@@ -1,0 +1,30 @@
+# ignore all object files
+*.o
+*.d
+*.dylib
+*.dSYM
+*.a
+*.so
+
+# ignore swap files for vim editing
+*.swp
+
+# build objects 
+autom4te.cache
+
+# ignore all auto-generated targets
+configure
+config.h
+config.h.in
+config.h.in~
+config.log
+config.status
+makefile
+*.m
+
+# miscellany
+octave-core
+*.tar
+*.gz
+.DS_Store
+
