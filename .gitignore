@@ -21,6 +21,7 @@ config.log
 config.status
 makefile
 *.m
+examples/*_example
 
 # miscellany
 octave-core

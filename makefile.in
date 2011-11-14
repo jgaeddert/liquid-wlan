@@ -187,7 +187,7 @@ clean-autoscript :
 ##
 .PHONY: examples
 example_programs :=						\
-	examples/test_example					\
+	examples/wififramesync_example				\
 
 example_objects	= $(patsubst %,%.o,$(example_programs))
 examples: $(example_programs)

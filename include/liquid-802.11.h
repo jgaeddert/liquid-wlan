@@ -119,8 +119,6 @@ void wififramegen_writesymbol(wififramegen _q,
 typedef struct wififramesync_s * wififramesync;
 
 typedef int (*wififramesync_callback)(liquid_float_complex * _y,
-                                      unsigned char * _p,
-                                      unsigned int _M,
                                       void * _userdata);
 
 wififramesync wififramesync_create(wififramesync_callback _callback,
