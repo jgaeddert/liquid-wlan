@@ -78,6 +78,9 @@ all:
 # in these variables
 objects :=							\
 	src/libliquid_802_11.o					\
+	src/wififrame.common.o					\
+	src/wififramegen.o					\
+	src/wififramesync.o					\
 
 autotest_sources :=						\
 
