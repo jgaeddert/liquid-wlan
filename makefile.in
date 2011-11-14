@@ -1,0 +1,240 @@
+# Copyright (c) 2011 Joseph Gaeddert
+# Copyright (c) 2011 Virginia Polytechnic Institute & State University
+#
+# This file is part of liquid.
+#
+# liquid is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# liquid is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with liquid.  If not, see <http://www.gnu.org/licenses/>.
+
+# 
+# Makefile for liquid 802.11 libraries
+#
+# Targets:
+#    all                 :   dynamic shared-library object (e.g. libliquid-802.11.so)
+#    install             :   install the dynamic shared library object and
+#                            header file(s)
+#    uninstall           :   uninstall the library and header file(s)
+#    clean               :   clean all targets (bench, check, examples, etc)
+#    distclean           :   removes everything except the originally distributed files
+#    examples            :   build all examples
+#
+#    clean-examples      :   clean examples programs
+#
+
+# paths
+srcdir = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+VPATH = @srcdir@
+include_dirs	:= . include
+vpath %.h $(include_dirs)
+modulesdir = src
+
+# programs
+CC = @CC@
+MV	:= mv -f
+RM	:= rm -f
+SED	:= @SED@
+GREP	:= @GREP@
+AR	:= ar
+RANLIB	:= ranlib
+
+# flags
+INCLUDE_CFLAGS	= $(addprefix -I ,$(include_dirs))
+CONFIG_CFLAGS	= @ARCH_OPTION@
+# -g : debugging info
+CFLAGS		+= $(INCLUDE_CFLAGS) -g -O2 -Wall -fPIC $(CONFIG_CFLAGS)
+LDFLAGS		+= @LIBS@
+ARFLAGS		= r
+PATHSEP		= /
+
+# 
+# liquid headers
+#
+headers_install	:= liquid-802.11.h
+headers		:= $(headers_install) liquid-802.11.internal.h
+include_headers	:= $(addprefix include/,$(headers))
+
+
+## 
+## main library objects
+##
+
+all:
+
+# Target collection
+#
+# Information about targets for each module is collected
+# in these variables
+objects :=							\
+	src/libliquid_802_11.o					\
+
+autotest_sources :=						\
+
+benchmark_sources :=						\
+
+
+##
+## TARGET : all       - build shared library (default)
+##
+.PHONY: all
+
+# Shared library
+SHARED_LIB	= @SH_LIB@
+
+# liquid library definition
+libliquid-802.11.a: $(objects)
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
+
+# darwin
+#
+# gcc -dynamiclib -install_name libliquid-802.11.dylib -o libliquid-802.11.dylib libmodem.a libutility.a 
+libliquid-802.11.dylib: $(objects)
+	$(CC) $(LDFLAGS) -dynamiclib -install_name $@ -o $@ $^
+
+# linux, et al
+libliquid-802.11.so: libliquid-802.11.a
+	$(CC) $(LDFLAGS) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive
+
+all: libliquid-802.11.a $(SHARED_LIB)
+
+##
+## TARGET : help      - print list of targets (see documentation for more)
+##
+
+# look for all occurences of '## TARGET : ' and print rest of line to screen
+help:
+	@echo "Targets for liquid-dsp makefile:"
+	@$(GREP) -E "^## TARGET : " [Mm]akefile | $(SED) 's/## TARGET : /  /'
+
+## 
+## TARGET : install   - installs the libraries and header files in the host system
+##
+
+install:
+	@echo "installing..."
+	mkdir -p $(exec_prefix)/lib
+	install -m 644 -p $(SHARED_LIB) libliquid-802.11.a $(exec_prefix)/lib
+	mkdir -p $(prefix)/include
+	mkdir -p $(prefix)/include/liquid
+	install -m 644 -p $(addprefix include/,$(headers_install)) $(prefix)/include/liquid
+	@echo ""
+	@echo "---------------------------------------------------------"
+	@echo "  liquid-dsp was successfully installed.     "
+	@echo ""
+	@echo "  On some machines (e.g. Linux) you should rebind your"
+	@echo "  libraries by running 'ldconfig' to make the shared"
+	@echo "  object available.  You might also need to modify your"
+	@echo "  LD_LIBRARY_PATH environment variable to include the"
+	@echo "  directory $(exec_prefix)"
+	@echo "---------------------------------------------------------"
+	@echo ""
+
+## 
+## TARGET : uninstall - uninstalls the libraries and header files in the host system
+##
+
+uninstall:
+	@echo "uninstalling..."
+	$(RM) $(addprefix $(prefix)/include/liquid/, $(headers_install))
+	$(RM) $(exec_prefix)/lib/libliquid-802.11.a
+	$(RM) $(exec_prefix)/lib/$(SHARED_LIB)
+	@echo "done."
+
+##
+## autoscript
+##
+
+autoscript : scripts/autoscript
+
+scripts/autoscript.o scripts/main.o : %.o : %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+scripts/autoscript : scripts/autoscript.o scripts/main.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+clean-autoscript :
+	$(RM) scripts/autoscript.o scripts/main.o scripts/autoscript
+
+
+##
+## TARGET : check     - build and run autotest scripts
+##
+
+
+
+##
+## TARGET : bench     - build and run all benchmarks
+##
+
+
+## 
+## TARGET : examples  - build all examples binaries
+##
+.PHONY: examples
+example_programs :=						\
+	examples/test_example					\
+
+example_objects	= $(patsubst %,%.o,$(example_programs))
+examples: $(example_programs)
+
+EXAMPLES_LDFLAGS = $(LDFLAGS)
+
+# NOTE: linked libraries must come _after_ the target program
+$(example_objects): %.o : %.c
+
+$(example_programs): % : %.o libliquid-802.11.a
+
+# clean examples
+clean-examples:
+	$(RM) examples/*.o
+	$(RM) $(example_programs)
+
+## 
+## TARGET : sandbox   - build all sandbox binaries
+##
+
+
+
+## 
+## TARGET : doc       - build documentation (doc/liquid.pdf)
+##
+
+
+##
+## TARGET : world     - build absolutely everything
+##
+
+
+##
+## TARGET : clean     - clean build (objects, dependencies, libraries, etc.)
+##
+
+
+clean:
+	$(RM) $(objects)
+	$(RM) libliquid-802.11.a
+	$(RM) $(SHARED_LIB)
+
+##
+## TARGET : distclean - removes everything except the originally distributed files
+##
+
+distclean: clean
+	@echo "cleaning distribution..."
+	$(RM) octave-core *.m
+	$(RM) configure config.h config.h.in config.h.in~ config.log config.status
+	$(RM) -r autom4te.cache
+	$(RM) makefile
+
