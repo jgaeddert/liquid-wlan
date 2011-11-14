@@ -77,6 +77,15 @@ extern "C" {
 LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 
 // 
+// 802.11a/g framing
+//
+
+#define WIFIFRAME_SCTYPE_NULL   0
+#define WIFIFRAME_SCTYPE_PILOT  1
+#define WIFIFRAME_SCTYPE_DATA   2
+
+
+// 
 // 802.11a/g frame generator
 //
 

@@ -46,6 +46,18 @@
 #endif
 
 //
+// wi-fi frame (common objects)
+//
+
+// PLCP short sequence
+extern const float complex wififrame_S0[64]; // freq
+extern const float complex wififrame_s0[64]; // time
+
+// PLCP long sequence
+extern const float complex wififrame_S1[64]; // freq
+extern const float complex wififrame_s1[64]; // time
+
+//
 // wi-fi frame generator
 //
 
