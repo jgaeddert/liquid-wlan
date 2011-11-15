@@ -84,6 +84,16 @@ LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 #define WIFIFRAME_SCTYPE_PILOT  1
 #define WIFIFRAME_SCTYPE_DATA   2
 
+// rates
+#define WIFIFRAME_RATE_6        (0) // BPSK,   r1/2, 1101
+#define WIFIFRAME_RATE_9        (1) // BPSK,   r3/4, 1111
+#define WIFIFRAME_RATE_12       (2) // QPSK,   r1/2, 0101
+#define WIFIFRAME_RATE_18       (3) // QPSK,   r3/4, 0111
+#define WIFIFRAME_RATE_24       (4) // 16-QAM, r1/2, 1001
+#define WIFIFRAME_RATE_36       (5) // 16-QAM, r3/4, 1011
+#define WIFIFRAME_RATE_48       (6) // 64-QAM, r2/3, 0001
+#define WIFIFRAME_RATE_54       (7) // 64-QAM, r3/4, 0011
+
 
 // 
 // 802.11a/g frame generator
