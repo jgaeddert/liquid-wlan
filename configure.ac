@@ -57,12 +57,21 @@ AC_CHECK_LIB([m], [sinf, cosf, expf, cargf, cexpf, crealf, cimagf, sqrtf], [],
 AC_CHECK_LIB([liquid], [modem_create], [],
              [AC_MSG_ERROR(Need liquid-dsp library!)],
              [])
+AC_CHECK_LIB([fec], [create_viterbi27], [],
+             [AC_MSG_ERROR(Need libfec library!, see http://www.ka9q.net/code/fec/)],
+             [])
 
 # Check for necessary header files
 AC_CHECK_HEADERS([stdio.h stdlib.h complex.h string.h getopt.h sys/resource.h float.h inttypes.h limits.h stdlib.h string.h unistd.h])
 if test -z "$HAVE_stdio.h"
 then
     AC_MSG_ERROR([Need stdio.h!])
+fi
+
+AC_CHECK_HEADERS([fec.h])
+if test -z "$HAVE_fec.h"
+then
+    AC_MSG_ERROR([Need fec.h!, see http://www.ka9q.net/code/fec/])
 fi
 
 # Check for optional header files, libraries, programs
