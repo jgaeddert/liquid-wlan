@@ -95,3 +95,15 @@ The procedure for extracting data symbols is as follows:
       fit of pilot phases
     - copy all 48 data subcarriers to buffer and invoke callback
 
+
+\section{MAC Data}
+
+octets: 2        2         6         6         6         2         6      0-2312       4
+  +---------+---------+---------+---------+---------+---------+---------+---------+---------+
+  |  Frame  |Duration/| Address | Address | Address | Sequence| Address |  Frame  |         |
+  | Control |   ID    |    1    |    2    |    3    | Control |    4    |  Body   |   CRC   |
+  +---------+---------+---------+---------+---------+---------+---------+---------+---------+
+  |<---                           MAC Header                        --->|
+
+
+
