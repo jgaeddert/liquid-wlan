@@ -21,6 +21,9 @@ config.log
 config.status
 makefile
 *.m
+
+# ignore binaries
+autotest/*_autotest
 examples/*_example
 sandbox/*_test
 

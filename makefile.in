@@ -179,6 +179,27 @@ clean-autoscript :
 ## TARGET : check     - build and run autotest scripts
 ##
 
+autotest_programs :=						\
+	autotest/interleaver_autotest				\
+
+autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
+
+AUTOTEST_LDFLAGS = $(LDFLAGS)
+
+# NOTE: linked libraries must come _after_ the target program
+$(autotest_objects): %.o : %.c
+
+$(autotest_programs): % : %.o libliquid-802.11.a
+
+# main target; run all programs
+check : % : $(autotest_programs)
+	./$<
+
+# clean autotest
+clean-check:
+	$(RM) autotest/*.o
+	$(RM) $(autotest_programs)
+
 
 
 ##
