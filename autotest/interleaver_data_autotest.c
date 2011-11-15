@@ -33,7 +33,8 @@
 #include <time.h>
 
 #include <liquid/liquid.h>
-#include <fec.h>
+
+#include "liquid-802.11.internal.h"
 
 int main(int argc, char*argv[])
 {
