@@ -39,6 +39,9 @@
 #include <liquid/liquid.h>
 #include <fec.h>
 
+#define SOFTBIT_1   (255)
+#define SOFTBIT_0   (0)
+
 int main(int argc, char*argv[])
 {
     // original data message
@@ -52,8 +55,9 @@ int main(int argc, char*argv[])
     //  7   1   -               15  0   -               23  0   SIGNAL TAIL
     //      1011 0001               0011 0000               0000 0000
     unsigned char msg_org[3] = {0xb1, 0x30, 0x00};
-    unsigned char msg_enc[6];   // after encoding
-    //unsigned char msg_dec[3];   // after decoding
+    unsigned char msg_enc[6];   // encoded message
+    unsigned char msg_rec[6];   // received message
+    unsigned char msg_dec[3];   // decoded message
 
     // after encoding (test)
     // 1101 0001
@@ -109,6 +113,48 @@ int main(int argc, char*argv[])
     for (i=0; i<6; i++)
         printf("%3u : 0x%.2x (0x%.2x)\n", i, msg_enc[i], msg_test[i]);
 
+    //
+    // channel
+    //
+    for (i=0; i<6; i++)
+        msg_rec[i] = msg_enc[i];
+
+    // add error
+    msg_rec[0] ^= 0x40;
+
+
+    //
+    // decode message
+    //
+
+    // unpack encoded bits
+    unsigned char bits_enc[48];
+    for (i=0; i<6; i++) {
+        bits_enc[8*i+0] = (msg_rec[i] >> 7) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+1] = (msg_rec[i] >> 6) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+2] = (msg_rec[i] >> 5) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+3] = (msg_rec[i] >> 4) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+4] = (msg_rec[i] >> 3) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+5] = (msg_rec[i] >> 2) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+6] = (msg_rec[i] >> 1) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+        bits_enc[8*i+7] = (msg_rec[i]     ) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+    }
+    
+    // run decoder
+    void * vp = create_viterbi27(48);
+    init_viterbi27(vp,0);
+    update_viterbi27_blk(vp,bits_enc,48);
+    chainback_viterbi27(vp, msg_dec, 48, 0);
+    delete_viterbi27(vp);
+
+    // print decoded message
+    printf("decoded message:\n");
+    for (i=0; i<3; i++)
+        printf("%3u : 0x%.2x (0x%.2x)\n", i, msg_dec[i], msg_org[i]);
+
+    // count errors and print results
+    unsigned int num_errors = count_bit_errors_array(msg_dec, msg_org, 3);
+    printf("bit errors : %3u / %3u\n", num_errors, 24);
 
     printf("done.\n");
     return 0;
