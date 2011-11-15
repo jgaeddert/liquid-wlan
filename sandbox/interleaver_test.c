@@ -35,9 +35,6 @@
 #include <liquid/liquid.h>
 #include <fec.h>
 
-#define SOFTBIT_1   (255)
-#define SOFTBIT_0   (0)
-
 int main(int argc, char*argv[])
 {
     // input message
@@ -142,8 +139,6 @@ int main(int argc, char*argv[])
         printf("%3u : 0x%.2x (0x%.2x)\n", i, msg_dec1[i], msg_org[i]);
     printf("errors : %3u / %3u\n", count_bit_errors_array(msg_dec1, msg_org, 6), 48);
     printf("\n");
-
-    // de-interleave
 
     printf("done.\n");
     return 0;
