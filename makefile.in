@@ -263,7 +263,7 @@ clean-sandbox:
 ##
 
 
-clean:
+clean: clean-check clean-examples clean-sandbox
 	$(RM) $(objects)
 	$(RM) libliquid-802.11.a
 	$(RM) $(SHARED_LIB)
