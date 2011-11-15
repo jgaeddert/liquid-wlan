@@ -26,6 +26,7 @@
 #    uninstall           :   uninstall the library and header file(s)
 #    clean               :   clean all targets (bench, check, examples, etc)
 #    distclean           :   removes everything except the originally distributed files
+#    check               :   build and run all autotests
 #    examples            :   build all examples
 #
 #    clean-examples      :   clean examples programs
@@ -194,6 +195,7 @@ $(autotest_programs): % : %.o libliquid-802.11.a
 # main target; run all programs
 check : % : $(autotest_programs)
 	./$<
+	@echo ">>>> autotest passed"
 
 # clean autotest
 clean-check:
@@ -254,16 +256,6 @@ clean-sandbox:
 	$(RM) sandbox/*.o
 	$(RM) $(sandbox_programs)
 
-
-
-## 
-## TARGET : doc       - build documentation (doc/liquid.pdf)
-##
-
-
-##
-## TARGET : world     - build absolutely everything
-##
 
 
 ##
