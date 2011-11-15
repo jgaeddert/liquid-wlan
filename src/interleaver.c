@@ -50,9 +50,12 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
 
     unsigned int s = (_nbpsc / 2) < 1 ? 1 : _nbpsc/2; // max( _nbpsc/2, 1 )
 
-    // internal arrays
+    // internal array
     unsigned char msg_p0[_ncbps/8]; // first permutation
-    memset(msg_p0, 0x00, (_ncbps/8)*sizeof(unsigned char));
+
+    // clear arrays
+    memset(msg_p0,   0x00, (_ncbps/8)*sizeof(unsigned char));
+    memset(_msg_enc, 0x00, (_ncbps/8)*sizeof(unsigned char));
 
     div_t d0;
     div_t d1;
@@ -68,10 +71,10 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
         bit = (_msg_dec[d0.quot] >> (8-d0.rem-1)) & 0x01;
         msg_p0[d1.quot] |= bit << (8-d1.rem-1);
         
-        printf("%3u > %3u (%1u)\n", k, i, bit);
+        //printf("%3u > %3u (%1u)\n", k, i, bit);
     }
 
-    printf("-------\n");
+    //printf("-------\n");
 
     // inner permutation
     for (i=0; i<_ncbps; i++) {
@@ -83,7 +86,7 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
         bit = (msg_p0[d0.quot] >> (8-d0.rem-1)) & 0x01;
         _msg_enc[d1.quot] |= bit << (8-d1.rem-1);
         
-        printf("%3u > %3u (%1u)\n", i, j, bit);
+        //printf("%3u > %3u (%1u)\n", i, j, bit);
     }
 }
 
@@ -123,9 +126,13 @@ void wifi_interleaver_decode_symbol(unsigned int _ncbps,
 
     unsigned int s = (_nbpsc / 2) < 1 ? 1 : _nbpsc/2; // max( _nbpsc/2, 1 )
 
-    // internal arrays
+    // internal array
     unsigned char msg_p0[_ncbps/8]; // first permutation
-    memset(msg_p0, 0x00, (_ncbps/8)*sizeof(unsigned char));
+    
+    // clear arrays
+    memset(msg_p0,   0x00, (_ncbps/8)*sizeof(unsigned char));
+    memset(_msg_dec, 0x00, (_ncbps/8)*sizeof(unsigned char));
+
 
     div_t d0;
     div_t d1;
