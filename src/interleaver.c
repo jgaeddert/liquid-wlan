@@ -43,14 +43,15 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
         exit(1);
     }
 
-    // internal arrays
-    unsigned char msg_p0[_ncbps/8]; // first permutation
-
     unsigned int k; // original
     unsigned int i;
     unsigned int j;
 
     unsigned int s = (_nbpsc / 2) < 1 ? 1 : _nbpsc/2; // max( _nbpsc/2, 1 )
+
+    // internal arrays
+    unsigned char msg_p0[_ncbps/8]; // first permutation
+    memset(msg_p0, 0x00, (_ncbps/8)*sizeof(unsigned char));
 
     div_t d0;
     div_t d1;
@@ -109,14 +110,15 @@ void wifi_interleaver_decode_symbol(unsigned int _ncbps,
         exit(1);
     }
 
-    // internal arrays
-    unsigned char msg_p0[_ncbps/8]; // first permutation
-
     unsigned int k; // original
     unsigned int i;
     unsigned int j;
 
     unsigned int s = (_nbpsc / 2) < 1 ? 1 : _nbpsc/2; // max( _nbpsc/2, 1 )
+
+    // internal arrays
+    unsigned char msg_p0[_ncbps/8]; // first permutation
+    memset(msg_p0, 0x00, (_ncbps/8)*sizeof(unsigned char));
 
     div_t d0;
     div_t d1;

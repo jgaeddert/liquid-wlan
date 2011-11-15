@@ -46,18 +46,38 @@ int main(int argc, char*argv[])
     // options...
     unsigned int ncbps = 48;    // number of coded bits per OFDM symbol
     unsigned int nbpsc = 1;     // number of bits per subcarrier (modulation depth)
+    
+    unsigned int i;
 
+    // 
     // interleave message
+    //
     unsigned char msg_enc[6];
     wifi_interleaver_encode_symbol(ncbps, nbpsc, msg_org, msg_enc);
+    
+    // print results
+    printf("interleaved:\n");
+    for (i=0; i<6; i++)
+        printf("%3u : 0x%.2x > 0x%.2x (0x%.2x)\n", i, msg_org[i], msg_enc[i], msg_test[i]);
+    printf("errors : %3u / %3u\n", count_bit_errors_array(msg_enc, msg_test, 6), 48);
+
     if (count_bit_errors_array(msg_enc, msg_test, 6) > 0) {
         fprintf(stderr,"fail: %s, encoding failure\n", __FILE__);
         exit(1);
     }
 
+    // 
     // de-interleave message
+    //
     unsigned char msg_dec[6];
     wifi_interleaver_decode_symbol(ncbps, nbpsc, msg_enc, msg_dec);
+    
+    // print results
+    printf("de-interleaved:\n");
+    for (i=0; i<6; i++)
+        printf("%3u : 0x%.2x > 0x%.2x (0x%.2x)\n", i, msg_enc[i], msg_dec[i], msg_org[i]);
+    printf("errors : %3u / %3u\n", count_bit_errors_array(msg_dec, msg_org, 6), 48);
+
     if (count_bit_errors_array(msg_dec, msg_org, 6) > 0) {
         fprintf(stderr,"fail: %s, decoding failure\n", __FILE__);
         exit(1);
