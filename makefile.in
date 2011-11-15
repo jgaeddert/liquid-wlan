@@ -211,6 +211,25 @@ clean-examples:
 ## TARGET : sandbox   - build all sandbox binaries
 ##
 
+.PHONY: sandbox
+sandbox_programs =						\
+	sandbox/datascrambler_test				\
+
+sandbox_objects	= $(patsubst %,%.o,$(sandbox_programs))
+sandbox: $(sandbox_programs)
+SANDBOX_LDFLAGS = $(LDFLAGS) -lfftw3f
+
+# NOTE: linked libraries must come _after_ the target program
+$(sandbox_objects): %.o : %.c
+
+$(sandbox_programs): % : %.o libliquid-802.11.a
+	$(CC) $(SANDBOX_LDFLAGS) $^ -o $@
+
+# clean sandbox
+clean-sandbox:
+	$(RM) sandbox/*.o
+	$(RM) $(sandbox_programs)
+
 
 
 ## 
