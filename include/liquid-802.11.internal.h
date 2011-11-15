@@ -21,6 +21,7 @@
 #define __LIQUID_802_11_INTERNAL_H__
 
 #include <liquid/liquid.h>
+#include <fec.h>
 
 #include "liquid-802.11.h"
 
