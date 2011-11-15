@@ -214,6 +214,7 @@ clean-examples:
 .PHONY: sandbox
 sandbox_programs =						\
 	sandbox/datascrambler_test				\
+	sandbox/signalfield_test				\
 
 sandbox_objects	= $(patsubst %,%.o,$(sandbox_programs))
 sandbox: $(sandbox_programs)
