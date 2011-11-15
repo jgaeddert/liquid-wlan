@@ -67,7 +67,11 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
 
         bit = (_msg_dec[d0.quot] >> (8-d0.rem-1)) & 0x01;
         msg_p0[d1.quot] |= bit << (8-d1.rem-1);
+        
+        printf("%3u > %3u (%1u)\n", k, i, bit);
     }
+
+    printf("-------\n");
 
     // inner permutation
     for (i=0; i<_ncbps; i++) {
@@ -78,6 +82,8 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
 
         bit = (msg_p0[d0.quot] >> (8-d0.rem-1)) & 0x01;
         _msg_enc[d1.quot] |= bit << (8-d1.rem-1);
+        
+        printf("%3u > %3u (%1u)\n", i, j, bit);
     }
 }
 

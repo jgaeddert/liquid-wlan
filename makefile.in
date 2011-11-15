@@ -177,6 +177,7 @@ clean-autoscript :
 ##
 
 autotest_programs :=						\
+	autotest/interleaver_data_autotest			\
 	autotest/interleaver_signal_autotest			\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
@@ -190,7 +191,7 @@ $(autotest_programs): % : %.o libliquid-802.11.a
 
 # main target; run all programs
 check : $(autotest_programs)
-	$(patsubst %, ./%;, $(autotest_programs))
+	$(patsubst %, ./% &&, $(autotest_programs)) echo "autotest pass!"
 
 # clean autotest
 clean-check:
