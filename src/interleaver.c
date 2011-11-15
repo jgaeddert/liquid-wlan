@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "liquid-802.11.internal.h"
 
@@ -101,8 +102,8 @@ void wifi_interleaver_encode(unsigned int _ncbps,
 //  _msg_dec    :   decoded message (de-iterleaved)
 void wifi_interleaver_decode_symbol(unsigned int _ncbps,
                                     unsigned int _nbpsc,
-                                    unsigned char * _msg_dec,
-                                    unsigned char * _msg_enc)
+                                    unsigned char * _msg_enc,
+                                    unsigned char * _msg_dec)
 {
     // validate input
     if (_ncbps % 8) {
