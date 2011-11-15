@@ -1,0 +1,11 @@
+
+
+library:
+  * data scrambler: s(x) = x^7 + x^4 + 1, n=127, 00001110 11110010...
+  * interleaver
+  * forward error-correction coding (convolutional encoder) with puncturing
+
+autotest:
+  * data scrambler
+  * interleaver
+  * encoding/decoding (FEC)
