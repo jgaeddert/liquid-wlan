@@ -87,10 +87,6 @@ objects :=							\
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
 
-autotest_sources :=						\
-
-benchmark_sources :=						\
-
 
 ##
 ## TARGET : all       - build shared library (default)
@@ -181,7 +177,7 @@ clean-autoscript :
 ##
 
 autotest_programs :=						\
-	autotest/interleaver_autotest				\
+	autotest/interleaver_signal_autotest			\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
@@ -193,9 +189,8 @@ $(autotest_objects): %.o : %.c
 $(autotest_programs): % : %.o libliquid-802.11.a
 
 # main target; run all programs
-check : % : $(autotest_programs)
-	./$<
-	@echo ">>>> autotest passed"
+check : $(autotest_programs)
+	$(patsubst %, ./%;, $(autotest_programs))
 
 # clean autotest
 clean-check:

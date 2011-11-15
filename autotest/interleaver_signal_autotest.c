@@ -19,7 +19,7 @@
  */
 
 //
-// interleaver_autotest.c
+// interleaver_signal_autotest.c
 //
 // Test interleaver; data obtained from
 // Annex G in 1999 specification (Tables ...)
