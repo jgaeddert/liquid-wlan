@@ -27,6 +27,10 @@
 //  00100110 00101110 10110110 00001100
 //  11010100 11100111 10110100 00101010
 //  11111010 01010001 10111000 1111111
+// 
+// NOTE: the above sequence is the same as the phase of the BPSK pilot
+//       subcarriers when replacing the 1s with '-1' and 0s with '1',
+//       viz {1,1,1,1, -1,-1,-1,1, -1,-1,-,1-,1...}
 //
 
 #include <stdio.h>
