@@ -58,6 +58,60 @@ extern const float complex wififrame_s0[64]; // time
 extern const float complex wififrame_S1[64]; // freq
 extern const float complex wififrame_s1[64]; // time
 
+// 
+// encoding/decoding
+//
+
+//void signal_pack(options, output array);
+//void signal_unpack(options, output array);
+
+// encode signal using half-rate convolutional code
+//  _msg_dec    :   24-bit signal field [size: 3 x 1]
+//  _msg_enc    :   48-bit signal field [size: 6 x 1]
+void signal_encode(unsigned char * _msg_dec,
+                   unsigned char * _msg_enc);
+
+// decode signal using half-rate convolutional code
+//  _msg_enc    :   48-bit signal field [size: 6 x 1]
+//  _msg_dec    :   24-bit signal field [size: 3 x 1]
+void signal_decode(unsigned char * _msg_enc,
+                   unsigned char * _msg_dec);
+
+// scramble data
+void data_scramble(unsigned char * _msg_dec,
+                   unsigned char * _msg_enc,
+                   unsigned int _n);
+
+// unscramble data
+void data_unscramble(unsigned char * _msg_enc,
+                     unsigned char * _msg_dec,
+                     unsigned int _n);
+
+// intereleave message
+//  _ncbps      :   number of coded bits per OFDM symbol
+//  _nbpsc      :   number of bits per subcarrier (modulation depth)
+//  _n          :   input messge length (bytes)
+//  _msg_dec    :   decoded message (de-iterleaved)
+//  _msg_enc    :   encoded message (interleaved)
+void interleave_encode(unsigned int _ncbps,
+                       unsigned int _nbpsc,
+                       unsigned int _n,
+                       unsigned char * _msg_dec,
+                       unsigned char * _msg_enc);
+
+// de-intereleave message
+//  _ncbps      :   number of coded bits per OFDM symbol
+//  _nbpsc      :   number of bits per subcarrier (modulation depth)
+//  _n          :   input messge length (bytes)
+//  _msg_enc    :   encoded message (interleaved)
+//  _msg_dec    :   decoded message (de-iterleaved)
+void interleave_decode(unsigned int _ncbps,
+                       unsigned int _nbpsc,
+                       unsigned int _n,
+                       unsigned char * _msg_enc,
+                       unsigned char * _msg_dec);
+
+
 //
 // wi-fi frame generator
 //
