@@ -22,6 +22,7 @@ config.status
 makefile
 *.m
 examples/*_example
+sandbox/*_test
 
 # miscellany
 octave-core
