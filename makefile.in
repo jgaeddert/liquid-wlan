@@ -82,6 +82,9 @@ objects :=							\
 	src/wififramegen.o					\
 	src/wififramesync.o					\
 
+# explicitly define dependencies for library objects
+$(objects) : %.o : %.c $(include_headers)
+
 autotest_sources :=						\
 
 benchmark_sources :=						\
