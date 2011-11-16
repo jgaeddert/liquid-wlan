@@ -78,12 +78,14 @@ all:
 # Information about targets for each module is collected
 # in these variables
 objects :=							\
-	src/libliquid_802_11.o					\
 	src/interleaver.o					\
 	src/wifi_fec.o						\
 	src/wififrame.common.o					\
 	src/wififramegen.o					\
 	src/wififramesync.o					\
+
+# NOTE: for some reason this file causes linking errors ('corrupt archive')
+# src/libliquid_802_11.o
 
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
