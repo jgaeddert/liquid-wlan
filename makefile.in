@@ -79,6 +79,7 @@ all:
 # in these variables
 objects :=							\
 	src/interleaver.o					\
+	src/wifi_data_scrambler.o				\
 	src/wifi_signal.o					\
 	src/wififrame.common.o					\
 	src/wififramegen.o					\
@@ -180,6 +181,7 @@ clean-autoscript :
 ##
 
 autotest_programs :=						\
+	autotest/annexg_datascramble_autotest			\
 	autotest/datascrambler_autotest				\
 	autotest/interleaver_data_autotest			\
 	autotest/signalfield_pack_autotest			\

@@ -66,7 +66,6 @@ extern const float complex wififrame_s1[64]; // time
 // signal definition
 //
 
-
 struct wifi_signal_s {
     // Data rate (RATE)
     enum {
@@ -123,14 +122,24 @@ void wifi_fec_signal_decode(unsigned char * _msg_enc,
 //
 
 // scramble data
-void data_scramble(unsigned char * _msg_dec,
-                   unsigned char * _msg_enc,
-                   unsigned int _n);
+//  _msg_dec    :   original data message [size: _n x 1]
+//  _msg_enc    :   scrambled data message [size: _n x 1]
+//  _n          :   length of input/output (bytes)
+//  _seed       :   linear feedback shift register initial state
+void wifi_data_scramble(unsigned char * _msg_dec,
+                        unsigned char * _msg_enc,
+                        unsigned int _n,
+                        unsigned int _seed);
 
 // unscramble data
-void data_unscramble(unsigned char * _msg_enc,
-                     unsigned char * _msg_dec,
-                     unsigned int _n);
+//  _msg_enc    :   scrambled data message [size: _n x 1]
+//  _msg_dec    :   original data message [size: _n x 1]
+//  _n          :   length of input/output (bytes)
+//  _seed       :   linear feedback shift register initial state
+void wifi_data_unscramble(unsigned char * _msg_enc,
+                          unsigned char * _msg_dec,
+                          unsigned int _n,
+                          unsigned int _seed);
 
 // intereleave one OFDM symbol
 //  _ncbps      :   number of coded bits per OFDM symbol
