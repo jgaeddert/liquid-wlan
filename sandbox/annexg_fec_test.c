@@ -107,10 +107,11 @@ int main(int argc, char*argv[])
     unsigned char msg_int[enc_msg_len];         // interleaved message
 
     unsigned char msg_rec[enc_msg_len];         // received message
-    unsigned char msg_dec[dec_msg_len];         // decoded message
     
-    //unsigned char msg_xxx[length];      // recovered original message
-
+    unsigned char msg_deint[enc_msg_len];       // de-interleaved message
+    unsigned char msg_dec[dec_msg_len];         // decoded message
+    unsigned char msg_unscrambled[dec_msg_len]; // unscrambled message
+    
     unsigned int i;
 
     // 
@@ -217,7 +218,7 @@ int main(int argc, char*argv[])
 
 
     // 
-    // apply interleaver
+    // interleave symbols
     //
     
     for (i=0; i<nsym; i++)
@@ -232,19 +233,26 @@ int main(int argc, char*argv[])
     }
     printf("\n");
 
-#if 0
     //
-    // channel
+    // TODO : modulate/demodulate
     //
-    for (i=0; i<6; i++)
-        msg_rec[i] = msg_enc[i];
 
-    // add error
-    msg_rec[0] ^= 0x40;
-#else
-    memmove(msg_rec, msg_enc, enc_msg_len*sizeof(unsigned char));
-#endif
+    //
+    // de-interleave symbols
+    //
 
+    for (i=0; i<nsym; i++)
+        wifi_interleaver_decode_symbol(ncbps, nbpsc, &msg_int[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
+
+    // print de-interleaved message
+    printf("de-interleaved data (verify with Table G.18):\n");
+    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_deint, msg_enc, enc_msg_len), 8*enc_msg_len);
+    for (i=0; i<enc_msg_len; i++) {
+        printf(" %.2x", msg_deint[i]);
+        if ( ((i+1)%16)==0 )
+            printf("\n");
+    }
+    printf("\n");
 
 #if 0
     //
@@ -261,7 +269,7 @@ int main(int argc, char*argv[])
     unsigned int k=0;   // intput bit index (0<=k<8)
     p=0;   // puncturing matrix column index
     //unsigned char bit;
-    byte_in = msg_rec[n];
+    byte_in = msg_deint[n];
     for (i=0; i<num_enc_bits; i+=R) {
         //
         for (r=0; r<R; r++) {
@@ -273,7 +281,7 @@ int main(int argc, char*argv[])
                 if (k==8) {
                     k = 0;
                     n++;
-                    byte_in = msg_rec[n];
+                    byte_in = msg_deint[n];
                 }
             } else {
                 // push erasure
@@ -300,14 +308,15 @@ int main(int argc, char*argv[])
     chainback_viterbi27(vp, msg_dec, num_enc_bits, 0);
     delete_viterbi27(vp);
 
-    // print decoded message
-    printf("decoded message:\n");
-    for (i=0; i<3; i++)
-        printf("%3u : 0x%.2x (0x%.2x)\n", i, msg_dec[i], msg_org[i]);
-
-    // count errors and print results
-    unsigned int num_errors = count_bit_errors_array(msg_dec, msg_org, 3);
-    printf("bit errors : %3u / %3u\n", num_errors, 24);
+    // print de-interleaved message
+    printf("decoded data (verify with Table G.17/G.17):\n");
+    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, enc_msg_len), 8*enc_msg_len);
+    for (i=0; i<enc_msg_len; i++) {
+        printf(" %.2x", msg_dec[i]);
+        if ( ((i+1)%16)==0 )
+            printf("\n");
+    }
+    printf("\n");
 #endif
 
     printf("done.\n");
