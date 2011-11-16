@@ -51,6 +51,7 @@ int main(int argc, char*argv[])
     unsigned int length = 100;  // original data length (bytes)
     unsigned int ndbps  = 144;  // number of data bits per OFDM symbol
     unsigned int ncbps  = 192;  // number of coded bits per OFDM symbol
+    unsigned int nbpsc  =   4;  // number of bits per subcarrier (modulation depth)
     unsigned int seed   = 0x5d; // data scrambler seed
 
     // original data message (Table G.1)
@@ -100,11 +101,13 @@ int main(int argc, char*argv[])
     printf("    dec msg len :   %3u bytes\n", dec_msg_len);
     printf("    enc msg len :   %3u bytes\n", enc_msg_len);
 
-    unsigned char msg_org[dec_msg_len]; // original message
-    unsigned char msg_scrambled[dec_msg_len];   // original message (scrambled)
-    unsigned char msg_enc[enc_msg_len]; // encoded message
-    unsigned char msg_rec[enc_msg_len]; // received message
-    unsigned char msg_dec[dec_msg_len]; // decoded message
+    unsigned char msg_org[dec_msg_len];         // original message
+    unsigned char msg_scrambled[dec_msg_len];   // scrambled message
+    unsigned char msg_enc[enc_msg_len];         // encoded message
+    unsigned char msg_int[enc_msg_len];         // interleaved message
+
+    unsigned char msg_rec[enc_msg_len];         // received message
+    unsigned char msg_dec[dec_msg_len];         // decoded message
     
     //unsigned char msg_xxx[length];      // recovered original message
 
@@ -214,9 +217,20 @@ int main(int argc, char*argv[])
 
 
     // 
-    // TODO : apply interleaver...
+    // apply interleaver
     //
+    
+    for (i=0; i<nsym; i++)
+        wifi_interleaver_encode_symbol(ncbps, nbpsc, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
 
+    // print interleaved message
+    printf("interleaved data (verify with Table G.21):\n");
+    for (i=0; i<enc_msg_len; i++) {
+        printf(" %.2x", msg_int[i]);
+        if ( ((i+1)%16)==0 )
+            printf("\n");
+    }
+    printf("\n");
 
 #if 0
     //
