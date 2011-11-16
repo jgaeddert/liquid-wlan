@@ -135,7 +135,10 @@ int main(int argc, char*argv[])
     //
     wifi_data_scramble(msg_org, msg_scrambled, dec_msg_len, seed);
 
-    // TODO : zero tail bits...
+    // zero tail bits (basically just revert scrambling these bits). For the
+    // example given in Annex G, this amounts to the 6 bits after the SERVICE
+    // and data bits (indices 816..821).
+    msg_scrambled[length+2] &= 0x03;
 
     // print scrambled message
     printf("scrambled data (verify with Table G.16):\n");
