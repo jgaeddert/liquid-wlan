@@ -182,9 +182,9 @@ clean-autoscript :
 autotest_programs :=						\
 	autotest/datascrambler_autotest				\
 	autotest/interleaver_data_autotest			\
-	autotest/interleaver_signal_autotest			\
-	autotest/signalfield_encoder_autotest			\
 	autotest/signalfield_pack_autotest			\
+	autotest/signalfield_encoder_autotest			\
+	autotest/signalfield_interleaver_autotest		\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
