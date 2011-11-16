@@ -19,7 +19,7 @@
  */
 
 //
-// signalfield_test.c
+// signalfield_fec_test.c
 //
 // Test PLCP Header encoding/decoding (SIGNAL field); data obtained from
 // Annex G in 1999 specification (Tables G.7 & G.8, p. 61-62).
