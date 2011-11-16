@@ -122,7 +122,7 @@ int main(int argc, char*argv[])
         msg_org[i] = 0x00;
 
     // print original message
-    printf("original data (verify with Table G.13):\n");
+    printf("original data (verify with Table G.13/G.14):\n");
     for (i=0; i<dec_msg_len; i++) {
         printf(" %.2x", msg_org[i]);
         if ( ((i+1)%16)==0 )
@@ -141,7 +141,7 @@ int main(int argc, char*argv[])
     msg_scrambled[length+2] &= 0x03;
 
     // print scrambled message
-    printf("scrambled data (verify with Table G.16):\n");
+    printf("scrambled data (verify with Table G.16/G.17):\n");
     for (i=0; i<dec_msg_len; i++) {
         printf(" %.2x", msg_scrambled[i]);
         if ( ((i+1)%16)==0 )
@@ -213,6 +213,11 @@ int main(int argc, char*argv[])
     printf("\n");
 
 
+    // 
+    // TODO : apply interleaver...
+    //
+
+
 #if 0
     //
     // channel
@@ -222,30 +227,63 @@ int main(int argc, char*argv[])
 
     // add error
     msg_rec[0] ^= 0x40;
+#else
+    memmove(msg_rec, msg_enc, enc_msg_len*sizeof(unsigned char));
+#endif
 
 
+#if 0
     //
     // decode message
     //
 
-    // unpack encoded bits
-    unsigned char bits_enc[48];
-    for (i=0; i<6; i++) {
-        bits_enc[8*i+0] = (msg_rec[i] >> 7) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+1] = (msg_rec[i] >> 6) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+2] = (msg_rec[i] >> 5) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+3] = (msg_rec[i] >> 4) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+4] = (msg_rec[i] >> 3) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+5] = (msg_rec[i] >> 2) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+6] = (msg_rec[i] >> 1) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
-        bits_enc[8*i+7] = (msg_rec[i]     ) & 0x01 ? SOFTBIT_1 : SOFTBIT_0;
+    // unpack bytes, adding erasures at punctured indices
+
+    // unpack bytes, adding erasures at punctured indices
+    unsigned int num_dec_bits = dec_msg_len * 8;
+    unsigned int num_enc_bits = num_dec_bits * R;
+    unsigned char enc_bits[num_enc_bits];
+    n=0;   // input byte index
+    unsigned int k=0;   // intput bit index (0<=k<8)
+    p=0;   // puncturing matrix column index
+    //unsigned char bit;
+    byte_in = msg_rec[n];
+    for (i=0; i<num_enc_bits; i+=R) {
+        //
+        for (r=0; r<R; r++) {
+            if (pmatrix[r*P + p]) {
+                // push bit from input
+                bit = (byte_in >> (7-k)) & 0x01;
+                enc_bits[i+r] = bit ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
+                k++;
+                if (k==8) {
+                    k = 0;
+                    n++;
+                    byte_in = msg_rec[n];
+                }
+            } else {
+                // push erasure
+                enc_bits[i+r] = LIQUID_802_11_SOFTBIT_ERASURE;
+            }
+        }
+        p = (p+1) % P;
     }
-    
-    // run decoder
-    void * vp = create_viterbi27(48);
+
+#if 0
+    unsigned int ii;
+    printf("msg encoded (bits):\n");
+    for (ii=0; ii<num_enc_bits; ii++) {
+        printf("%3u ", enc_bits[ii]);
+        if (((ii+1)%8)==0)
+            printf("\n");
+    }
+    printf("\n");
+#endif
+
+    void * vp = create_viterbi27(num_enc_bits);
     init_viterbi27(vp,0);
-    update_viterbi27_blk(vp,bits_enc,48);
-    chainback_viterbi27(vp, msg_dec, 48, 0);
+    update_viterbi27_blk(vp,enc_bits,num_enc_bits);
+    chainback_viterbi27(vp, msg_dec, num_enc_bits, 0);
     delete_viterbi27(vp);
 
     // print decoded message

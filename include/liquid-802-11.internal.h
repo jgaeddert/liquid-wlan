@@ -102,8 +102,9 @@ void wifi_signal_unpack(unsigned char * _signal,
 // encoding/decoding
 //
 
-#define LIQUID_802_11_SOFTBIT_1 (255)
-#define LIQUID_802_11_SOFTBIT_0 (0)
+#define LIQUID_802_11_SOFTBIT_1       (255)
+#define LIQUID_802_11_SOFTBIT_ERASURE (127)
+#define LIQUID_802_11_SOFTBIT_0       (0)
 
 // encode SIGNAL field using half-rate convolutional code
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
