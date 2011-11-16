@@ -85,6 +85,7 @@ objects :=							\
 	src/wififrame.common.o					\
 	src/wififramegen.o					\
 	src/wififramesync.o					\
+	src/utility.o						\
 
 # NOTE: for some reason this file causes linking errors ('corrupt archive')
 # src/libliquid_802_11.o
@@ -242,6 +243,7 @@ clean-examples:
 
 .PHONY: sandbox
 sandbox_programs =						\
+	sandbox/annexg_fec_test					\
 	sandbox/datascrambler_test				\
 	sandbox/interleaver_test				\
 	sandbox/signalfield_fec_test				\

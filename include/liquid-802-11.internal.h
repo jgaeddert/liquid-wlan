@@ -209,5 +209,13 @@ void wifi_interleaver_decode(unsigned int _ncbps,
 // wi-fi frame synchronizer
 //
 
+//
+// utility
+//
+
+// reverse byte table
+extern const unsigned char liquid_802_11_reverse_byte[256];
+
+
 #endif // __LIQUID_802_11_INTERNAL_H__
 
