@@ -117,6 +117,21 @@ void wifi_fec_signal_encode(unsigned char * _msg_dec,
 void wifi_fec_signal_decode(unsigned char * _msg_enc,
                             unsigned char * _msg_dec);
 
+// puncturing matrices
+extern const char wifi_fec_conv27p23_matrix[12];
+extern const char wifi_fec_conv27p34_matrix[18];
+
+// encode data using convolutional code
+//  _fec_scheme :   error-correction scheme
+//  _dec_msg_len:   length of decoded message
+//  _msg_dec    :   decoded message (with tail bits inserted)
+//  _msg_enc    :   encoded message
+void wifi_fec_encode(unsigned int    _fec_scheme,
+                     unsigned int    _dec_msg_len,
+                     unsigned char * _msg_dec,
+                     unsigned char * _msg_enc);
+
+
 //
 // data scrambler/de-scrambler
 //
