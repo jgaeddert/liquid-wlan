@@ -106,11 +106,14 @@ int main(int argc, char*argv[])
     unsigned char msg_rec[enc_msg_len]; // received message
     unsigned char msg_dec[dec_msg_len]; // decoded message
     
-    unsigned char msg_xxx[length];      // recovered original message
+    //unsigned char msg_xxx[length];      // recovered original message
 
     unsigned int i;
 
-    // prepend SERVICE bits, reverse bytes, add padding
+    // 
+    // assemble raw data message (prepend SERVICE bits, reverse bytes,
+    // add padding)
+    //
     msg_org[0] = 0x00;
     msg_org[1] = 0x00;
     for (i=0; i<length; i++)
@@ -126,8 +129,13 @@ int main(int argc, char*argv[])
             printf("\n");
     }
     printf("\n");
+
+    // 
     // scramble data
+    //
     wifi_data_scramble(msg_org, msg_scrambled, dec_msg_len, seed);
+
+    // TODO : zero tail bits...
 
     // print scrambled message
     printf("scrambled data (verify with Table G.16):\n");
@@ -139,52 +147,70 @@ int main(int argc, char*argv[])
     printf("\n");
 
 
-#if 0
+    // 
+    // encode data
+    //
+
     // initialize encoder
     unsigned int R = 2; // primitive rate, inverted (e.g. R=2 for rate 1/2)
     //unsigned int K = 7; // constraint length
     int poly[2] = {0x6d, 0x4f}; // generator polynomial (same as V27POLYA, V27POLYB in fec.h)
-
-    // decoder objects
-    //void * vp;  // decoder object
     
-    // 
-    // encode message and test against msg_test
-    //
-    //unsigned int i;     // input byte counter
-    unsigned int j;     // 
-    unsigned int r;
-    unsigned int n=0;   // output bit counter
-    unsigned int sr=0;  // convolutional shift register
-    unsigned char byte_in;
-    unsigned char byte_out;
-    unsigned char bit;
+    // 3/4-rate K=7 puncturing matrix
+    const char pmatrix[18] = {
+        1, 1, 0, 1, 1, 0, 1, 1, 0,
+        1, 0, 1, 1, 0, 1, 1, 0, 1};
 
-    for (i=0; i<3; i++) {
-        byte_in = msg_org[i];
+    unsigned int P = 9; // columns of puncturing matrix
+
+    unsigned int j;     // 
+    unsigned int r;     // 
+    unsigned int sr=0;  // convolutional shift register
+    unsigned int n=0;   // output bit counter
+    unsigned int p=0;   // puncturing matrix column index
+
+    unsigned char bit;
+    unsigned char byte_in;
+    unsigned char byte_out=0;
+
+    for (i=0; i<dec_msg_len; i++) {
+        byte_in = msg_scrambled[i];
 
         // break byte into individual bits
         for (j=0; j<8; j++) {
-            // shift bit starting with left-most
-            bit = (byte_in >> (8-j-1)) & 0x01;
-            sr  = (sr << 1) | bit;
+            // shift bit starting with most significant
+            bit = (byte_in >> (7-j)) & 0x01;
+            sr = (sr << 1) | bit;
 
             // compute parity bits for each polynomial
-            printf("%3u : %1u > [%1u %1u]\n", 8*i+j, bit, parity(sr & poly[0]), parity(sr & poly[1]));
             for (r=0; r<R; r++) {
-                byte_out = (byte_out << 1) | parity(sr & poly[r]);
-                msg_enc[n/8] = byte_out;
-                n++;
+                // enable output determined by puncturing matrix
+                if (pmatrix[r*P + p]) {
+                    byte_out = (byte_out<<1) | parity(sr & poly[r]);
+                    msg_enc[n/8] = byte_out;
+                    n++;
+                } else {
+                }
             }
+
+            // update puncturing matrix column index
+            p = (p+1) % P;
         }
     }
 
     // NOTE: tail bits are already inserted into 'decoded' message
 
     // print encoded message
-    for (i=0; i<6; i++)
-        printf("%3u : 0x%.2x (0x%.2x)\n", i, msg_enc[i], msg_test[i]);
+    printf("encoded data (verify with Table G.18):\n");
+    for (i=0; i<enc_msg_len; i++) {
+        printf(" %.2x", msg_enc[i]);
+        if ( ((i+1)%16)==0 )
+            printf("\n");
+    }
+    printf("\n");
 
+
+#if 0
     //
     // channel
     //
