@@ -49,3 +49,47 @@ void wifi_fec_encode(unsigned int    _fec_scheme,
 {
 }
 
+// encode with punctured code
+void wifi_fec_encode_punctured(unsigned char * _msg_dec,
+                               unsigned char * _msg_enc,
+                               unsigned int    _dec_msg_len,
+                               unsigned char * _pmatrix,
+                               unsigned char   _P)
+{
+    unsigned int i,j,r; // bookkeeping
+    unsigned int sr=0;  // convolutional shift register
+    unsigned int n=0;   // output bit counter
+    unsigned int p=0;   // puncturing matrix column index
+    
+    unsigned int R = 2; // primitive rate, inverted (e.g. R=2 for rate 1/2)
+    int poly[2] = {0x6d, 0x4f}; // generator polynomial (same as V27POLYA, V27POLYB in fec.h)
+
+    unsigned char bit;
+    unsigned char byte_in;
+    unsigned char byte_out=0;
+
+    for (i=0; i<_dec_msg_len; i++) {
+        byte_in = _msg_dec[i];
+
+        // break byte into individual bits
+        for (j=0; j<8; j++) {
+            // shift bit starting with most significant
+            bit = (byte_in >> (7-j)) & 0x01;
+            sr = (sr << 1) | bit;
+
+            // compute parity bits for each polynomial
+            for (r=0; r<R; r++) {
+                // enable output determined by puncturing matrix
+                if (_pmatrix[r*_P+p]) {
+                    byte_out = (byte_out<<1) | parity(sr & poly[r]);
+                    _msg_enc[n/8] = byte_out;
+                    n++;
+                } else {
+                }
+            }
+
+            // update puncturing matrix column index
+            p = (p+1) % _P;
+        }
+    }
+}
