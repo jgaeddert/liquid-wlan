@@ -20,6 +20,9 @@
 #ifndef __LIQUID_802_11_INTERNAL_H__
 #define __LIQUID_802_11_INTERNAL_H__
 
+// Configuration file
+#include "config.h"
+
 #include <complex.h>
 #include <liquid/liquid.h>
 #include <fec.h>
