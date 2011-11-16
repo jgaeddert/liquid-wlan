@@ -20,10 +20,11 @@
 #ifndef __LIQUID_802_11_INTERNAL_H__
 #define __LIQUID_802_11_INTERNAL_H__
 
+#include <complex.h>
 #include <liquid/liquid.h>
 #include <fec.h>
 
-#include "liquid-802.11.h"
+#include "liquid-802-11.h"
 
 // Use fftw library if installed, otherwise use liquid-dsp (less
 // efficient) fft library.
@@ -58,8 +59,13 @@ extern const float complex wififrame_s0[64]; // time
 extern const float complex wififrame_S1[64]; // freq
 extern const float complex wififrame_s1[64]; // time
 
-//void signal_pack(options, output array);
-//void signal_unpack(options, output array);
+//
+// signal definition
+//
+
+
+//void wifi_signal_pack(options, output array);
+//void wifi_signal_unpack(options, output array);
 
 // 
 // encoding/decoding

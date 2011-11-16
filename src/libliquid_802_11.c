@@ -22,7 +22,7 @@
 // Run-time library version numbers
 //
 
-#include "liquid-802.11.h"
+#include "liquid-802-11.h"
 
 const char liquid_802_11_version[] = LIQUID_802_11_VERSION;
 

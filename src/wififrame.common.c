@@ -22,7 +22,7 @@
 // wifi physical layer convergence procedure (PLCP) data
 //
 
-#include "liquid-802.11.internal.h"
+#include "liquid-802-11.internal.h"
 
 int wififrame_getsctype(unsigned int _id)
 {

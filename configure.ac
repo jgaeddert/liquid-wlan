@@ -115,11 +115,11 @@ esac
 
 case $target_os in
 darwin*)
-    SH_LIB=libliquid-802.11.dylib
+    SH_LIB=libliquid-802-11.dylib
     REBIND=""
     ;;
 *)
-    SH_LIB=libliquid-802.11.so
+    SH_LIB=libliquid-802-11.so
     REBIND=ldconfig
     ;;
 esac

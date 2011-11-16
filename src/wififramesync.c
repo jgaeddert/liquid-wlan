@@ -28,7 +28,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "liquid-802.11.internal.h"
+#include "liquid-802-11.internal.h"
 
 #define DEBUG_WIFIFRAMESYNC             0
 #define DEBUG_WIFIFRAMESYNC_PRINT       0
@@ -39,7 +39,7 @@
 
 struct wififramesync_s {
     // callback
-    ofdmframesync_callback callback;
+    wififramesync_callback callback;
     void * userdata;
 
     // transform object
