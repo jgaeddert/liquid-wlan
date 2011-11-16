@@ -80,6 +80,7 @@ all:
 objects :=							\
 	src/libliquid_802_11.o					\
 	src/interleaver.o					\
+	src/wifi_fec.o						\
 	src/wififrame.common.o					\
 	src/wififramegen.o					\
 	src/wififramesync.o					\
@@ -179,6 +180,7 @@ clean-autoscript :
 autotest_programs :=						\
 	autotest/interleaver_data_autotest			\
 	autotest/interleaver_signal_autotest			\
+	autotest/signalfield_encoder_autotest			\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 

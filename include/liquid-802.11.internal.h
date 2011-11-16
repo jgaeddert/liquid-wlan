@@ -58,24 +58,31 @@ extern const float complex wififrame_s0[64]; // time
 extern const float complex wififrame_S1[64]; // freq
 extern const float complex wififrame_s1[64]; // time
 
+//void signal_pack(options, output array);
+//void signal_unpack(options, output array);
+
 // 
 // encoding/decoding
 //
 
-//void signal_pack(options, output array);
-//void signal_unpack(options, output array);
+#define LIQUID_802_11_SOFTBIT_1 (255)
+#define LIQUID_802_11_SOFTBIT_0 (0)
 
-// encode signal using half-rate convolutional code
+// encode SIGNAL field using half-rate convolutional code
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
-void signal_encode(unsigned char * _msg_dec,
-                   unsigned char * _msg_enc);
+void wifi_fec_signal_encode(unsigned char * _msg_dec,
+                            unsigned char * _msg_enc);
 
-// decode signal using half-rate convolutional code
+// decode SIGNAL field using half-rate convolutional code
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
-void signal_decode(unsigned char * _msg_enc,
-                   unsigned char * _msg_dec);
+void wifi_fec_signal_decode(unsigned char * _msg_enc,
+                            unsigned char * _msg_dec);
+
+//
+// data scrambler/de-scrambler
+//
 
 // scramble data
 void data_scramble(unsigned char * _msg_dec,
