@@ -254,7 +254,6 @@ int main(int argc, char*argv[])
     }
     printf("\n");
 
-#if 0
     //
     // decode message
     //
@@ -262,9 +261,13 @@ int main(int argc, char*argv[])
     // unpack bytes, adding erasures at punctured indices
 
     // unpack bytes, adding erasures at punctured indices
-    unsigned int num_dec_bits = dec_msg_len * 8;
-    unsigned int num_enc_bits = num_dec_bits * R;
+    unsigned int num_dec_bits = dec_msg_len * 8;    // number of decoded bits
+    unsigned int num_enc_bits = num_dec_bits * R;   // number of encoded bits (with erasure insertions)
     unsigned char enc_bits[num_enc_bits];
+
+    printf("num decoded bits : %3u\n", num_dec_bits);
+    printf("num encoded bits : %3u\n", num_enc_bits);
+#if 1
     n=0;   // input byte index
     unsigned int k=0;   // intput bit index (0<=k<8)
     p=0;   // puncturing matrix column index
@@ -309,9 +312,10 @@ int main(int argc, char*argv[])
     delete_viterbi27(vp);
 
     // print de-interleaved message
-    printf("decoded data (verify with Table G.17/G.17):\n");
-    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, enc_msg_len), 8*enc_msg_len);
-    for (i=0; i<enc_msg_len; i++) {
+    // TODO : last few bits will be in error; need to clip to tail bits in decoder
+    printf("decoded data (verify with Table G.16/G.17):\n");
+    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, dec_msg_len), 8*dec_msg_len);
+    for (i=0; i<dec_msg_len; i++) {
         printf(" %.2x", msg_dec[i]);
         if ( ((i+1)%16)==0 )
             printf("\n");
