@@ -19,13 +19,115 @@
  */
 
 //
-// wifi physical layer convergence procedure (PLCP) data
+// wifi SIGNAL field
 //
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "liquid-802-11.internal.h"
+
+// print SIGNAL structure
+void wifi_signal_print(struct wifi_signal_s * _q)
+{
+    printf("wifi signal field:\n");
+}
+
+// pack SIGNAL structure into 3-byte array
+void wifi_signal_pack(struct wifi_signal_s * _q,
+                      unsigned char * _signal)
+{
+    // initialize output array
+    _signal[0] = 0x00;
+    _signal[1] = 0x00;
+    _signal[2] = 0x00;
+
+    // pack 'rate'
+    _signal[0] |= (_q->rate << 4) & 0xf0;
+
+    // pack 'reserved' bit
+    _signal[0] |= _q->R ? 0x08 : 0;
+
+    // pack 'length' (LSB first)
+    _signal[0] |= (_q->length & 0x001) ? 0x04 : 0;
+    _signal[0] |= (_q->length & 0x002) ? 0x02 : 0;
+    _signal[0] |= (_q->length & 0x004) ? 0x01 : 0;
+    
+    _signal[1] |= (_q->length & 0x008) ? 0x80 : 0;
+    _signal[1] |= (_q->length & 0x010) ? 0x40 : 0;
+    _signal[1] |= (_q->length & 0x020) ? 0x20 : 0;
+    _signal[1] |= (_q->length & 0x040) ? 0x10 : 0;
+    _signal[1] |= (_q->length & 0x080) ? 0x08 : 0;
+    _signal[1] |= (_q->length & 0x100) ? 0x04 : 0;
+    _signal[1] |= (_q->length & 0x200) ? 0x02 : 0;
+    _signal[1] |= (_q->length & 0x400) ? 0x01 : 0;
+    
+    _signal[2] |= (_q->length & 0x800) ? 0x80 : 0;
+
+    // compute parity and add to message
+    unsigned int parity = ( liquid_count_ones(_signal[0]) +
+                            liquid_count_ones(_signal[1]) +
+                            liquid_count_ones(_signal[2]) ) % 2;
+    _signal[2] |= parity ? 0x40 : 0;
+}
+
+// unpack SIGNAL structure from 3-byte array
+void wifi_signal_unpack(unsigned char * _signal,
+                        struct wifi_signal_s * _q)
+{
+    // compute parity (last byte masked with 6 'tail' bits)
+    unsigned int parity = ( liquid_count_ones(_signal[0]) +
+                            liquid_count_ones(_signal[1]) +
+                            liquid_count_ones(_signal[2] & 0x3f) ) % 2;
+
+    // strip parity bit
+    unsigned int parity_check = _signal[2] & 0x40 ? 1 : 0;
+    if (parity != parity_check) {
+        fprintf(stderr,"warning: wifi_signal_unpack(), parity mismatch!\n");
+        // TODO : return flag
+    }
+
+    // strip rate
+    unsigned int rate = (_signal[0] >> 4) & 0x0f;
+    switch (rate) {
+    case WIFI_SIGNAL_RATE_6:
+    case WIFI_SIGNAL_RATE_9:
+    case WIFI_SIGNAL_RATE_12:
+    case WIFI_SIGNAL_RATE_18:
+    case WIFI_SIGNAL_RATE_24:
+    case WIFI_SIGNAL_RATE_36:
+    case WIFI_SIGNAL_RATE_48:
+    case WIFI_SIGNAL_RATE_54:
+        _q->rate = rate;
+        break;
+    default:
+        fprintf(stderr,"warning: wifi_signal_unpack(), invalid rate\n");
+        _q->rate = WIFI_SIGNAL_RATE_6;
+        // TODO : return flag
+    }
+
+    // unpack 'reserved' bit
+    _q->R = _signal[0] & 0x08 ? 1 : 0;
+
+    // unpack message length
+    unsigned int length = 0;
+    length |= (_signal[0] & 0x04) ? 0x001 : 0;
+    length |= (_signal[0] & 0x02) ? 0x002 : 0;
+    length |= (_signal[0] & 0x01) ? 0x004 : 0;
+    
+    length |= (_signal[1] & 0x80) ? 0x008 : 0;
+    length |= (_signal[1] & 0x40) ? 0x010 : 0;
+    length |= (_signal[1] & 0x20) ? 0x020 : 0;
+    length |= (_signal[1] & 0x10) ? 0x040 : 0;
+    length |= (_signal[1] & 0x08) ? 0x080 : 0;
+    length |= (_signal[1] & 0x04) ? 0x100 : 0;
+    length |= (_signal[1] & 0x02) ? 0x200 : 0;
+    length |= (_signal[1] & 0x01) ? 0x400 : 0;
+    
+    length |= (_signal[2] & 0x80) ? 0x800 : 0;
+
+    _q->length = length;
+}
 
 // encode SIGNAL field using half-rate convolutional code
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]

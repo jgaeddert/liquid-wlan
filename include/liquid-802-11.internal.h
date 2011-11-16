@@ -67,8 +67,37 @@ extern const float complex wififrame_s1[64]; // time
 //
 
 
-//void wifi_signal_pack(options, output array);
-//void wifi_signal_unpack(options, output array);
+struct wifi_signal_s {
+    // Data rate (RATE)
+    enum {
+        WIFI_SIGNAL_RATE_6  = 13,   // BPSK,   r1/2, 1101
+        WIFI_SIGNAL_RATE_9  = 15,   // BPSK,   r3/4, 1111
+        WIFI_SIGNAL_RATE_12 =  5,   // QPSK,   r1/2, 0101
+        WIFI_SIGNAL_RATE_18 =  7,   // QPSK,   r3/4, 0111
+        WIFI_SIGNAL_RATE_24 =  9,   // 16-QAM, r1/2, 1001
+        WIFI_SIGNAL_RATE_36 = 11,   // 16-QAM, r3/4, 1011
+        WIFI_SIGNAL_RATE_48 =  1,   // 64-QAM, r2/3, 0001
+        WIFI_SIGNAL_RATE_54 =  3,   // 64-QAM, r3/4, 0011
+    } rate;
+
+    // reserved bit
+    unsigned char R;
+
+    // 12-bit data length
+    unsigned int length;
+};
+
+// print SIGNAL structure
+void wifi_signal_print(struct wifi_signal_s * _q);
+
+// pack SIGNAL structure into 3-byte array
+void wifi_signal_pack(struct wifi_signal_s * _q,
+                      unsigned char * _signal);
+
+// unpack SIGNAL structure from 3-byte array
+void wifi_signal_unpack(unsigned char * _signal,
+                        struct wifi_signal_s * _q);
+
 
 // 
 // encoding/decoding

@@ -85,6 +85,7 @@ LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 #define WIFIFRAME_SCTYPE_DATA   2
 
 // rates
+// TODO : overlap with struct wifi_signal_s
 #define WIFIFRAME_RATE_6        (0) // BPSK,   r1/2, 1101
 #define WIFIFRAME_RATE_9        (1) // BPSK,   r3/4, 1111
 #define WIFIFRAME_RATE_12       (2) // QPSK,   r1/2, 0101

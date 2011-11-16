@@ -79,7 +79,7 @@ all:
 # in these variables
 objects :=							\
 	src/interleaver.o					\
-	src/wifi_fec.o						\
+	src/wifi_signal.o					\
 	src/wififrame.common.o					\
 	src/wififramegen.o					\
 	src/wififramesync.o					\
@@ -184,6 +184,7 @@ autotest_programs :=						\
 	autotest/interleaver_data_autotest			\
 	autotest/interleaver_signal_autotest			\
 	autotest/signalfield_encoder_autotest			\
+	autotest/signalfield_pack_autotest			\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
