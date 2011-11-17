@@ -98,14 +98,22 @@ void wlanframegen_write_S1(wlanframegen _q,
     //memmove(_y, _q->s1, (_q->M)*sizeof(float complex));
 }
 
+// assemble frame (see Table 76)
+//  _q          :   framing object
+//  _payload    :   raw payload data [size: _opts.LENGTH x 1]
+//  _opts       :   framing options
+void wlanframegen_assemble(wlanframegen _q,
+                           unsigned char * _payload,
+                           struct wlan_txvector_s _opts);
 
-// write OFDM symbol
-//  _q      :   framging generator object
-//  _x      :   input symbols, [size: _M x 1]
-//  _y      :   output samples, [size: _M x 1]
-void wlanframegen_writesymbol(wlanframegen _q,
-                              float complex * _x,
-                              float complex * _y)
+
+// write OFDM symbol to buffer, returning '1' when frame is complete
+//  _q              :   framing generator object
+//  _buffer         :   output buffer, [size: 80 x 1]
+//  _num_written    :   number of samples written to buffer
+int wlanframegen_writesymbol(wlanframegen    _q,
+                             float complex * _buffer,
+                             unsigned int  * _num_written)
 {
 #if 0
     // move frequency data to internal buffer
@@ -138,6 +146,8 @@ void wlanframegen_writesymbol(wlanframegen _q,
     memmove( _y, &_q->x[_q->M - _q->cp_len], (_q->cp_len)*sizeof(float complex));
     memmove(&_y[_q->cp_len], _q->x, (_q->M)*sizeof(float complex));
 #endif
+
+    return 1;
 }
 
 

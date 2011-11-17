@@ -87,6 +87,21 @@ LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 #define WLANFRAME_RATE_48       (6) // 64-QAM, r2/3, 0001
 #define WLANFRAME_RATE_54       (7) // 64-QAM, r3/4, 0011
 
+// TXVECTOR parameters structure
+struct wlan_txvector_s {
+    unsigned int LENGTH;        // length of payload (1-4095)
+    unsigned int DATARATE;      // data rate field (e.g. WLANFRAME_RATE_6)
+    unsigned int SERVICE;       // NULL: 7 scrambler initialization plus 9 reserved bits
+    unsigned int TXPWR_LEVEL;   // transmit power level, (1-8)
+};
+
+// RXVECTOR parameters structure
+struct wlan_rxvector_s {
+    unsigned int LENGTH;        // length of payload (1-4095)
+    unsigned int RSSI;          // received signal strength indicator
+    unsigned int DATARATE;      // data rate field (e.g. WLANFRAME_RATE_6)
+    unsigned int SERVICE;       // NULL: 7 scrambler initialization plus 9 reserved bits
+};
 
 // 
 // 802.11a/g frame generator
@@ -103,15 +118,24 @@ void wlanframegen_print(wlanframegen _q);
 
 void wlanframegen_reset(wlanframegen _q);
 
+// assemble frame (see Table 76)
+//  _q          :   framing object
+//  _payload    :   raw payload data [size: _opts.LENGTH x 1]
+//  _opts       :   framing options
+void wlanframegen_assemble(wlanframegen _q,
+                           unsigned char * _payload,
+                           struct wlan_txvector_s _opts);
+
+// write OFDM symbol, returning '1' when frame is complete
+int wlanframegen_writesymbol(wlanframegen           _q,
+                             liquid_float_complex * _buffer,
+                             unsigned int         * _num_written);
+
 void wlanframegen_write_S0(wlanframegen _q,
                            liquid_float_complex *_y);
 
 void wlanframegen_write_S1(wlanframegen _q,
                            liquid_float_complex *_y);
-
-void wlanframegen_writesymbol(wlanframegen _q,
-                              liquid_float_complex * _x,
-                              liquid_float_complex *_y);
 
 
 
