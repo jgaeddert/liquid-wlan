@@ -63,6 +63,19 @@ extern const float complex wififrame_S1[64]; // freq
 extern const float complex wififrame_s1[64]; // time
 
 //
+struct wififrame_param_s {
+    unsigned int rate;          // primitive data rate [MBits/s]
+    unsigned int mod_scheme;    // modulation scheme (depth is nbpsc field)
+    unsigned int fec_scheme;    // forward error-correction coding scheme
+    unsigned int nbpsc;         // number of coded bits per subcarrier
+    unsigned int ncbps;         // number of coded bits per OFDM symbol
+    unsigned int ndbps;         // number of data bits per OFDM symbol
+};
+
+// rate-dependent parameters (Table 78)
+extern const struct wififrame_param_s wififrame_ratetab[8];
+
+//
 // signal definition
 //
 

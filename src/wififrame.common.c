@@ -24,6 +24,17 @@
 
 #include "liquid-802-11.internal.h"
 
+const struct wififrame_param_s wififrame_param_ratetab[8] = {
+    // rate [MBits/s] modulation scheme  fec scheme            nbpsc ncbps ndbps
+    {   6,            LIQUID_MODEM_BPSK, LIQUID_WIFI_FEC_R1_2, 1,     48,   24},
+    {   9,            LIQUID_MODEM_BPSK, LIQUID_WIFI_FEC_R3_4, 1,     48,   36},
+    {  12,            LIQUID_MODEM_QPSK, LIQUID_WIFI_FEC_R1_2, 2,     96,   48},
+    {  18,            LIQUID_MODEM_QPSK, LIQUID_WIFI_FEC_R3_4, 2,     96,   72},
+    {  24,            LIQUID_MODEM_QAM,  LIQUID_WIFI_FEC_R1_2, 4,    192,   96},
+    {  36,            LIQUID_MODEM_QAM,  LIQUID_WIFI_FEC_R3_4, 4,    192,  144},
+    {  48,            LIQUID_MODEM_QAM,  LIQUID_WIFI_FEC_R2_3, 6,    288,  192},
+    {  54,            LIQUID_MODEM_QAM,  LIQUID_WIFI_FEC_R3_4, 6,    288,  216}};
+
 int wififrame_getsctype(unsigned int _id)
 {
     if (_id==0 || (_id>26 && _id<38))
