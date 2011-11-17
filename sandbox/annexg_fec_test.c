@@ -41,6 +41,9 @@
 
 #include "liquid-802-11.internal.h"
 
+// use internal wifi codec?
+#define USE_INTERNAL_CODEC 1
+
 void print_byte_array(unsigned char * _data,
                       unsigned int    _n);
 
@@ -146,7 +149,9 @@ int main(int argc, char*argv[])
     // 
     // encode data
     //
-
+#if USE_INTERNAL_CODEC
+    wifi_fec_encode(LIQUID_WIFI_FEC_R3_4, dec_msg_len, msg_scrambled, msg_enc);
+#else
     // initialize encoder
     unsigned int R = 2; // primitive rate, inverted (e.g. R=2 for rate 1/2)
     //unsigned int K = 7; // constraint length
@@ -195,6 +200,7 @@ int main(int argc, char*argv[])
     }
 
     // NOTE: tail bits are already inserted into 'decoded' message
+#endif
 
     // print encoded message
     printf("encoded data (verify with Table G.18):\n");
@@ -234,6 +240,9 @@ int main(int argc, char*argv[])
     // decode message
     //
 
+#if USE_INTERNAL_CODEC
+    wifi_fec_decode(LIQUID_WIFI_FEC_R3_4, dec_msg_len, msg_deint, msg_dec);
+#else
     // unpack bytes, adding erasures at punctured indices
     // compute number of encoded bits with erasure insertions, removing
     // the additional padding to fill last OFDM symbol
@@ -272,8 +281,9 @@ int main(int argc, char*argv[])
     update_viterbi27_blk(vp,enc_bits,num_enc_bits);
     chainback_viterbi27(vp, msg_dec, num_enc_bits, 0);
     delete_viterbi27(vp);
+#endif
 
-    // print de-interleaved message
+    // print decoded message
     // NOTE : clip padding and tail bits
     printf("decoded data (verify with Table G.16/G.17):\n");
     printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, length+2), 8*(length+2));
