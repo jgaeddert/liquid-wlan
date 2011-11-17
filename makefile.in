@@ -78,7 +78,7 @@ all:
 # Information about targets for each module is collected
 # in these variables
 objects :=							\
-	src/interleaver.o					\
+	src/wifi_interleaver.o					\
 	src/wifi_fec.o						\
 	src/wifi_data_scrambler.o				\
 	src/wifi_signal.o					\
