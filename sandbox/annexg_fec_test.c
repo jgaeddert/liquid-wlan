@@ -111,6 +111,7 @@ int main(int argc, char*argv[])
     unsigned char msg_deint[enc_msg_len];       // de-interleaved message
     unsigned char msg_dec[dec_msg_len];         // decoded message
     unsigned char msg_unscrambled[dec_msg_len]; // unscrambled message
+    unsigned char msg_rx[length];               // recovered message (compare to msg_data)
     
     unsigned int i;
 
@@ -329,6 +330,43 @@ int main(int argc, char*argv[])
     }
     printf("\n");
 #endif
+
+    //
+    // unscramble data
+    //
+
+    // TODO : strip scrambling seed from header?
+    wifi_data_scramble(msg_dec, msg_unscrambled, dec_msg_len, seed);
+
+    // print unscrambled message
+    // NOTE : clip to tail bits in decoder
+    printf("unscrambled data (verify with Table G.13/G.14):\n");
+    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_unscrambled, msg_org, length+2), 8*(length+2));
+    //for (i=0; i<dec_msg_len; i++) {
+    for (i=0; i<length+2; i++) {
+        printf(" %.2x", msg_unscrambled[i]);
+        if ( ((i+1)%16)==0 )
+            printf("\n");
+    }
+    printf("\n");
+
+    //
+    // recover original data sequence
+    //
+
+    // strip SERVICE bits/padding, and reverse bytes
+    for (i=0; i<length; i++)
+        msg_rx[i] = liquid_802_11_reverse_byte[ msg_unscrambled[i+2] ];
+
+    // print recovered message
+    printf("recovered data (verify with Table G.1):\n");
+    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_rx, msg_data, length), 8*length);
+    for (i=0; i<length; i++) {
+        printf(" %.2x", msg_rx[i]);
+        if ( ((i+1)%16)==0 )
+            printf("\n");
+    }
+    printf("\n");
 
     printf("done.\n");
     return 0;
