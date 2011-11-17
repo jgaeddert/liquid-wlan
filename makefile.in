@@ -201,7 +201,7 @@ $(autotest_programs): % : %.o libliquid-802-11.a
 
 # main target; run all programs
 check : $(autotest_programs)
-	$(patsubst %, ./% &&, $(autotest_programs)) echo "autotest pass!"
+	$(patsubst %, ./% &&, $(autotest_programs)) echo "\n====================\n   autotest pass!\n====================\n"
 
 # clean autotest
 clean-check:

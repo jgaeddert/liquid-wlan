@@ -95,10 +95,6 @@ LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 #define WLANFRAME_RATE_48       (6) // 64-QAM, r2/3, 0001
 #define WLANFRAME_RATE_54       (7) // 64-QAM, r3/4, 0011
 
-// forward error-correction coding schemes
-#define WLANFRAME_FEC_V27       (0) // r1/2
-#define WLANFRAME_FEC_V27P23    (1) // r2/3
-#define WLANFRAME_FEC_V27P34    (2) // r3/4
 
 // 
 // 802.11a/g frame generator
