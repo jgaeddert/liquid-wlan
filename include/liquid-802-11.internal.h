@@ -151,6 +151,16 @@ void wifi_fec_encode(unsigned int    _fec_scheme,
                      unsigned char * _msg_dec,
                      unsigned char * _msg_enc);
 
+// decode data using convolutional code
+//  _fec_scheme :   error-correction scheme
+//  _dec_msg_len:   length of decoded message
+//  _msg_enc    :   encoded message
+//  _msg_dec    :   decoded message (with tail bits inserted)
+void wifi_fec_decode(unsigned int    _fec_scheme,
+                     unsigned int    _dec_msg_len,
+                     unsigned char * _msg_enc,
+                     unsigned char * _msg_dec);
+
 
 //
 // data scrambler/de-scrambler
