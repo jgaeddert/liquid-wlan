@@ -57,26 +57,39 @@ void wifi_fec_encode(unsigned int    _fec_scheme,
                      unsigned char * _msg_dec,
                      unsigned char * _msg_enc)
 {
-}
+    // validate input
+    if (_fec_scheme != LIQUID_WIFI_FEC_R1_2 &&
+        _fec_scheme != LIQUID_WIFI_FEC_R2_3 &&
+        _fec_scheme != LIQUID_WIFI_FEC_R3_4)
+    {
+        fprintf(stderr,"error: wifi_fec_encode(), invalid scheme\n");
+        exit(1);
+    } else if (_dec_msg_len == 0) {
+        fprintf(stderr,"error: wifi_fec_encode(), input message length must be greater than zero\n");
+        exit(1);
+    }
 
-// encode with punctured code
-void wifi_fec_encode_punctured(unsigned char * _msg_dec,
-                               unsigned char * _msg_enc,
-                               unsigned int    _dec_msg_len,
-                               unsigned char * _pmatrix,
-                               unsigned char   _P)
-{
-    unsigned int i,j,r; // bookkeeping
+    // initialize encoder options
+    unsigned int R                = wificonv_fectab[_fec_scheme].R;
+    //unsigned int K              = wificonv_fectab[_fec_scheme].K;
+    const unsigned int * genpoly  = wificonv_fectab[_fec_scheme].genpoly;
+    
+    // puncturing options
+    int punctured                 = wificonv_fectab[_fec_scheme].punctured;
+    unsigned int P                = wificonv_fectab[_fec_scheme].P;
+    const unsigned char * pmatrix = wificonv_fectab[_fec_scheme].pmatrix;
+
+    // bookkeeping
+    unsigned int i;     // input byte index
+    unsigned int j;     // bit index
+    unsigned int r;     // output convolutional encoder branch
     unsigned int sr=0;  // convolutional shift register
     unsigned int n=0;   // output bit counter
     unsigned int p=0;   // puncturing matrix column index
-    
-    unsigned int R = 2; // primitive rate, inverted (e.g. R=2 for rate 1/2)
-    int poly[2] = {0x6d, 0x4f}; // generator polynomial (same as V27POLYA, V27POLYB in fec.h)
 
-    unsigned char bit;
-    unsigned char byte_in;
-    unsigned char byte_out=0;
+    unsigned char bit;          // input bit
+    unsigned char byte_in;      // intput byte
+    unsigned char byte_out=0;   // output byte
 
     for (i=0; i<_dec_msg_len; i++) {
         byte_in = _msg_dec[i];
@@ -89,17 +102,28 @@ void wifi_fec_encode_punctured(unsigned char * _msg_dec,
 
             // compute parity bits for each polynomial
             for (r=0; r<R; r++) {
-                // enable output determined by puncturing matrix
-                if (_pmatrix[r*_P+p]) {
-                    byte_out = (byte_out<<1) | parity(sr & poly[r]);
+                if (punctured) {
+                    // enable output determined by puncturing matrix
+                    if (pmatrix[r*P + p]) {
+                        byte_out = (byte_out<<1) | parity(sr & genpoly[r]);
+                        _msg_enc[n/8] = byte_out;
+                        n++;
+                    }
+                } else {
+                    // enable all outputs
+                    byte_out = (byte_out << 1) | parity(sr & genpoly[r]);
                     _msg_enc[n/8] = byte_out;
                     n++;
-                } else {
                 }
             }
 
             // update puncturing matrix column index
-            p = (p+1) % _P;
+            if (punctured)
+                p = (p+1) % P;
         }
     }
+
+    // NOTE: tail bits are already inserted into 'decoded' message
+
 }
+

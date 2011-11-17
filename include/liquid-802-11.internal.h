@@ -109,14 +109,14 @@ void wifi_signal_unpack(unsigned char * _signal,
 // wifi convolutional encoder/decoder properties
 struct wificonv_s {
     // base convolutional encoder/decoder properties (fixed for 802.11a/g)
-    unsigned int * genpoly;     // generator polynomials [fixed: 0x6d, 0x4f]
-    unsigned int   R;           // primitive rate        [fixed: 2]
-    unsigned int   K;           // constraint length     [fixed: 7]
+    const unsigned int * genpoly;   // generator polynomials [fixed: 0x6d, 0x4f]
+    unsigned int   R;               // primitive rate        [fixed: 2]
+    unsigned int   K;               // constraint length     [fixed: 7]
     
     // puncturing options
-    int punctured;              // punctured?
-    unsigned char * pmatrix;    // puncturing matrix [size: R x P]
-    unsigned int P;             // columns of puncturing matrix
+    int punctured;                  // punctured?
+    const unsigned char * pmatrix;  // puncturing matrix [size: R x P]
+    unsigned int P;                 // columns of puncturing matrix
 };
 
 // convolutional encoder/decoder constants
@@ -124,6 +124,9 @@ extern const unsigned  int wificonv_genpoly[2];         // r1/2 base generator p
 extern const unsigned char wificonv_v27p23_pmatrix[12]; // r2/3 puncturing matrix
 extern const unsigned char wificonv_v27p34_pmatrix[18]; // r3/4 puncturing matrix
 
+#define LIQUID_WIFI_FEC_R1_2    (0) // r1/2
+#define LIQUID_WIFI_FEC_R2_3    (1) // r2/3
+#define LIQUID_WIFI_FEC_R3_4    (2) // r3/4
 extern const struct wificonv_s wificonv_fectab[3];      // available codecs
 
 // encode SIGNAL field using half-rate convolutional code
