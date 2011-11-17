@@ -21,8 +21,8 @@
 //
 // interleaver_signal_autotest.c
 //
-// Test interleaver; data obtained from
-// Annex G in 1999 specification (Tables ...)
+// Test interleaver; data obtained from Annex G in 1999 specification
+// (Tables G.8 & G.9)
 //
 
 #include <stdio.h>
@@ -32,9 +32,7 @@
 #include <getopt.h>
 #include <time.h>
 
-#include <liquid/liquid.h>
-
-#include "liquid-802.11.internal.h"
+#include "liquid-802-11.internal.h"
 
 int main(int argc, char*argv[])
 {

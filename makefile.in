@@ -20,7 +20,7 @@
 # Makefile for liquid 802.11 libraries
 #
 # Targets:
-#    all                 :   dynamic shared-library object (e.g. libliquid-802.11.so)
+#    all                 :   dynamic shared-library object (e.g. libliquid-802-11.so)
 #    install             :   install the dynamic shared library object and
 #                            header file(s)
 #    uninstall           :   uninstall the library and header file(s)
@@ -62,8 +62,8 @@ PATHSEP		= /
 # 
 # liquid headers
 #
-headers_install	:= liquid-802.11.h
-headers		:= $(headers_install) liquid-802.11.internal.h
+headers_install	:= liquid-802-11.h
+headers		:= $(headers_install) liquid-802-11.internal.h
 include_headers	:= $(addprefix include/,$(headers))
 
 
@@ -78,11 +78,17 @@ all:
 # Information about targets for each module is collected
 # in these variables
 objects :=							\
-	src/libliquid_802_11.o					\
-	src/interleaver.o					\
+	src/wifi_interleaver.o					\
+	src/wifi_fec.o						\
+	src/wifi_data_scrambler.o				\
+	src/wifi_signal.o					\
 	src/wififrame.common.o					\
 	src/wififramegen.o					\
 	src/wififramesync.o					\
+	src/utility.o						\
+
+# NOTE: for some reason this file causes linking errors ('corrupt archive')
+# src/libliquid_802_11.o
 
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
@@ -97,21 +103,21 @@ $(objects) : %.o : %.c $(include_headers)
 SHARED_LIB	= @SH_LIB@
 
 # liquid library definition
-libliquid-802.11.a: $(objects)
+libliquid-802-11.a: $(objects)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
 # darwin
 #
-# gcc -dynamiclib -install_name libliquid-802.11.dylib -o libliquid-802.11.dylib libmodem.a libutility.a 
-libliquid-802.11.dylib: $(objects)
+# gcc -dynamiclib -install_name libliquid-802-11.dylib -o libliquid-802-11.dylib libmodem.a libutility.a 
+libliquid-802-11.dylib: $(objects)
 	$(CC) $(LDFLAGS) -dynamiclib -install_name $@ -o $@ $^
 
 # linux, et al
-libliquid-802.11.so: libliquid-802.11.a
+libliquid-802-11.so: libliquid-802-11.a
 	$(CC) $(LDFLAGS) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive
 
-all: libliquid-802.11.a $(SHARED_LIB)
+all: libliquid-802-11.a $(SHARED_LIB)
 
 ##
 ## TARGET : help      - print list of targets (see documentation for more)
@@ -129,7 +135,7 @@ help:
 install:
 	@echo "installing..."
 	mkdir -p $(exec_prefix)/lib
-	install -m 644 -p $(SHARED_LIB) libliquid-802.11.a $(exec_prefix)/lib
+	install -m 644 -p $(SHARED_LIB) libliquid-802-11.a $(exec_prefix)/lib
 	mkdir -p $(prefix)/include
 	mkdir -p $(prefix)/include/liquid
 	install -m 644 -p $(addprefix include/,$(headers_install)) $(prefix)/include/liquid
@@ -152,7 +158,7 @@ install:
 uninstall:
 	@echo "uninstalling..."
 	$(RM) $(addprefix $(prefix)/include/liquid/, $(headers_install))
-	$(RM) $(exec_prefix)/lib/libliquid-802.11.a
+	$(RM) $(exec_prefix)/lib/libliquid-802-11.a
 	$(RM) $(exec_prefix)/lib/$(SHARED_LIB)
 	@echo "done."
 
@@ -177,8 +183,12 @@ clean-autoscript :
 ##
 
 autotest_programs :=						\
+	autotest/annexg_datascramble_autotest			\
+	autotest/datascrambler_autotest				\
 	autotest/interleaver_data_autotest			\
-	autotest/interleaver_signal_autotest			\
+	autotest/signalfield_pack_autotest			\
+	autotest/signalfield_encoder_autotest			\
+	autotest/signalfield_interleaver_autotest		\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
@@ -187,7 +197,7 @@ AUTOTEST_LDFLAGS = $(LDFLAGS)
 # NOTE: linked libraries must come _after_ the target program
 $(autotest_objects): %.o : %.c
 
-$(autotest_programs): % : %.o libliquid-802.11.a
+$(autotest_programs): % : %.o libliquid-802-11.a
 
 # main target; run all programs
 check : $(autotest_programs)
@@ -220,7 +230,7 @@ EXAMPLES_LDFLAGS = $(LDFLAGS)
 # NOTE: linked libraries must come _after_ the target program
 $(example_objects): %.o : %.c
 
-$(example_programs): % : %.o libliquid-802.11.a
+$(example_programs): % : %.o libliquid-802-11.a
 
 # clean examples
 clean-examples:
@@ -233,9 +243,10 @@ clean-examples:
 
 .PHONY: sandbox
 sandbox_programs =						\
+	sandbox/annexg_fec_test					\
 	sandbox/datascrambler_test				\
 	sandbox/interleaver_test				\
-	sandbox/signalfield_test				\
+	sandbox/signalfield_fec_test				\
 
 sandbox_objects	= $(patsubst %,%.o,$(sandbox_programs))
 sandbox: $(sandbox_programs)
@@ -244,7 +255,7 @@ SANDBOX_LDFLAGS = $(LDFLAGS) -lfftw3f
 # NOTE: linked libraries must come _after_ the target program
 $(sandbox_objects): %.o : %.c
 
-$(sandbox_programs): % : %.o libliquid-802.11.a
+$(sandbox_programs): % : %.o libliquid-802-11.a
 	$(CC) $(SANDBOX_LDFLAGS) $^ -o $@
 
 # clean sandbox
@@ -261,7 +272,7 @@ clean-sandbox:
 
 clean: clean-check clean-examples clean-sandbox
 	$(RM) $(objects)
-	$(RM) libliquid-802.11.a
+	$(RM) libliquid-802-11.a
 	$(RM) $(SHARED_LIB)
 
 ##

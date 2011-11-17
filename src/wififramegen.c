@@ -28,11 +28,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "liquid-802.11.internal.h"
-
-#if HAVE_FFTW3_H
-#   include <fftw3.h>
-#endif
+#include "liquid-802-11.internal.h"
 
 #define DEBUG_WIFIFRAMEGEN            1
 

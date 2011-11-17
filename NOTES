@@ -4,3 +4,17 @@ Notes on 802.11a/g implementation
   * modem: BPSK seems backwards, map: {0,1} > {1,0}
   * modem: QPSK also backwards, map: {0,1,2,3} > {3,1,2,0}
   * pilot sequence: same as data scrambler: m-sequence: m=7, g=0x91, a=0x7f (n=127)
+
+Notes on building:
+  * when re-archiving, occasionally the following error message arises:
+    
+    ld: in libliquid-802-11.a(!<arch>
+    #1/20), corrupt archive, member contents extends past end of file for architecture x86_64
+    collect2: ld returned 1 exit status
+
+  Solution: delete the archive (libliquid-802-11.a) and try again. Must
+  be a problem with re-archiving; not sure of reason.
+
+  Tracked problem to src/libliquid_802_11.c; removed from build and
+  everything seemed to work ok. Not sure why.
+

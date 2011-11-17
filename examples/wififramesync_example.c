@@ -31,7 +31,7 @@
 #include <getopt.h>
 #include <time.h>
 
-#include "liquid-802.11.h"
+#include "liquid-802-11.h"
 
 static int callback(float complex * _X,
                     void * _userdata);
