@@ -27,15 +27,25 @@
 
 #include "liquid-802-11.internal.h"
 
+// r1/2 base generator polynomials (same as V27POLYA, V27POLYB in fec.h)
+const unsigned int wificonv_genpoly[2] = {0x6d, 0x4f};
+
 // 2/3-rate K=7 puncturing matrix
-const char wifi_fec_conv27p23_matrix[12] = {
+const unsigned char wificonv_v27p23_pmatrix[12] = {
     1, 1, 1, 1, 1, 1,
     1, 0, 1, 0, 1, 0};
 
 // 3/4-rate K=7 puncturing matrix
-const char wifi_fec_conv27p34_matrix[18] = {
+const unsigned char wificonv_v27p34_pmatrix[18] = {
     1, 1, 0, 1, 1, 0, 1, 1, 0,
     1, 0, 1, 1, 0, 1, 1, 0, 1};
+
+// table of available convolutional codecs
+const struct wificonv_s wificonv_fectab[3] = {
+    //  genpoly           R  K  punctured? pmatrix                  P
+    {   wificonv_genpoly, 2, 7, 0,         NULL,                    0},
+    {   wificonv_genpoly, 2, 7, 1,         wificonv_v27p23_pmatrix, 6},
+    {   wificonv_genpoly, 2, 7, 1,         wificonv_v27p34_pmatrix, 9}};
 
 // encode data using convolutional code
 //  _fec_scheme :   error-correction scheme

@@ -106,6 +106,26 @@ void wifi_signal_unpack(unsigned char * _signal,
 #define LIQUID_802_11_SOFTBIT_ERASURE (127)
 #define LIQUID_802_11_SOFTBIT_0       (0)
 
+// wifi convolutional encoder/decoder properties
+struct wificonv_s {
+    // base convolutional encoder/decoder properties (fixed for 802.11a/g)
+    unsigned int * genpoly;     // generator polynomials [fixed: 0x6d, 0x4f]
+    unsigned int   R;           // primitive rate        [fixed: 2]
+    unsigned int   K;           // constraint length     [fixed: 7]
+    
+    // puncturing options
+    int punctured;              // punctured?
+    unsigned char * pmatrix;    // puncturing matrix [size: R x P]
+    unsigned int P;             // columns of puncturing matrix
+};
+
+// convolutional encoder/decoder constants
+extern const unsigned  int wificonv_genpoly[2];         // r1/2 base generator polynomials
+extern const unsigned char wificonv_v27p23_pmatrix[12]; // r2/3 puncturing matrix
+extern const unsigned char wificonv_v27p34_pmatrix[18]; // r3/4 puncturing matrix
+
+extern const struct wificonv_s wificonv_fectab[3];      // available codecs
+
 // encode SIGNAL field using half-rate convolutional code
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
@@ -117,10 +137,6 @@ void wifi_fec_signal_encode(unsigned char * _msg_dec,
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
 void wifi_fec_signal_decode(unsigned char * _msg_enc,
                             unsigned char * _msg_dec);
-
-// puncturing matrices
-extern const char wifi_fec_conv27p23_matrix[12];
-extern const char wifi_fec_conv27p34_matrix[18];
 
 // encode data using convolutional code
 //  _fec_scheme :   error-correction scheme
