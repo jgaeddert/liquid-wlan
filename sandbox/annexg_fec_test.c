@@ -259,14 +259,20 @@ int main(int argc, char*argv[])
     //
 
     // unpack bytes, adding erasures at punctured indices
-
-    // unpack bytes, adding erasures at punctured indices
+#if 0
     unsigned int num_dec_bits = dec_msg_len * 8;    // number of decoded bits
-    unsigned int num_enc_bits = num_dec_bits * R;   // number of encoded bits (with erasure insertions)
+    unsigned int num_enc_bits = num_dec_bits * R - npad;   // number of encoded bits (with erasure insertions)
     unsigned char enc_bits[num_enc_bits];
 
     printf("num decoded bits : %3u\n", num_dec_bits);
     printf("num encoded bits : %3u\n", num_enc_bits);
+#else
+    // compute number of encoded bits with erasure insertions, removing
+    // the additional padding to fill last OFDM symbol
+    unsigned int num_enc_bits = dec_msg_len * 8 * R - npad;
+    unsigned char enc_bits[num_enc_bits];
+#endif
+
 #if 1
     n=0;   // input byte index
     unsigned int k=0;   // intput bit index (0<=k<8)
@@ -312,10 +318,11 @@ int main(int argc, char*argv[])
     delete_viterbi27(vp);
 
     // print de-interleaved message
-    // TODO : last few bits will be in error; need to clip to tail bits in decoder
+    // NOTE : clip to tail bits in decoder
     printf("decoded data (verify with Table G.16/G.17):\n");
-    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, dec_msg_len), 8*dec_msg_len);
-    for (i=0; i<dec_msg_len; i++) {
+    printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, length+2), 8*(length+2));
+    //for (i=0; i<dec_msg_len; i++) {
+    for (i=0; i<length+2; i++) {
         printf(" %.2x", msg_dec[i]);
         if ( ((i+1)%16)==0 )
             printf("\n");
