@@ -135,6 +135,7 @@ void wifi_signal_unpack(unsigned char * _signal,
 void wifi_fec_signal_encode(unsigned char * _msg_dec,
                             unsigned char * _msg_enc)
 {
+#if 0
     // initialize encoder
     unsigned int R = 2; // primitive rate, inverted (e.g. R=2 for rate 1/2)
     int poly[2] = {0x6d, 0x4f}; // generator polynomial (same as V27POLYA, V27POLYB in fec.h)
@@ -167,6 +168,10 @@ void wifi_fec_signal_encode(unsigned char * _msg_dec,
             }
         }
     }
+#else
+    // encode using generic encoding method (half-rate encoder)
+    wifi_fec_encode(LIQUID_WIFI_FEC_R1_2, 3, _msg_dec, _msg_enc);
+#endif
 }
 
 // decode SIGNAL field using half-rate convolutional code
