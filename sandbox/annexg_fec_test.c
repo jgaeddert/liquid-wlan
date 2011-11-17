@@ -23,7 +23,6 @@
 //
 // Test data encoding/decoding;
 // data obtained from Annex G in 1999 specification
-// (Tables ...)
 //
 // Generator polynomials:
 //  g0 = 133 (oct) = 1011011 (bin), 1101101 (bin, flipped) = 0x6d
@@ -42,8 +41,8 @@
 
 #include "liquid-802-11.internal.h"
 
-#define SOFTBIT_1   (255)
-#define SOFTBIT_0   (0)
+void print_byte_array(unsigned char * _data,
+                      unsigned int    _n);
 
 int main(int argc, char*argv[])
 {
@@ -128,12 +127,7 @@ int main(int argc, char*argv[])
 
     // print original message
     printf("original data (verify with Table G.13/G.14):\n");
-    for (i=0; i<dec_msg_len; i++) {
-        printf(" %.2x", msg_org[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
+    print_byte_array(msg_org, dec_msg_len);
 
     // 
     // scramble data
@@ -147,13 +141,7 @@ int main(int argc, char*argv[])
 
     // print scrambled message
     printf("scrambled data (verify with Table G.16/G.17):\n");
-    for (i=0; i<dec_msg_len; i++) {
-        printf(" %.2x", msg_scrambled[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
-
+    print_byte_array(msg_scrambled, dec_msg_len);
 
     // 
     // encode data
@@ -210,13 +198,7 @@ int main(int argc, char*argv[])
 
     // print encoded message
     printf("encoded data (verify with Table G.18):\n");
-    for (i=0; i<enc_msg_len; i++) {
-        printf(" %.2x", msg_enc[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
-
+    print_byte_array(msg_enc, enc_msg_len);
 
     // 
     // interleave symbols
@@ -227,54 +209,37 @@ int main(int argc, char*argv[])
 
     // print interleaved message
     printf("interleaved data (verify with Table G.21):\n");
-    for (i=0; i<enc_msg_len; i++) {
-        printf(" %.2x", msg_int[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
+    print_byte_array(msg_int, enc_msg_len);
 
     //
     // TODO : modulate/demodulate
     //
+
+    // for now, just copy data
+    memmove(msg_rec, msg_int, enc_msg_len*sizeof(unsigned char));
 
     //
     // de-interleave symbols
     //
 
     for (i=0; i<nsym; i++)
-        wifi_interleaver_decode_symbol(ncbps, nbpsc, &msg_int[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
+        wifi_interleaver_decode_symbol(ncbps, nbpsc, &msg_rec[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
 
     // print de-interleaved message
     printf("de-interleaved data (verify with Table G.18):\n");
     printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_deint, msg_enc, enc_msg_len), 8*enc_msg_len);
-    for (i=0; i<enc_msg_len; i++) {
-        printf(" %.2x", msg_deint[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
+    print_byte_array(msg_deint, enc_msg_len);
 
     //
     // decode message
     //
 
     // unpack bytes, adding erasures at punctured indices
-#if 0
-    unsigned int num_dec_bits = dec_msg_len * 8;    // number of decoded bits
-    unsigned int num_enc_bits = num_dec_bits * R - npad;   // number of encoded bits (with erasure insertions)
-    unsigned char enc_bits[num_enc_bits];
-
-    printf("num decoded bits : %3u\n", num_dec_bits);
-    printf("num encoded bits : %3u\n", num_enc_bits);
-#else
     // compute number of encoded bits with erasure insertions, removing
     // the additional padding to fill last OFDM symbol
     unsigned int num_enc_bits = dec_msg_len * 8 * R - npad;
     unsigned char enc_bits[num_enc_bits];
-#endif
 
-#if 1
     n=0;   // input byte index
     unsigned int k=0;   // intput bit index (0<=k<8)
     p=0;   // puncturing matrix column index
@@ -301,17 +266,7 @@ int main(int argc, char*argv[])
         p = (p+1) % P;
     }
 
-#if 0
-    unsigned int ii;
-    printf("msg encoded (bits):\n");
-    for (ii=0; ii<num_enc_bits; ii++) {
-        printf("%3u ", enc_bits[ii]);
-        if (((ii+1)%8)==0)
-            printf("\n");
-    }
-    printf("\n");
-#endif
-
+    // run Viterbi decoder
     void * vp = create_viterbi27(num_enc_bits);
     init_viterbi27(vp,0);
     update_viterbi27_blk(vp,enc_bits,num_enc_bits);
@@ -319,17 +274,12 @@ int main(int argc, char*argv[])
     delete_viterbi27(vp);
 
     // print de-interleaved message
-    // NOTE : clip to tail bits in decoder
+    // NOTE : clip padding and tail bits
     printf("decoded data (verify with Table G.16/G.17):\n");
     printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_dec, msg_scrambled, length+2), 8*(length+2));
-    //for (i=0; i<dec_msg_len; i++) {
-    for (i=0; i<length+2; i++) {
-        printf(" %.2x", msg_dec[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
-#endif
+    //print_byte_array(msg_dec, dec_msg_len);
+    print_byte_array(msg_dec, length+2);
+
 
     //
     // unscramble data
@@ -339,16 +289,11 @@ int main(int argc, char*argv[])
     wifi_data_scramble(msg_dec, msg_unscrambled, dec_msg_len, seed);
 
     // print unscrambled message
-    // NOTE : clip to tail bits in decoder
+    // NOTE : clip padding bits
     printf("unscrambled data (verify with Table G.13/G.14):\n");
     printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_unscrambled, msg_org, length+2), 8*(length+2));
-    //for (i=0; i<dec_msg_len; i++) {
-    for (i=0; i<length+2; i++) {
-        printf(" %.2x", msg_unscrambled[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
+    //print_byte_array(msg_unscrambled, dec_msg_len);
+    print_byte_array(msg_unscrambled, length+2);
 
     //
     // recover original data sequence
@@ -361,14 +306,21 @@ int main(int argc, char*argv[])
     // print recovered message
     printf("recovered data (verify with Table G.1):\n");
     printf(" bit errors: %3u / %3u\n", count_bit_errors_array(msg_rx, msg_data, length), 8*length);
-    for (i=0; i<length; i++) {
-        printf(" %.2x", msg_rx[i]);
-        if ( ((i+1)%16)==0 )
-            printf("\n");
-    }
-    printf("\n");
+    print_byte_array(msg_rx, length);
 
     printf("done.\n");
     return 0;
+}
+
+void print_byte_array(unsigned char * _data,
+                      unsigned int    _n)
+{
+    unsigned int i;
+    for (i=0; i<_n; i++) {
+        printf(" %.2x", _data[i]);
+
+        if ( ((i+1)%16)==0 || i==(_n-1) )
+            printf("\n");
+    }
 }
 
