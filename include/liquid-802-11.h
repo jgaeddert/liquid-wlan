@@ -80,48 +80,48 @@ LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 // 802.11a/g framing
 //
 
-#define WIFIFRAME_SCTYPE_NULL   0
-#define WIFIFRAME_SCTYPE_PILOT  1
-#define WIFIFRAME_SCTYPE_DATA   2
+#define WLANFRAME_SCTYPE_NULL   0
+#define WLANFRAME_SCTYPE_PILOT  1
+#define WLANFRAME_SCTYPE_DATA   2
 
 // rates
-// TODO : overlap with struct wifi_signal_s
-#define WIFIFRAME_RATE_6        (0) // BPSK,   r1/2, 1101
-#define WIFIFRAME_RATE_9        (1) // BPSK,   r3/4, 1111
-#define WIFIFRAME_RATE_12       (2) // QPSK,   r1/2, 0101
-#define WIFIFRAME_RATE_18       (3) // QPSK,   r3/4, 0111
-#define WIFIFRAME_RATE_24       (4) // 16-QAM, r1/2, 1001
-#define WIFIFRAME_RATE_36       (5) // 16-QAM, r3/4, 1011
-#define WIFIFRAME_RATE_48       (6) // 64-QAM, r2/3, 0001
-#define WIFIFRAME_RATE_54       (7) // 64-QAM, r3/4, 0011
+// TODO : overlap with struct wlan_signal_s
+#define WLANFRAME_RATE_6        (0) // BPSK,   r1/2, 1101
+#define WLANFRAME_RATE_9        (1) // BPSK,   r3/4, 1111
+#define WLANFRAME_RATE_12       (2) // QPSK,   r1/2, 0101
+#define WLANFRAME_RATE_18       (3) // QPSK,   r3/4, 0111
+#define WLANFRAME_RATE_24       (4) // 16-QAM, r1/2, 1001
+#define WLANFRAME_RATE_36       (5) // 16-QAM, r3/4, 1011
+#define WLANFRAME_RATE_48       (6) // 64-QAM, r2/3, 0001
+#define WLANFRAME_RATE_54       (7) // 64-QAM, r3/4, 0011
 
 // forward error-correction coding schemes
-#define WIFIFRAME_FEC_V27       (0) // r1/2
-#define WIFIFRAME_FEC_V27P23    (1) // r2/3
-#define WIFIFRAME_FEC_V27P34    (2) // r3/4
+#define WLANFRAME_FEC_V27       (0) // r1/2
+#define WLANFRAME_FEC_V27P23    (1) // r2/3
+#define WLANFRAME_FEC_V27P34    (2) // r3/4
 
 // 
 // 802.11a/g frame generator
 //
 
-typedef struct wififramegen_s * wififramegen;
+typedef struct wlanframegen_s * wlanframegen;
 
 // create OFDM framing generator object
-wififramegen wififramegen_create();
+wlanframegen wlanframegen_create();
 
-void wififramegen_destroy(wififramegen _q);
+void wlanframegen_destroy(wlanframegen _q);
 
-void wififramegen_print(wififramegen _q);
+void wlanframegen_print(wlanframegen _q);
 
-void wififramegen_reset(wififramegen _q);
+void wlanframegen_reset(wlanframegen _q);
 
-void wififramegen_write_S0(wififramegen _q,
+void wlanframegen_write_S0(wlanframegen _q,
                            liquid_float_complex *_y);
 
-void wififramegen_write_S1(wififramegen _q,
+void wlanframegen_write_S1(wlanframegen _q,
                            liquid_float_complex *_y);
 
-void wififramegen_writesymbol(wififramegen _q,
+void wlanframegen_writesymbol(wlanframegen _q,
                               liquid_float_complex * _x,
                               liquid_float_complex *_y);
 
@@ -131,25 +131,25 @@ void wififramegen_writesymbol(wififramegen _q,
 // 802.11a/g frame synchronizer
 //
 
-typedef struct wififramesync_s * wififramesync;
+typedef struct wlanframesync_s * wlanframesync;
 
-typedef int (*wififramesync_callback)(liquid_float_complex * _y,
+typedef int (*wlanframesync_callback)(liquid_float_complex * _y,
                                       void * _userdata);
 
-wififramesync wififramesync_create(wififramesync_callback _callback,
+wlanframesync wlanframesync_create(wlanframesync_callback _callback,
                                    void * _userdata);
 
-void wififramesync_destroy(wififramesync _q);
-void wififramesync_debug_print(wififramesync _q, const char * _filename);
-void wififramesync_print(wififramesync _q);
-void wififramesync_reset(wififramesync _q);
-void wififramesync_execute(wififramesync _q,
+void wlanframesync_destroy(wlanframesync _q);
+void wlanframesync_debug_print(wlanframesync _q, const char * _filename);
+void wlanframesync_print(wlanframesync _q);
+void wlanframesync_reset(wlanframesync _q);
+void wlanframesync_execute(wlanframesync _q,
                            liquid_float_complex * _x,
                            unsigned int _n);
 
 // query methods
-float wififramesync_get_rssi(wififramesync _q); // received signal strength indication
-float wififramesync_get_cfo(wififramesync _q);  // carrier offset estimate
+float wlanframesync_get_rssi(wlanframesync _q); // received signal strength indication
+float wlanframesync_get_cfo(wlanframesync _q);  // carrier offset estimate
 
 
 

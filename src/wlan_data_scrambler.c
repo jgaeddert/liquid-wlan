@@ -19,7 +19,7 @@
  */
 
 //
-// wifi data scrambler/unscrambler
+// wlan data scrambler/unscrambler
 //
 
 #include <stdio.h>
@@ -32,7 +32,7 @@
 //  _msg_enc    :   scrambled data message [size: _n x 1]
 //  _n          :   length of input/output (bytes)
 //  _seed       :   linear feedback shift register initial state
-void wifi_data_scramble(unsigned char * _msg_dec,
+void wlan_data_scramble(unsigned char * _msg_dec,
                         unsigned char * _msg_enc,
                         unsigned int _n,
                         unsigned int _seed)
@@ -64,12 +64,12 @@ void wifi_data_scramble(unsigned char * _msg_dec,
 //  _msg_dec    :   original data message [size: _n x 1]
 //  _n          :   length of input/output (bytes)
 //  _seed       :   linear feedback shift register initial state
-void wifi_data_unscramble(unsigned char * _msg_enc,
+void wlan_data_unscramble(unsigned char * _msg_enc,
                           unsigned char * _msg_dec,
                           unsigned int _n,
                           unsigned int _seed)
 {
     // same as scrambler
-    wifi_data_scramble(_msg_enc, _msg_dec, _n, _seed);
+    wlan_data_scramble(_msg_enc, _msg_dec, _n, _seed);
 }
 

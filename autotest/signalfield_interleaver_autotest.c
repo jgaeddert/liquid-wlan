@@ -52,7 +52,7 @@ int main(int argc, char*argv[])
     // interleave message
     //
     unsigned char msg_enc[6];
-    wifi_interleaver_encode_symbol(ncbps, nbpsc, msg_org, msg_enc);
+    wlan_interleaver_encode_symbol(ncbps, nbpsc, msg_org, msg_enc);
     
     // print results
     printf("interleaved:\n");
@@ -69,7 +69,7 @@ int main(int argc, char*argv[])
     // de-interleave message
     //
     unsigned char msg_dec[6];
-    wifi_interleaver_decode_symbol(ncbps, nbpsc, msg_enc, msg_dec);
+    wlan_interleaver_decode_symbol(ncbps, nbpsc, msg_enc, msg_dec);
     
     // print results
     printf("de-interleaved:\n");

@@ -19,7 +19,7 @@
  */
 
 //
-// wififramegen.c
+// wlanframegen.c
 //
 
 #include <stdlib.h>
@@ -30,9 +30,9 @@
 
 #include "liquid-802-11.internal.h"
 
-#define DEBUG_WIFIFRAMEGEN            1
+#define DEBUG_WLANFRAMEGEN            1
 
-struct wififramegen_s {
+struct wlanframegen_s {
     // scaling factors
     float g_data;
 
@@ -50,9 +50,9 @@ struct wififramegen_s {
     float complex * s1;     // long sequence (time)
 };
 
-wififramegen wififramegen_create()
+wlanframegen wlanframegen_create()
 {
-    wififramegen q = (wififramegen) malloc(sizeof(struct wififramegen_s));
+    wlanframegen q = (wlanframegen) malloc(sizeof(struct wlanframegen_s));
 
     // allocate memory for transform objects
     q->X = (float complex*) malloc(64*sizeof(float complex));
@@ -65,7 +65,7 @@ wififramegen wififramegen_create()
     return q;
 }
 
-void wififramegen_destroy(wififramegen _q)
+void wlanframegen_destroy(wlanframegen _q)
 {
     // free transform array memory
     free(_q->X);
@@ -76,23 +76,23 @@ void wififramegen_destroy(wififramegen _q)
     free(_q);
 }
 
-void wififramegen_print(wififramegen _q)
+void wlanframegen_print(wlanframegen _q)
 {
-    printf("wififramegen:\n");
+    printf("wlanframegen:\n");
 }
 
-void wififramegen_reset(wififramegen _q)
+void wlanframegen_reset(wlanframegen _q)
 {
 }
 
-void wififramegen_write_S0(wififramegen _q,
+void wlanframegen_write_S0(wlanframegen _q,
                            float complex * _y)
 {
     //memmove(_y, _q->s0, (_q->M)*sizeof(float complex));
 }
 
 
-void wififramegen_write_S1(wififramegen _q,
+void wlanframegen_write_S1(wlanframegen _q,
                            float complex * _y)
 {
     //memmove(_y, _q->s1, (_q->M)*sizeof(float complex));
@@ -103,7 +103,7 @@ void wififramegen_write_S1(wififramegen _q,
 //  _q      :   framging generator object
 //  _x      :   input symbols, [size: _M x 1]
 //  _y      :   output samples, [size: _M x 1]
-void wififramegen_writesymbol(wififramegen _q,
+void wlanframegen_writesymbol(wlanframegen _q,
                               float complex * _x,
                               float complex * _y)
 {
@@ -117,10 +117,10 @@ void wififramegen_writesymbol(wififramegen _q,
         k = (i + _q->M/2) % _q->M;
 
         sctype = _q->p[k];
-        if (sctype==WIFIFRAME_SCTYPE_NULL) {
+        if (sctype==WLANFRAME_SCTYPE_NULL) {
             // disabled subcarrier
             _q->X[k] = 0.0f;
-        } else if (sctype==WIFIFRAME_SCTYPE_PILOT) {
+        } else if (sctype==WLANFRAME_SCTYPE_PILOT) {
             // pilot subcarrier
             _q->X[k] = (msequence_advance(_q->ms_pilot) ? 1.0f : -1.0f) * _q->g_data;
         } else {

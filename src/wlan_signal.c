@@ -19,7 +19,7 @@
  */
 
 //
-// wifi SIGNAL field
+// wlan SIGNAL field
 //
 
 #include <stdio.h>
@@ -28,13 +28,13 @@
 #include "liquid-802-11.internal.h"
 
 // print SIGNAL structure
-void wifi_signal_print(struct wifi_signal_s * _q)
+void wlan_signal_print(struct wlan_signal_s * _q)
 {
-    printf("wifi signal field:\n");
+    printf("wlan signal field:\n");
 }
 
 // pack SIGNAL structure into 3-byte array
-void wifi_signal_pack(struct wifi_signal_s * _q,
+void wlan_signal_pack(struct wlan_signal_s * _q,
                       unsigned char * _signal)
 {
     // initialize output array
@@ -72,8 +72,8 @@ void wifi_signal_pack(struct wifi_signal_s * _q,
 }
 
 // unpack SIGNAL structure from 3-byte array
-void wifi_signal_unpack(unsigned char * _signal,
-                        struct wifi_signal_s * _q)
+void wlan_signal_unpack(unsigned char * _signal,
+                        struct wlan_signal_s * _q)
 {
     // compute parity (last byte masked with 6 'tail' bits)
     unsigned int parity = ( liquid_count_ones(_signal[0]) +
@@ -83,26 +83,26 @@ void wifi_signal_unpack(unsigned char * _signal,
     // strip parity bit
     unsigned int parity_check = _signal[2] & 0x40 ? 1 : 0;
     if (parity != parity_check) {
-        fprintf(stderr,"warning: wifi_signal_unpack(), parity mismatch!\n");
+        fprintf(stderr,"warning: wlan_signal_unpack(), parity mismatch!\n");
         // TODO : return flag
     }
 
     // strip rate
     unsigned int rate = (_signal[0] >> 4) & 0x0f;
     switch (rate) {
-    case WIFI_SIGNAL_RATE_6:
-    case WIFI_SIGNAL_RATE_9:
-    case WIFI_SIGNAL_RATE_12:
-    case WIFI_SIGNAL_RATE_18:
-    case WIFI_SIGNAL_RATE_24:
-    case WIFI_SIGNAL_RATE_36:
-    case WIFI_SIGNAL_RATE_48:
-    case WIFI_SIGNAL_RATE_54:
+    case WLAN_SIGNAL_RATE_6:
+    case WLAN_SIGNAL_RATE_9:
+    case WLAN_SIGNAL_RATE_12:
+    case WLAN_SIGNAL_RATE_18:
+    case WLAN_SIGNAL_RATE_24:
+    case WLAN_SIGNAL_RATE_36:
+    case WLAN_SIGNAL_RATE_48:
+    case WLAN_SIGNAL_RATE_54:
         _q->rate = rate;
         break;
     default:
-        fprintf(stderr,"warning: wifi_signal_unpack(), invalid rate\n");
-        _q->rate = WIFI_SIGNAL_RATE_6;
+        fprintf(stderr,"warning: wlan_signal_unpack(), invalid rate\n");
+        _q->rate = WLAN_SIGNAL_RATE_6;
         // TODO : return flag
     }
 
@@ -132,7 +132,7 @@ void wifi_signal_unpack(unsigned char * _signal,
 // encode SIGNAL field using half-rate convolutional code
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
-void wifi_fec_signal_encode(unsigned char * _msg_dec,
+void wlan_fec_signal_encode(unsigned char * _msg_dec,
                             unsigned char * _msg_enc)
 {
 #if 0
@@ -170,14 +170,14 @@ void wifi_fec_signal_encode(unsigned char * _msg_dec,
     }
 #else
     // encode using generic encoding method (half-rate encoder)
-    wifi_fec_encode(LIQUID_WIFI_FEC_R1_2, 3, _msg_dec, _msg_enc);
+    wlan_fec_encode(LIQUID_WLAN_FEC_R1_2, 3, _msg_dec, _msg_enc);
 #endif
 }
 
 // decode SIGNAL field using half-rate convolutional code
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
-void wifi_fec_signal_decode(unsigned char * _msg_enc,
+void wlan_fec_signal_decode(unsigned char * _msg_enc,
                             unsigned char * _msg_dec)
 {
 #if 0
@@ -204,7 +204,7 @@ void wifi_fec_signal_decode(unsigned char * _msg_enc,
     delete_viterbi27(vp);
 #else
     // decode using generic decoding method (half-rate encoder)
-    wifi_fec_decode(LIQUID_WIFI_FEC_R1_2, 3, _msg_enc, _msg_dec);
+    wlan_fec_decode(LIQUID_WLAN_FEC_R1_2, 3, _msg_enc, _msg_dec);
 #endif
 }
 

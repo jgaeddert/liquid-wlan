@@ -19,9 +19,9 @@
  */
 
 //
-// wififramesync_example.c
+// wlanframesync_example.c
 //
-// Test generation/synchronization of wifi frame
+// Test generation/synchronization of wlan frame
 //
 
 #include <stdio.h>
@@ -41,16 +41,16 @@ int main(int argc, char*argv[])
     srand(time(NULL));
 
     // create frame generator
-    wififramegen fg = wififramegen_create();
-    wififramegen_print(fg);
+    wlanframegen fg = wlanframegen_create();
+    wlanframegen_print(fg);
 
     // create frame synchronizer
-    wififramesync fs = wififramesync_create(callback, NULL);
-    wififramesync_print(fs);
+    wlanframesync fs = wlanframesync_create(callback, NULL);
+    wlanframesync_print(fs);
 
     // destroy objects
-    wififramegen_destroy(fg);
-    wififramesync_destroy(fs);
+    wlanframegen_destroy(fg);
+    wlanframesync_destroy(fs);
 
 
     printf("done.\n");

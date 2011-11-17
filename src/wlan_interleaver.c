@@ -33,14 +33,14 @@
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)
 //  _msg_dec    :   decoded message (de-iterleaved)
 //  _msg_enc    :   encoded message (interleaved)
-void wifi_interleaver_encode_symbol(unsigned int _ncbps,
+void wlan_interleaver_encode_symbol(unsigned int _ncbps,
                                     unsigned int _nbpsc,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc)
 {
     // validate input
     if (_ncbps % 8) {
-        fprintf(stderr,"error: wifi_interleaver_encode_symbol(), invalid ncbps\n");
+        fprintf(stderr,"error: wlan_interleaver_encode_symbol(), invalid ncbps\n");
         exit(1);
     }
 
@@ -96,7 +96,7 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
 //  _n          :   input messge length (bytes)
 //  _msg_dec    :   decoded message (de-iterleaved)
 //  _msg_enc    :   encoded message (interleaved)
-void wifi_interleaver_encode(unsigned int _ncbps,
+void wlan_interleaver_encode(unsigned int _ncbps,
                              unsigned int _nbpsc,
                              unsigned int _n,
                              unsigned char * _msg_dec,
@@ -109,14 +109,14 @@ void wifi_interleaver_encode(unsigned int _ncbps,
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)
 //  _msg_enc    :   encoded message (interleaved)
 //  _msg_dec    :   decoded message (de-iterleaved)
-void wifi_interleaver_decode_symbol(unsigned int _ncbps,
+void wlan_interleaver_decode_symbol(unsigned int _ncbps,
                                     unsigned int _nbpsc,
                                     unsigned char * _msg_enc,
                                     unsigned char * _msg_dec)
 {
     // validate input
     if (_ncbps % 8) {
-        fprintf(stderr,"error: wifi_interleaver_encode_symbol(), invalid ncbps\n");
+        fprintf(stderr,"error: wlan_interleaver_encode_symbol(), invalid ncbps\n");
         exit(1);
     }
 
@@ -167,7 +167,7 @@ void wifi_interleaver_decode_symbol(unsigned int _ncbps,
 //  _n          :   input messge length (bytes)
 //  _msg_enc    :   encoded message (interleaved)
 //  _msg_dec    :   decoded message (de-iterleaved)
-void wifi_interleaver_decode(unsigned int _ncbps,
+void wlan_interleaver_decode(unsigned int _ncbps,
                              unsigned int _nbpsc,
                              unsigned int _n,
                              unsigned char * _msg_enc,

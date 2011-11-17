@@ -19,7 +19,7 @@
  */
 
 //
-// wififramesync.c
+// wlanframesync.c
 //
 
 #include <stdlib.h>
@@ -30,16 +30,16 @@
 
 #include "liquid-802-11.internal.h"
 
-#define DEBUG_WIFIFRAMESYNC             0
-#define DEBUG_WIFIFRAMESYNC_PRINT       0
-#define DEBUG_WIFIFRAMESYNC_FILENAME    "wififramesync_internal_debug.m"
-#define DEBUG_WIFIFRAMESYNC_BUFFER_LEN  (2048)
+#define DEBUG_WLANFRAMESYNC             0
+#define DEBUG_WLANFRAMESYNC_PRINT       0
+#define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
+#define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
 
-#define WIFIFRAMESYNC_ENABLE_SQUELCH    0
+#define WLANFRAMESYNC_ENABLE_SQUELCH    0
 
-struct wififramesync_s {
+struct wlanframesync_s {
     // callback
-    wififramesync_callback callback;
+    wlanframesync_callback callback;
     void * userdata;
 
     // transform object
@@ -48,18 +48,18 @@ struct wififramesync_s {
     float complex * x;      // time-domain buffer
     windowcf input_buffer;  // input sequence buffer
 
-#if DEBUG_WIFIFRAMESYNC
+#if DEBUG_WLANFRAMESYNC
     agc_crcf agc_rx;        // automatic gain control (rssi)
     windowcf debug_x;
     windowf  debug_rssi;
 #endif
 };
 
-wififramesync wififramesync_create(wififramesync_callback _callback,
+wlanframesync wlanframesync_create(wlanframesync_callback _callback,
                                    void * _userdata)
 {
     // allocate main object memory
-    wififramesync q = (wififramesync) malloc(sizeof(struct wififramesync_s));
+    wlanframesync q = (wlanframesync) malloc(sizeof(struct wlanframesync_s));
     
     // set callback data
     q->callback = _callback;
@@ -79,31 +79,31 @@ wififramesync wififramesync_create(wififramesync_callback _callback,
     q->s0 = (float complex*) malloc(64*sizeof(float complex));
     q->S1 = (float complex*) malloc(64*sizeof(float complex));
     q->s1 = (float complex*) malloc(64*sizeof(float complex));
-    wififrame_init_S0(q->p, q->M, q->S0, q->s0, &q->M_S0);
-    wififrame_init_S1(q->p, q->M, q->S1, q->s1, &q->M_S1);
+    wlanframe_init_S0(q->p, q->M, q->S0, q->s0, &q->M_S0);
+    wlanframe_init_S1(q->p, q->M, q->S1, q->s1, &q->M_S1);
 #endif
 
     // reset object
-    wififramesync_reset(q);
+    wlanframesync_reset(q);
 
-#if DEBUG_WIFIFRAMESYNC
+#if DEBUG_WLANFRAMESYNC
     // agc, rssi
     q->agc_rx = agc_crcf_create();
     agc_crcf_set_bandwidth(q->agc_rx,  1e-2f);
     agc_crcf_set_gain_limits(q->agc_rx, 1e-5f, 1e5f);
 
-    q->debug_x =        windowcf_create(DEBUG_WIFIFRAMESYNC_BUFFER_LEN);
-    q->debug_rssi =     windowf_create(DEBUG_WIFIFRAMESYNC_BUFFER_LEN);
+    q->debug_x =        windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
+    q->debug_rssi =     windowf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
 #endif
 
     // return object
     return q;
 }
 
-void wififramesync_destroy(wififramesync _q)
+void wlanframesync_destroy(wlanframesync _q)
 {
-#if DEBUG_WIFIFRAMESYNC
-    wififramesync_debug_print(_q, DEBUG_WIFIFRAMESYNC_FILENAME);
+#if DEBUG_WLANFRAMESYNC
+    wlanframesync_debug_print(_q, DEBUG_WLANFRAMESYNC_FILENAME);
 
     agc_crcf_destroy(_q->agc_rx);
 
@@ -121,29 +121,29 @@ void wififramesync_destroy(wififramesync _q)
     free(_q);
 }
 
-void wififramesync_print(wififramesync _q)
+void wlanframesync_print(wlanframesync _q)
 {
-    printf("wififramesync:\n");
+    printf("wlanframesync:\n");
 }
 
-void wififramesync_reset(wififramesync _q)
+void wlanframesync_reset(wlanframesync _q)
 {
 }
 
-void wififramesync_execute(wififramesync _q,
+void wlanframesync_execute(wlanframesync _q,
                            float complex * _x,
                            unsigned int _n)
 {
 }
 
 // get receiver RSSI
-float wififramesync_get_rssi(wififramesync _q)
+float wlanframesync_get_rssi(wlanframesync _q)
 {
     return 0.0f;
 }
 
 // get receiver carrier frequency offset estimate
-float wififramesync_get_cfo(wififramesync _q)
+float wlanframesync_get_cfo(wlanframesync _q)
 {
     return 0.0f;
 }
@@ -154,97 +154,97 @@ float wififramesync_get_cfo(wififramesync _q)
 //
 
 // frame detection
-void wififramesync_execute_seekplcp(wififramesync _q)
+void wlanframesync_execute_seekplcp(wlanframesync _q)
 {
 }
 
 // frame detection
-void wififramesync_execute_plcpshort0(wififramesync _q)
+void wlanframesync_execute_plcpshort0(wlanframesync _q)
 {
 }
 
 // frame detection
-void wififramesync_execute_plcpshort1(wififramesync _q)
+void wlanframesync_execute_plcpshort1(wlanframesync _q)
 {
 }
 
-void wififramesync_execute_plcplong(wififramesync _q)
+void wlanframesync_execute_plcplong(wlanframesync _q)
 {
 }
 
-void wififramesync_execute_rxsymbols(wififramesync _q)
+void wlanframesync_execute_rxsymbols(wlanframesync _q)
 {
 }
 
 // compute S0 metrics
-void wififramesync_S0_metrics(wififramesync _q,
+void wlanframesync_S0_metrics(wlanframesync _q,
                               float complex * _G,
                               float complex * _s_hat)
 {
 }
 
 // estimate short sequence gain
-//  _q      :   wififramesync object
+//  _q      :   wlanframesync object
 //  _x      :   input array (time), [size: M x 1]
 //  _G      :   output gain (freq)
-void wififramesync_estimate_gain_S0(wififramesync _q,
+void wlanframesync_estimate_gain_S0(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G)
 {
 }
 
 // estimate long sequence gain
-//  _q      :   wififramesync object
+//  _q      :   wlanframesync object
 //  _x      :   input array (time), [size: M x 1]
 //  _G      :   output gain (freq)
-void wififramesync_estimate_gain_S1(wififramesync _q,
+void wlanframesync_estimate_gain_S1(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G)
 {
 }
 
 // estimate complex equalizer gain from G0 and G1
-//  _q      :   wififramesync object
+//  _q      :   wlanframesync object
 //  _ntaps  :   number of time-domain taps for smoothing
-void wififramesync_estimate_eqgain(wififramesync _q,
+void wlanframesync_estimate_eqgain(wlanframesync _q,
                                    unsigned int _ntaps)
 {
 }
 
 // estimate complex equalizer gain from G0 and G1 using polynomial fit
-//  _q      :   wififramesync object
+//  _q      :   wlanframesync object
 //  _order  :   polynomial order
-void wififramesync_estimate_eqgain_poly(wififramesync _q,
+void wlanframesync_estimate_eqgain_poly(wlanframesync _q,
                                         unsigned int _order)
 {
 }
 
 // recover symbol, correcting for gain, pilot phase, etc.
-void wififramesync_rxsymbol(wififramesync _q)
+void wlanframesync_rxsymbol(wlanframesync _q)
 {
 }
 
 
-void wififramesync_debug_print(wififramesync _q,
+void wlanframesync_debug_print(wlanframesync _q,
                                const char * _filename)
 {
     FILE * fid = fopen(_filename,"w");
     if (!fid) {
-        fprintf(stderr,"error: wififrame_debug_print(), could not open '%s' for writing\n", _filename);
+        fprintf(stderr,"error: wlanframe_debug_print(), could not open '%s' for writing\n", _filename);
         return;
     }
-    fprintf(fid,"%% %s : auto-generated file\n", DEBUG_WIFIFRAMESYNC_FILENAME);
-#if DEBUG_WIFIFRAMESYNC
+    fprintf(fid,"%% %s : auto-generated file\n", DEBUG_WLANFRAMESYNC_FILENAME);
+#if DEBUG_WLANFRAMESYNC
     fprintf(fid,"close all;\n");
     fprintf(fid,"clear all;\n");
-    fprintf(fid,"n = %u;\n", DEBUG_WIFIFRAMESYNC_BUFFER_LEN);
+    fprintf(fid,"n = %u;\n", DEBUG_WLANFRAMESYNC_BUFFER_LEN);
     unsigned int i;
     float complex * rc;
     float * r;
 
     fprintf(fid,"x = zeros(1,n);\n");
     windowcf_read(_q->debug_x, &rc);
-    for (i=0; i<DEBUG_WIFIFRAMESYNC_BUFFER_LEN; i++)
+    for (i=0; i<DEBUG_WLANFRAMESYNC_BUFFER_LEN; i++)
         fprintf(fid,"x(%4u) = %12.4e + j*%12.4e;\n", i+1, crealf(rc[i]), cimagf(rc[i]));
     fprintf(fid,"figure;\n");
     fprintf(fid,"plot(0:(n-1),real(x),0:(n-1),imag(x));\n");
@@ -253,9 +253,9 @@ void wififramesync_debug_print(wififramesync _q,
 
     // write agc_rssi
     fprintf(fid,"\n\n");
-    fprintf(fid,"agc_rssi = zeros(1,%u);\n", DEBUG_WIFIFRAMESYNC_BUFFER_LEN);
+    fprintf(fid,"agc_rssi = zeros(1,%u);\n", DEBUG_WLANFRAMESYNC_BUFFER_LEN);
     windowf_read(_q->debug_rssi, &r);
-    for (i=0; i<DEBUG_WIFIFRAMESYNC_BUFFER_LEN; i++)
+    for (i=0; i<DEBUG_WLANFRAMESYNC_BUFFER_LEN; i++)
         fprintf(fid,"agc_rssi(%4u) = %12.4e;\n", i+1, r[i]);
     fprintf(fid,"figure;\n");
     fprintf(fid,"plot(agc_rssi)\n");
@@ -265,7 +265,7 @@ void wififramesync_debug_print(wififramesync _q,
 #endif
 
     fclose(fid);
-    printf("wififramesync/debug: results written to '%s'\n", _filename);
+    printf("wlanframesync/debug: results written to '%s'\n", _filename);
 }
 
 

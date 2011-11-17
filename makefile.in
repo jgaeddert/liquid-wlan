@@ -78,13 +78,13 @@ all:
 # Information about targets for each module is collected
 # in these variables
 objects :=							\
-	src/wifi_interleaver.o					\
-	src/wifi_fec.o						\
-	src/wifi_data_scrambler.o				\
-	src/wifi_signal.o					\
-	src/wififrame.common.o					\
-	src/wififramegen.o					\
-	src/wififramesync.o					\
+	src/wlan_interleaver.o					\
+	src/wlan_fec.o						\
+	src/wlan_data_scrambler.o				\
+	src/wlan_signal.o					\
+	src/wlanframe.common.o					\
+	src/wlanframegen.o					\
+	src/wlanframesync.o					\
 	src/utility.o						\
 
 # NOTE: for some reason this file causes linking errors ('corrupt archive')
@@ -220,7 +220,7 @@ clean-check:
 ##
 .PHONY: examples
 example_programs :=						\
-	examples/wififramesync_example				\
+	examples/wlanframesync_example				\
 
 example_objects	= $(patsubst %,%.o,$(example_programs))
 examples: $(example_programs)

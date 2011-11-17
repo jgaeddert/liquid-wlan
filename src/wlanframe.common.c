@@ -19,23 +19,23 @@
  */
 
 //
-// wifi physical layer convergence procedure (PLCP) data
+// wlan physical layer convergence procedure (PLCP) data
 //
 
 #include "liquid-802-11.internal.h"
 
-int wififrame_getsctype(unsigned int _id)
+int wlanframe_getsctype(unsigned int _id)
 {
     if (_id==0 || (_id>26 && _id<38))
-        return WIFIFRAME_SCTYPE_NULL;
+        return WLANFRAME_SCTYPE_NULL;
     else if (_id==11 || _id==25 || _id==39 || _id==53)
-        return WIFIFRAME_SCTYPE_PILOT;
+        return WLANFRAME_SCTYPE_PILOT;
     else
-        return WIFIFRAME_SCTYPE_DATA;
+        return WLANFRAME_SCTYPE_DATA;
 }
 
 // PLCP short sequence (frequency domain)
-const float complex wififrame_S0[64] = {
+const float complex wlanframe_S0[64] = {
       0.000000+  0.000000*_Complex_I,   0.0f, 0.0f, 0.0f,
      -0.707110+ -0.707110*_Complex_I,   0.0f, 0.0f, 0.0f,
      -0.707110+ -0.707110*_Complex_I,   0.0f, 0.0f, 0.0f,
@@ -55,7 +55,7 @@ const float complex wififrame_S0[64] = {
 };
 
 // PLCP short sequence (time domain)
-const float complex wififrame_s0[64] = {
+const float complex wlanframe_s0[64] = {
       0.408250+  0.408250*_Complex_I,  -1.175500+  0.020764*_Complex_I, 
      -0.119570+ -0.696920*_Complex_I,   1.267000+ -0.112280*_Complex_I, 
       0.816500+  0.000000*_Complex_I,   1.267000+ -0.112280*_Complex_I, 
@@ -91,7 +91,7 @@ const float complex wififrame_s0[64] = {
 };
 
 // PLCP long sequence (frequency domain)
-const float complex wififrame_S1[64] = {
+const float complex wlanframe_S1[64] = {
       0.00,   1.00,  -1.00,  -1.00,   1.00,   1.00,  -1.00,   1.00, 
      -1.00,   1.00,  -1.00,  -1.00,  -1.00,  -1.00,  -1.00,   1.00, 
       1.00,  -1.00,  -1.00,   1.00,  -1.00,   1.00,  -1.00,   1.00, 
@@ -103,7 +103,7 @@ const float complex wififrame_S1[64] = {
 };
 
 // PLCP long sequence (time domain)
-const float complex wififrame_s1[64] = {
+const float complex wlanframe_s1[64] = {
       1.3868+  0.0000*_Complex_I,  -0.0455+ -1.0679*_Complex_I, 
       0.3528+ -0.9866*_Complex_I,   0.8594+  0.7349*_Complex_I, 
       0.1874+  0.2475*_Complex_I,   0.5310+ -0.7784*_Complex_I, 

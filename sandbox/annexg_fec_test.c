@@ -41,7 +41,7 @@
 
 #include "liquid-802-11.internal.h"
 
-// use internal wifi codec?
+// use internal wlan codec?
 #define USE_INTERNAL_CODEC 1
 
 void print_byte_array(unsigned char * _data,
@@ -135,7 +135,7 @@ int main(int argc, char*argv[])
     // 
     // scramble data
     //
-    wifi_data_scramble(msg_org, msg_scrambled, dec_msg_len, seed);
+    wlan_data_scramble(msg_org, msg_scrambled, dec_msg_len, seed);
 
     // zero tail bits (basically just revert scrambling these bits). For the
     // example given in Annex G, this amounts to the 6 bits after the SERVICE
@@ -150,7 +150,7 @@ int main(int argc, char*argv[])
     // encode data
     //
 #if USE_INTERNAL_CODEC
-    wifi_fec_encode(LIQUID_WIFI_FEC_R3_4, dec_msg_len, msg_scrambled, msg_enc);
+    wlan_fec_encode(LIQUID_WLAN_FEC_R3_4, dec_msg_len, msg_scrambled, msg_enc);
 #else
     // initialize encoder
     unsigned int R = 2; // primitive rate, inverted (e.g. R=2 for rate 1/2)
@@ -211,7 +211,7 @@ int main(int argc, char*argv[])
     //
     
     for (i=0; i<nsym; i++)
-        wifi_interleaver_encode_symbol(ncbps, nbpsc, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
+        wlan_interleaver_encode_symbol(ncbps, nbpsc, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
 
     // print interleaved message
     printf("interleaved data (verify with Table G.21):\n");
@@ -229,7 +229,7 @@ int main(int argc, char*argv[])
     //
 
     for (i=0; i<nsym; i++)
-        wifi_interleaver_decode_symbol(ncbps, nbpsc, &msg_rec[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
+        wlan_interleaver_decode_symbol(ncbps, nbpsc, &msg_rec[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
 
     // print de-interleaved message
     printf("de-interleaved data (verify with Table G.18):\n");
@@ -241,7 +241,7 @@ int main(int argc, char*argv[])
     //
 
 #if USE_INTERNAL_CODEC
-    wifi_fec_decode(LIQUID_WIFI_FEC_R3_4, dec_msg_len, msg_deint, msg_dec);
+    wlan_fec_decode(LIQUID_WLAN_FEC_R3_4, dec_msg_len, msg_deint, msg_dec);
 #else
     // unpack bytes, adding erasures at punctured indices
     // compute number of encoded bits with erasure insertions, removing
@@ -296,7 +296,7 @@ int main(int argc, char*argv[])
     //
 
     // TODO : strip scrambling seed from header?
-    wifi_data_scramble(msg_dec, msg_unscrambled, dec_msg_len, seed);
+    wlan_data_scramble(msg_dec, msg_unscrambled, dec_msg_len, seed);
 
     // print unscrambled message
     // NOTE : clip padding bits

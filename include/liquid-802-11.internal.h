@@ -55,28 +55,28 @@
 //
 
 // PLCP short sequence
-extern const float complex wififrame_S0[64]; // freq
-extern const float complex wififrame_s0[64]; // time
+extern const float complex wlanframe_S0[64]; // freq
+extern const float complex wlanframe_s0[64]; // time
 
 // PLCP long sequence
-extern const float complex wififrame_S1[64]; // freq
-extern const float complex wififrame_s1[64]; // time
+extern const float complex wlanframe_S1[64]; // freq
+extern const float complex wlanframe_s1[64]; // time
 
 //
 // signal definition
 //
 
-struct wifi_signal_s {
+struct wlan_signal_s {
     // Data rate (RATE)
     enum {
-        WIFI_SIGNAL_RATE_6  = 13,   // BPSK,   r1/2, 1101
-        WIFI_SIGNAL_RATE_9  = 15,   // BPSK,   r3/4, 1111
-        WIFI_SIGNAL_RATE_12 =  5,   // QPSK,   r1/2, 0101
-        WIFI_SIGNAL_RATE_18 =  7,   // QPSK,   r3/4, 0111
-        WIFI_SIGNAL_RATE_24 =  9,   // 16-QAM, r1/2, 1001
-        WIFI_SIGNAL_RATE_36 = 11,   // 16-QAM, r3/4, 1011
-        WIFI_SIGNAL_RATE_48 =  1,   // 64-QAM, r2/3, 0001
-        WIFI_SIGNAL_RATE_54 =  3,   // 64-QAM, r3/4, 0011
+        WLAN_SIGNAL_RATE_6  = 13,   // BPSK,   r1/2, 1101
+        WLAN_SIGNAL_RATE_9  = 15,   // BPSK,   r3/4, 1111
+        WLAN_SIGNAL_RATE_12 =  5,   // QPSK,   r1/2, 0101
+        WLAN_SIGNAL_RATE_18 =  7,   // QPSK,   r3/4, 0111
+        WLAN_SIGNAL_RATE_24 =  9,   // 16-QAM, r1/2, 1001
+        WLAN_SIGNAL_RATE_36 = 11,   // 16-QAM, r3/4, 1011
+        WLAN_SIGNAL_RATE_48 =  1,   // 64-QAM, r2/3, 0001
+        WLAN_SIGNAL_RATE_54 =  3,   // 64-QAM, r3/4, 0011
     } rate;
 
     // reserved bit
@@ -87,15 +87,15 @@ struct wifi_signal_s {
 };
 
 // print SIGNAL structure
-void wifi_signal_print(struct wifi_signal_s * _q);
+void wlan_signal_print(struct wlan_signal_s * _q);
 
 // pack SIGNAL structure into 3-byte array
-void wifi_signal_pack(struct wifi_signal_s * _q,
+void wlan_signal_pack(struct wlan_signal_s * _q,
                       unsigned char * _signal);
 
 // unpack SIGNAL structure from 3-byte array
-void wifi_signal_unpack(unsigned char * _signal,
-                        struct wifi_signal_s * _q);
+void wlan_signal_unpack(unsigned char * _signal,
+                        struct wlan_signal_s * _q);
 
 
 // 
@@ -106,8 +106,8 @@ void wifi_signal_unpack(unsigned char * _signal,
 #define LIQUID_802_11_SOFTBIT_ERASURE (127)
 #define LIQUID_802_11_SOFTBIT_0       (0)
 
-// wifi convolutional encoder/decoder properties
-struct wificonv_s {
+// wlan convolutional encoder/decoder properties
+struct wlanconv_s {
     // base convolutional encoder/decoder properties (fixed for 802.11a/g)
     const unsigned int * genpoly;   // generator polynomials [fixed: 0x6d, 0x4f]
     unsigned int   R;               // primitive rate        [fixed: 2]
@@ -120,25 +120,25 @@ struct wificonv_s {
 };
 
 // convolutional encoder/decoder constants
-extern const unsigned  int wificonv_genpoly[2];         // r1/2 base generator polynomials
-extern const unsigned char wificonv_v27p23_pmatrix[12]; // r2/3 puncturing matrix
-extern const unsigned char wificonv_v27p34_pmatrix[18]; // r3/4 puncturing matrix
+extern const unsigned  int wlanconv_genpoly[2];         // r1/2 base generator polynomials
+extern const unsigned char wlanconv_v27p23_pmatrix[12]; // r2/3 puncturing matrix
+extern const unsigned char wlanconv_v27p34_pmatrix[18]; // r3/4 puncturing matrix
 
-#define LIQUID_WIFI_FEC_R1_2    (0) // r1/2
-#define LIQUID_WIFI_FEC_R2_3    (1) // r2/3
-#define LIQUID_WIFI_FEC_R3_4    (2) // r3/4
-extern const struct wificonv_s wificonv_fectab[3];      // available codecs
+#define LIQUID_WLAN_FEC_R1_2    (0) // r1/2
+#define LIQUID_WLAN_FEC_R2_3    (1) // r2/3
+#define LIQUID_WLAN_FEC_R3_4    (2) // r3/4
+extern const struct wlanconv_s wlanconv_fectab[3];      // available codecs
 
 // encode SIGNAL field using half-rate convolutional code
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
-void wifi_fec_signal_encode(unsigned char * _msg_dec,
+void wlan_fec_signal_encode(unsigned char * _msg_dec,
                             unsigned char * _msg_enc);
 
 // decode SIGNAL field using half-rate convolutional code
 //  _msg_enc    :   48-bit signal field [size: 6 x 1]
 //  _msg_dec    :   24-bit signal field [size: 3 x 1]
-void wifi_fec_signal_decode(unsigned char * _msg_enc,
+void wlan_fec_signal_decode(unsigned char * _msg_enc,
                             unsigned char * _msg_dec);
 
 // encode data using convolutional code
@@ -146,7 +146,7 @@ void wifi_fec_signal_decode(unsigned char * _msg_enc,
 //  _dec_msg_len:   length of decoded message
 //  _msg_dec    :   decoded message (with tail bits inserted)
 //  _msg_enc    :   encoded message
-void wifi_fec_encode(unsigned int    _fec_scheme,
+void wlan_fec_encode(unsigned int    _fec_scheme,
                      unsigned int    _dec_msg_len,
                      unsigned char * _msg_dec,
                      unsigned char * _msg_enc);
@@ -156,7 +156,7 @@ void wifi_fec_encode(unsigned int    _fec_scheme,
 //  _dec_msg_len:   length of decoded message
 //  _msg_enc    :   encoded message
 //  _msg_dec    :   decoded message (with tail bits inserted)
-void wifi_fec_decode(unsigned int    _fec_scheme,
+void wlan_fec_decode(unsigned int    _fec_scheme,
                      unsigned int    _dec_msg_len,
                      unsigned char * _msg_enc,
                      unsigned char * _msg_dec);
@@ -171,7 +171,7 @@ void wifi_fec_decode(unsigned int    _fec_scheme,
 //  _msg_enc    :   scrambled data message [size: _n x 1]
 //  _n          :   length of input/output (bytes)
 //  _seed       :   linear feedback shift register initial state
-void wifi_data_scramble(unsigned char * _msg_dec,
+void wlan_data_scramble(unsigned char * _msg_dec,
                         unsigned char * _msg_enc,
                         unsigned int _n,
                         unsigned int _seed);
@@ -181,7 +181,7 @@ void wifi_data_scramble(unsigned char * _msg_dec,
 //  _msg_dec    :   original data message [size: _n x 1]
 //  _n          :   length of input/output (bytes)
 //  _seed       :   linear feedback shift register initial state
-void wifi_data_unscramble(unsigned char * _msg_enc,
+void wlan_data_unscramble(unsigned char * _msg_enc,
                           unsigned char * _msg_dec,
                           unsigned int _n,
                           unsigned int _seed);
@@ -191,7 +191,7 @@ void wifi_data_unscramble(unsigned char * _msg_enc,
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)
 //  _msg_dec    :   decoded message (de-iterleaved)
 //  _msg_enc    :   encoded message (interleaved)
-void wifi_interleaver_encode_symbol(unsigned int _ncbps,
+void wlan_interleaver_encode_symbol(unsigned int _ncbps,
                                     unsigned int _nbpsc,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
@@ -202,7 +202,7 @@ void wifi_interleaver_encode_symbol(unsigned int _ncbps,
 //  _n          :   input messge length (bytes)
 //  _msg_dec    :   decoded message (de-iterleaved)
 //  _msg_enc    :   encoded message (interleaved)
-void wifi_interleaver_encode(unsigned int _ncbps,
+void wlan_interleaver_encode(unsigned int _ncbps,
                              unsigned int _nbpsc,
                              unsigned int _n,
                              unsigned char * _msg_dec,
@@ -213,7 +213,7 @@ void wifi_interleaver_encode(unsigned int _ncbps,
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)
 //  _msg_enc    :   encoded message (interleaved)
 //  _msg_dec    :   decoded message (de-iterleaved)
-void wifi_interleaver_decode_symbol(unsigned int _ncbps,
+void wlan_interleaver_decode_symbol(unsigned int _ncbps,
                                     unsigned int _nbpsc,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
@@ -224,7 +224,7 @@ void wifi_interleaver_decode_symbol(unsigned int _ncbps,
 //  _n          :   input messge length (bytes)
 //  _msg_enc    :   encoded message (interleaved)
 //  _msg_dec    :   decoded message (de-iterleaved)
-void wifi_interleaver_decode(unsigned int _ncbps,
+void wlan_interleaver_decode(unsigned int _ncbps,
                              unsigned int _nbpsc,
                              unsigned int _n,
                              unsigned char * _msg_enc,

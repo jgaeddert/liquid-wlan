@@ -64,7 +64,7 @@ int main(int argc, char*argv[])
     unsigned int i;
 
     // encode
-    wifi_fec_signal_encode(msg_org, msg_enc);
+    wlan_fec_signal_encode(msg_org, msg_enc);
 
     // print encoded message
     for (i=0; i<6; i++)
@@ -81,7 +81,7 @@ int main(int argc, char*argv[])
     msg_rec[0] ^= 0x40;
 
     // decode message
-    wifi_fec_signal_decode(msg_rec, msg_dec);
+    wlan_fec_signal_decode(msg_rec, msg_dec);
 
     // print decoded message
     printf("decoded message:\n");

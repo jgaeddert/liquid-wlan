@@ -38,8 +38,8 @@
 int main(int argc, char*argv[])
 {
     // initialize SIGNAL structure
-    struct wifi_signal_s signal_org;
-    signal_org.rate   = WIFI_SIGNAL_RATE_36;    // rate
+    struct wlan_signal_s signal_org;
+    signal_org.rate   = WLAN_SIGNAL_RATE_36;    // rate
     signal_org.R      = 0;                      // reserved
     signal_org.length = 100;                    // data length
     
@@ -55,12 +55,12 @@ int main(int argc, char*argv[])
     //      1011 0001               0011 0000               0000 0000
     unsigned char signal_packed_test[3] = {0xb1, 0x30, 0x00};
     unsigned char signal_packed[3];
-    struct wifi_signal_s signal_rec;
+    struct wlan_signal_s signal_rec;
 
     unsigned int i;
 
     // pack signal
-    wifi_signal_pack(&signal_org, signal_packed);
+    wlan_signal_pack(&signal_org, signal_packed);
 
     // print packed message
     printf("decoded message:\n");
@@ -74,7 +74,7 @@ int main(int argc, char*argv[])
     }
 
     // unpack signal field
-    wifi_signal_unpack(signal_packed, &signal_rec);
+    wlan_signal_unpack(signal_packed, &signal_rec);
 
 #if 0
     // print decoded message

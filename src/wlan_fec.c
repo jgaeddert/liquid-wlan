@@ -19,7 +19,7 @@
  */
 
 //
-// wifi forward error-correction encoder/decoder
+// wlan forward error-correction encoder/decoder
 //
 
 #include <stdio.h>
@@ -28,56 +28,56 @@
 #include "liquid-802-11.internal.h"
 
 // r1/2 base generator polynomials (same as V27POLYA, V27POLYB in fec.h)
-const unsigned int wificonv_genpoly[2] = {0x6d, 0x4f};
+const unsigned int wlanconv_genpoly[2] = {0x6d, 0x4f};
 
 // 2/3-rate K=7 puncturing matrix
-const unsigned char wificonv_v27p23_pmatrix[12] = {
+const unsigned char wlanconv_v27p23_pmatrix[12] = {
     1, 1, 1, 1, 1, 1,
     1, 0, 1, 0, 1, 0};
 
 // 3/4-rate K=7 puncturing matrix
-const unsigned char wificonv_v27p34_pmatrix[18] = {
+const unsigned char wlanconv_v27p34_pmatrix[18] = {
     1, 1, 0, 1, 1, 0, 1, 1, 0,
     1, 0, 1, 1, 0, 1, 1, 0, 1};
 
 // table of available convolutional codecs
-const struct wificonv_s wificonv_fectab[3] = {
+const struct wlanconv_s wlanconv_fectab[3] = {
     //  genpoly           R  K  punctured? pmatrix                  P
-    {   wificonv_genpoly, 2, 7, 0,         NULL,                    0},
-    {   wificonv_genpoly, 2, 7, 1,         wificonv_v27p23_pmatrix, 6},
-    {   wificonv_genpoly, 2, 7, 1,         wificonv_v27p34_pmatrix, 9}};
+    {   wlanconv_genpoly, 2, 7, 0,         NULL,                    0},
+    {   wlanconv_genpoly, 2, 7, 1,         wlanconv_v27p23_pmatrix, 6},
+    {   wlanconv_genpoly, 2, 7, 1,         wlanconv_v27p34_pmatrix, 9}};
 
 // encode data using convolutional code
 //  _fec_scheme :   error-correction scheme
 //  _dec_msg_len:   length of decoded message
 //  _msg_dec    :   decoded message (with tail bits inserted)
 //  _msg_enc    :   encoded message
-void wifi_fec_encode(unsigned int    _fec_scheme,
+void wlan_fec_encode(unsigned int    _fec_scheme,
                      unsigned int    _dec_msg_len,
                      unsigned char * _msg_dec,
                      unsigned char * _msg_enc)
 {
     // validate input
-    if (_fec_scheme != LIQUID_WIFI_FEC_R1_2 &&
-        _fec_scheme != LIQUID_WIFI_FEC_R2_3 &&
-        _fec_scheme != LIQUID_WIFI_FEC_R3_4)
+    if (_fec_scheme != LIQUID_WLAN_FEC_R1_2 &&
+        _fec_scheme != LIQUID_WLAN_FEC_R2_3 &&
+        _fec_scheme != LIQUID_WLAN_FEC_R3_4)
     {
-        fprintf(stderr,"error: wifi_fec_encode(), invalid scheme\n");
+        fprintf(stderr,"error: wlan_fec_encode(), invalid scheme\n");
         exit(1);
     } else if (_dec_msg_len == 0) {
-        fprintf(stderr,"error: wifi_fec_encode(), input message length must be greater than zero\n");
+        fprintf(stderr,"error: wlan_fec_encode(), input message length must be greater than zero\n");
         exit(1);
     }
 
     // initialize encoder options
-    unsigned int R                = wificonv_fectab[_fec_scheme].R;
-    //unsigned int K              = wificonv_fectab[_fec_scheme].K;
-    const unsigned int * genpoly  = wificonv_fectab[_fec_scheme].genpoly;
+    unsigned int R                = wlanconv_fectab[_fec_scheme].R;
+    //unsigned int K              = wlanconv_fectab[_fec_scheme].K;
+    const unsigned int * genpoly  = wlanconv_fectab[_fec_scheme].genpoly;
     
     // puncturing options
-    int punctured                 = wificonv_fectab[_fec_scheme].punctured;
-    unsigned int P                = wificonv_fectab[_fec_scheme].P;
-    const unsigned char * pmatrix = wificonv_fectab[_fec_scheme].pmatrix;
+    int punctured                 = wlanconv_fectab[_fec_scheme].punctured;
+    unsigned int P                = wlanconv_fectab[_fec_scheme].P;
+    const unsigned char * pmatrix = wlanconv_fectab[_fec_scheme].pmatrix;
 
     // bookkeeping
     unsigned int i;     // input byte index
@@ -132,32 +132,32 @@ void wifi_fec_encode(unsigned int    _fec_scheme,
 //  _dec_msg_len:   length of decoded message
 //  _msg_enc    :   encoded message
 //  _msg_dec    :   decoded message (with tail bits inserted)
-void wifi_fec_decode(unsigned int    _fec_scheme,
+void wlan_fec_decode(unsigned int    _fec_scheme,
                      unsigned int    _dec_msg_len,
                      unsigned char * _msg_enc,
                      unsigned char * _msg_dec)
 {
     // validate input
-    if (_fec_scheme != LIQUID_WIFI_FEC_R1_2 &&
-        _fec_scheme != LIQUID_WIFI_FEC_R2_3 &&
-        _fec_scheme != LIQUID_WIFI_FEC_R3_4)
+    if (_fec_scheme != LIQUID_WLAN_FEC_R1_2 &&
+        _fec_scheme != LIQUID_WLAN_FEC_R2_3 &&
+        _fec_scheme != LIQUID_WLAN_FEC_R3_4)
     {
-        fprintf(stderr,"error: wifi_fec_decode(), invalid scheme\n");
+        fprintf(stderr,"error: wlan_fec_decode(), invalid scheme\n");
         exit(1);
     } else if (_dec_msg_len == 0) {
-        fprintf(stderr,"error: wifi_fec_decode(), input message length must be greater than zero\n");
+        fprintf(stderr,"error: wlan_fec_decode(), input message length must be greater than zero\n");
         exit(1);
     }
 
     // initialize encoder options
-    unsigned int R                = wificonv_fectab[_fec_scheme].R;
-    //unsigned int K              = wificonv_fectab[_fec_scheme].K;
-    //const unsigned int * genpoly= wificonv_fectab[_fec_scheme].genpoly;
+    unsigned int R                = wlanconv_fectab[_fec_scheme].R;
+    //unsigned int K              = wlanconv_fectab[_fec_scheme].K;
+    //const unsigned int * genpoly= wlanconv_fectab[_fec_scheme].genpoly;
     
     // puncturing options
-    int punctured                 = wificonv_fectab[_fec_scheme].punctured;
-    unsigned int P                = wificonv_fectab[_fec_scheme].P;
-    const unsigned char * pmatrix = wificonv_fectab[_fec_scheme].pmatrix;
+    int punctured                 = wlanconv_fectab[_fec_scheme].punctured;
+    unsigned int P                = wlanconv_fectab[_fec_scheme].P;
+    const unsigned char * pmatrix = wlanconv_fectab[_fec_scheme].pmatrix;
 
     // bookkeeping
 #if 0

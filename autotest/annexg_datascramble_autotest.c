@@ -60,7 +60,7 @@ int main(int argc, char*argv[])
     unsigned char msg_unscrambled[18];
 
     // scramble data
-    wifi_data_scramble(msg_org, msg_scrambled, n, seed);
+    wlan_data_scramble(msg_org, msg_scrambled, n, seed);
 
     // check result
     if (count_bit_errors_array(msg_scrambled, msg_scrambled_test, n) > 0 ) {
@@ -69,7 +69,7 @@ int main(int argc, char*argv[])
     }
 
     // unscramble data
-    wifi_data_unscramble(msg_scrambled, msg_unscrambled, n, seed);
+    wlan_data_unscramble(msg_scrambled, msg_unscrambled, n, seed);
 
     // check result
     if (count_bit_errors_array(msg_unscrambled, msg_org, n) > 0 ) {
