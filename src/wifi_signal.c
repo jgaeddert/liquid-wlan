@@ -180,6 +180,7 @@ void wifi_fec_signal_encode(unsigned char * _msg_dec,
 void wifi_fec_signal_decode(unsigned char * _msg_enc,
                             unsigned char * _msg_dec)
 {
+#if 0
     unsigned int i;
 
     // unpack encoded bits
@@ -201,6 +202,9 @@ void wifi_fec_signal_decode(unsigned char * _msg_enc,
     update_viterbi27_blk(vp,bits_enc,48);
     chainback_viterbi27(vp, _msg_dec, 48, 0);
     delete_viterbi27(vp);
-
+#else
+    // decode using generic decoding method (half-rate encoder)
+    wifi_fec_decode(LIQUID_WIFI_FEC_R1_2, 3, _msg_enc, _msg_dec);
+#endif
 }
 
