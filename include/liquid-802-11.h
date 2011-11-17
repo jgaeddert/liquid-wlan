@@ -76,14 +76,6 @@ extern "C" {
 
 LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
 
-// 
-// 802.11a/g framing
-//
-
-#define WLANFRAME_SCTYPE_NULL   0
-#define WLANFRAME_SCTYPE_PILOT  1
-#define WLANFRAME_SCTYPE_DATA   2
-
 // rates
 // TODO : overlap with struct wlan_signal_s
 #define WLANFRAME_RATE_6        (0) // BPSK,   r1/2, 1101

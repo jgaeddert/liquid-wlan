@@ -54,14 +54,6 @@
 // wi-fi frame (common objects)
 //
 
-// PLCP short sequence
-extern const float complex wlanframe_S0[64]; // freq
-extern const float complex wlanframe_s0[64]; // time
-
-// PLCP long sequence
-extern const float complex wlanframe_S1[64]; // freq
-extern const float complex wlanframe_s1[64]; // time
-
 //
 struct wlanframe_param_s {
     unsigned int rate;          // primitive data rate [MBits/s]
@@ -243,6 +235,22 @@ void wlan_interleaver_decode(unsigned int _ncbps,
                              unsigned char * _msg_enc,
                              unsigned char * _msg_dec);
 
+
+// 
+// 802.11a/g framing
+//
+
+// PLCP short sequence
+extern const float complex wlanframe_S0[64]; // freq
+extern const float complex wlanframe_s0[64]; // time
+
+// PLCP long sequence
+extern const float complex wlanframe_S1[64]; // freq
+extern const float complex wlanframe_s1[64]; // time
+
+#define WLANFRAME_SCTYPE_NULL   0
+#define WLANFRAME_SCTYPE_PILOT  1
+#define WLANFRAME_SCTYPE_DATA   2
 
 //
 // wi-fi frame generator
