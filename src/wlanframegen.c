@@ -69,8 +69,13 @@ wlanframegen wlanframegen_create()
     q->x = (float complex*) malloc(64*sizeof(float complex));
     q->ifft = FFT_CREATE_PLAN(64, q->X, q->x, FFT_DIR_BACKWARD, FFT_METHOD);
 
+    // set initial properties
+    q->rate   = WLANFRAME_RATE_6;
+    q->length = 100;
+    q->seed   = 0x5d;
+
     // allocate memory for encoded message
-    q->enc_msg_len = 144;
+    q->enc_msg_len = wlan_packet_compute_enc_msg_len(q->rate, q->length);
     q->msg_enc = (unsigned char*) malloc(q->enc_msg_len*sizeof(unsigned char));
 
     // compute scaling factor
