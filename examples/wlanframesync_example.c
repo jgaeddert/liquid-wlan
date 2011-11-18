@@ -33,8 +33,9 @@
 
 #include "liquid-wlan.h"
 
-static int callback(float complex * _X,
-                    void * _userdata);
+static int callback(unsigned char *        _payload,
+                    struct wlan_rxvector_s _rxvector,
+                    void *                 _userdata);
 
 int main(int argc, char*argv[])
 {
@@ -57,8 +58,9 @@ int main(int argc, char*argv[])
     return 0;
 }
 
-static int callback(float complex * _X,
-                    void * _userdata)
+static int callback(unsigned char *        _payload,
+                    struct wlan_rxvector_s _rxvector,
+                    void *                 _userdata)
 {
     printf("**** callback invoked\n");
 
