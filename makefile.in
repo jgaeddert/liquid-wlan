@@ -247,6 +247,7 @@ sandbox_programs =						\
 	sandbox/annexg_fec_test					\
 	sandbox/datascrambler_test				\
 	sandbox/interleaver_test				\
+	sandbox/packet_codec_test				\
 	sandbox/signalfield_fec_test				\
 
 sandbox_objects	= $(patsubst %,%.o,$(sandbox_programs))

@@ -31,6 +31,8 @@
 
 #include "liquid-wlan.internal.h"
 
+#define DEBUG_PACKET_CODEC  0
+
 void liquid_print_byte_array(unsigned char * _data,
                              unsigned int    _n)
 {
@@ -118,11 +120,13 @@ void wlan_packet_encode(unsigned int    _rate,
     unsigned int enc_msg_len = (dec_msg_len * ncbps) / ndbps;
 
     // print status
+#if DEBUG_PACKET_CODEC
     printf("    nsym        :   %3u symbols\n", nsym);
     printf("    ndata       :   %3u bits\n", ndata);
     printf("    npad        :   %3u bits\n", npad);
     printf("    dec msg len :   %3u bytes\n", dec_msg_len);
     printf("    enc msg len :   %3u bytes\n", enc_msg_len);
+#endif
 
     unsigned char msg_org[dec_msg_len];         // original message
     unsigned char msg_scrambled[dec_msg_len];   // scrambled message
@@ -142,9 +146,11 @@ void wlan_packet_encode(unsigned int    _rate,
     for (i=length+2; i<dec_msg_len; i++)
         msg_org[i] = 0x00;
 
+#if DEBUG_PACKET_CODEC
     // print original message
     printf("original data (verify with Table G.13/G.14):\n");
     liquid_print_byte_array(msg_org, dec_msg_len);
+#endif
 
     // 
     // scramble data
@@ -156,9 +162,11 @@ void wlan_packet_encode(unsigned int    _rate,
     // and data bits (indices 816..821).
     msg_scrambled[length+2] &= 0x03;
 
+#if DEBUG_PACKET_CODEC
     // print scrambled message
     printf("scrambled data (verify with Table G.16/G.17):\n");
     liquid_print_byte_array(msg_scrambled, dec_msg_len);
+#endif
 
     // 
     // encode data
@@ -166,9 +174,11 @@ void wlan_packet_encode(unsigned int    _rate,
     wlan_fec_encode(fec_scheme, dec_msg_len, msg_scrambled, msg_enc);
     // NOTE: tail bits are already inserted into 'decoded' message
 
+#if DEBUG_PACKET_CODEC
     // print encoded message
     printf("encoded data (verify with Table G.18):\n");
     liquid_print_byte_array(msg_enc, enc_msg_len);
+#endif
 
     // 
     // interleave symbols
@@ -177,9 +187,11 @@ void wlan_packet_encode(unsigned int    _rate,
     for (i=0; i<nsym; i++)
         wlan_interleaver_encode_symbol(ncbps, nbpsc, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
 
+#if DEBUG_PACKET_CODEC
     // print interleaved message
     printf("interleaved data (verify with Table G.21):\n");
     liquid_print_byte_array(msg_int, enc_msg_len);
+#endif
     
     // copy result to output
     memmove(_msg_enc, msg_int, enc_msg_len*sizeof(unsigned char));
@@ -237,12 +249,14 @@ void wlan_packet_decode(unsigned int    _rate,
     // compute encoded message length (number of data bytes)
     unsigned int enc_msg_len = (dec_msg_len * ncbps) / ndbps;
 
+#if DEBUG_PACKET_CODEC
     // print status
     printf("    nsym        :   %3u symbols\n", nsym);
     printf("    ndata       :   %3u bits\n", ndata);
     printf("    npad        :   %3u bits\n", npad);
     printf("    dec msg len :   %3u bytes\n", dec_msg_len);
     printf("    enc msg len :   %3u bytes\n", enc_msg_len);
+#endif
 
     unsigned char msg_deint[enc_msg_len];       // de-interleaved message
     unsigned char msg_dec[dec_msg_len];         // decoded message
@@ -259,9 +273,11 @@ void wlan_packet_decode(unsigned int    _rate,
     for (i=0; i<nsym; i++)
         wlan_interleaver_decode_symbol(ncbps, nbpsc, &_msg_enc[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
 
+#if DEBUG_PACKET_CODEC
     // print de-interleaved message
     printf("de-interleaved data (verify with Table G.18):\n");
     liquid_print_byte_array(msg_deint, enc_msg_len);
+#endif
 
     //
     // decode message
@@ -269,11 +285,13 @@ void wlan_packet_decode(unsigned int    _rate,
 
     wlan_fec_decode(fec_scheme, dec_msg_len, msg_deint, msg_dec);
 
+#if DEBUG_PACKET_CODEC
     // print decoded message
     // NOTE : clip padding and tail bits
     printf("decoded data (verify with Table G.16/G.17):\n");
     //liquid_print_byte_array(msg_dec, dec_msg_len);
     liquid_print_byte_array(msg_dec, length+2);
+#endif
 
 
     //
@@ -283,11 +301,13 @@ void wlan_packet_decode(unsigned int    _rate,
     // TODO : strip scrambling seed from header?
     wlan_data_scramble(msg_dec, msg_unscrambled, dec_msg_len, seed);
 
+#if DEBUG_PACKET_CODEC
     // print unscrambled message
     // NOTE : clip padding bits
     printf("unscrambled data (verify with Table G.13/G.14):\n");
     //liquid_print_byte_array(msg_unscrambled, dec_msg_len);
     liquid_print_byte_array(msg_unscrambled, length+2);
+#endif
 
     //
     // recover original data sequence
@@ -297,9 +317,11 @@ void wlan_packet_decode(unsigned int    _rate,
     for (i=0; i<length; i++)
         msg_rx[i] = liquid_wlan_reverse_byte[ msg_unscrambled[i+2] ];
 
+#if DEBUG_PACKET_CODEC
     // print recovered message
     printf("recovered data (verify with Table G.1):\n");
     liquid_print_byte_array(msg_rx, length);
+#endif
 
     // copy to output
     memmove(_msg_dec, msg_rx, length*sizeof(unsigned char));
