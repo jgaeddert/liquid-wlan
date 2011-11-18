@@ -70,9 +70,10 @@ int main(int argc, char*argv[])
         0x65, 0x20, 0x74, 0x72, 0x65, 
         0x61, 0xda, 0x57, 0x99, 0xed};
 
-    // encoded data length (fixed at 144 bytes for now)
-    // TODO : add method to compute data length
-    unsigned int enc_msg_len = 144;
+    // encoded data length
+    unsigned int enc_msg_len = wlan_packet_compute_enc_msg_len(rate, length);
+    printf("dec msg len : %4u bytes\n", length);
+    printf("enc msg len : %4u bytes\n", enc_msg_len);
 
     // arrays
     unsigned char msg_enc[enc_msg_len]; // encoded data
