@@ -125,7 +125,7 @@ all: libliquid-wlan.a $(SHARED_LIB)
 
 # look for all occurences of '## TARGET : ' and print rest of line to screen
 help:
-	@echo "Targets for liquid-dsp makefile:"
+	@echo "Targets for liquid-wlan makefile:"
 	@$(GREP) -E "^## TARGET : " [Mm]akefile | $(SED) 's/## TARGET : /  /'
 
 ## 
@@ -141,7 +141,7 @@ install:
 	install -m 644 -p $(addprefix include/,$(headers_install)) $(prefix)/include/liquid
 	@echo ""
 	@echo "---------------------------------------------------------"
-	@echo "  liquid-dsp was successfully installed.     "
+	@echo "  liquid-wlan was successfully installed.     "
 	@echo ""
 	@echo "  On some machines (e.g. Linux) you should rebind your"
 	@echo "  libraries by running 'ldconfig' to make the shared"
