@@ -57,6 +57,17 @@ struct wlanframegen_s {
     // data arrays
     unsigned int enc_msg_len;   // length of encoded message (bytes)
     unsigned char * msg_enc;    // encoded message
+    
+    // counters/states
+    enum {
+        WLANFRAMEGEN_STATE_S0A=0,   // write first block of 'short' symbols
+        WLANFRAMEGEN_STATE_S0B,     // write second block of 'short' symbols
+        WLANFRAMEGEN_STATE_S1A,     // write first block of 'long' symbols
+        WLANFRAMEGEN_STATE_S1B,     // write second block of 'long' symbols
+        WLANFRAMEGEN_STATE_SIGNAL,  // write SIGNAL symbol
+        WLANFRAMEGEN_STATE_PAYLOAD  // write payload symbols
+    } state;
+    int frame_assembled;            // frame assembled flag
 };
 
 // create WLAN framing generator object
@@ -80,6 +91,9 @@ wlanframegen wlanframegen_create()
 
     // compute scaling factor
     q->g_data = 1.0f / sqrtf(52.0f);
+
+    // reset objects
+    wlanframegen_reset(q);
 
     return q;
 }
@@ -108,6 +122,9 @@ void wlanframegen_print(wlanframegen _q)
 // reset WLAN framing generator object internal state
 void wlanframegen_reset(wlanframegen _q)
 {
+    // reset state/counters
+    _q->frame_assembled = 0;
+    _q->state = WLANFRAMEGEN_STATE_S0A;
 }
 
 // assemble frame (see Table 76)
@@ -152,6 +169,21 @@ void wlanframegen_assemble(wlanframegen           _q,
 int wlanframegen_writesymbol(wlanframegen    _q,
                              float complex * _buffer)
 {
+    //
+    switch (_q->state) {
+    case WLANFRAMEGEN_STATE_S0A:
+    case WLANFRAMEGEN_STATE_S0B:
+    case WLANFRAMEGEN_STATE_S1A:
+    case WLANFRAMEGEN_STATE_S1B:
+    case WLANFRAMEGEN_STATE_SIGNAL:
+    case WLANFRAMEGEN_STATE_PAYLOAD:
+        break;
+    default:
+        // should never get to this point
+        fprintf(stderr,"error: wlanframegen_writesymbol(), invalid state\n");
+        exit(1);
+    }
+
 #if 0
     // move frequency data to internal buffer
     unsigned int i;
