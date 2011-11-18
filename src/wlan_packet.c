@@ -45,6 +45,38 @@ void liquid_print_byte_array(unsigned char * _data,
     }
 }
 
+// compute encoded message length
+unsigned int wlan_packet_compute_enc_msg_len(unsigned int _rate,
+                                             unsigned int _length)
+{
+    // strip parameters
+    unsigned int ndbps  = wlanframe_ratetab[_rate].ndbps;   // number of data bits per OFDM symbol
+    unsigned int ncbps  = wlanframe_ratetab[_rate].ncbps;   // number of coded bits per OFDM symbol
+    //unsigned int nbpsc  = wlanframe_ratetab[_rate].nbpsc;   // number of bits per subcarrier (modulation depth)
+
+    // compute number of OFDM symbols
+    div_t d = div(16 + 8*_length + 6, ndbps);
+    unsigned int nsym = d.quot + (d.rem == 0 ? 0 : 1);
+
+    // compute number of bits in the DATA field
+    unsigned int ndata = nsym * ndbps;
+
+#if 0
+    // compute number of pad bits
+    unsigned int npad = ndata - (16 + 8*_length + 6);
+#endif
+
+    // compute decoded message length (number of data bytes)
+    // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
+    unsigned int dec_msg_len = ndata / 8;
+
+    // compute encoded message length (number of data bytes)
+    unsigned int enc_msg_len = (dec_msg_len * ncbps) / ndbps;
+
+    // return length of encoded message (bytes)
+    return enc_msg_len;
+}
+
 // assemble data (prepend SERVICE bits, etc.), scramble, encode, interleave
 void wlan_packet_encode(unsigned int    _rate,
                         unsigned int    _seed,
@@ -109,8 +141,10 @@ void wlan_packet_encode(unsigned int    _rate,
     // compute number of bits in the DATA field
     unsigned int ndata = nsym * ndbps;
 
+#if DEBUG_PACKET_CODEC
     // compute number of pad bits
     unsigned int npad = ndata - (16 + 8*length + 6);
+#endif
 
     // compute decoded message length (number of data bytes)
     // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
@@ -239,8 +273,10 @@ void wlan_packet_decode(unsigned int    _rate,
     // compute number of bits in the DATA field
     unsigned int ndata = nsym * ndbps;
 
+#if DEBUG_PACKET_CODEC
     // compute number of pad bits
     unsigned int npad = ndata - (16 + 8*length + 6);
+#endif
 
     // compute decoded message length (number of data bytes)
     // NOTE : because ndbps is _always_ divisible by 8, so must ndata be

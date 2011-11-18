@@ -239,7 +239,9 @@ void wlan_interleaver_decode(unsigned int _ncbps,
 // high-level packet encoder/decoder
 //
 
-// TODO : compute encoded message length (bytes)
+// compute encoded message length
+unsigned int wlan_packet_compute_enc_msg_len(unsigned int _rate,
+                                             unsigned int _length);
 
 // assemble data (prepend SERVICE bits, etc.), scramble, encode, interleave
 void wlan_packet_encode(unsigned int    _rate,
