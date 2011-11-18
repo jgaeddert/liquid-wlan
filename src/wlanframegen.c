@@ -187,4 +187,27 @@ int wlanframegen_writesymbol(wlanframegen    _q,
     return 1;
 }
 
+// 
+// internal methods
+//
+
+// write first PLCP short sequence 'symbol' to buffer; this is the first
+// five 'short' symbols
+void wlanframegen_writesymbol_S0a(wlanframegen _q,
+                                  float complex * _buffer)
+{
+    // copy first 64 samples of short sequence
+    memmove(_buffer, wlanframe_s1, 64*sizeof(float complex));
+
+    // copy first 16 samples of short sequence
+    memmove(&_buffer[64], wlanframe_s1, 16*sizeof(float complex));
+}
+
+// write second PLCP short sequence 'symbol' to buffer
+void wlanframegen_writesymbol_S0b(wlanframegen _q,
+                                  float complex * _buffer)
+{
+    // same as first symbol
+    wlanframegen_writesymbol_S0a(_q, _buffer);
+}
 

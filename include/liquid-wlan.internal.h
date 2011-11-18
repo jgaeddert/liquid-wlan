@@ -274,11 +274,17 @@ extern const float complex wlanframe_s1[64]; // time
 #define WLANFRAME_SCTYPE_DATA   2
 
 //
-// wi-fi frame generator
+// wi-fi frame generator (internal methods)
 //
+void wlanframegen_writesymbol_S0a(wlanframegen _q, float complex * _buffer);
+void wlanframegen_writesymbol_S0b(wlanframegen _q, float complex * _buffer);
+void wlanframegen_writesymbol_S1a(wlanframegen _q, float complex * _buffer);
+void wlanframegen_writesymbol_S1b(wlanframegen _q, float complex * _buffer);
+void wlanframegen_writesymbol_signal(wlanframegen _q, float complex * _buffer);
+void wlanframegen_writesymbol_data(wlanframegen _q, float complex * _buffer);
 
 //
-// wi-fi frame synchronizer
+// wi-fi frame synchronizer (internal methods)
 //
 
 //
