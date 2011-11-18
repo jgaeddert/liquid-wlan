@@ -26,6 +26,24 @@ unsigned char msg_org[100] = {
     0x65, 0x20, 0x74, 0x72, 0x65, 
     0x61, 0xda, 0x57, 0x99, 0xed};
 
+// Table G.8: SIGNAL field bits after encoding
+// 1101 0001
+// 1010 0001
+// 0000 0010
+// 0011 1110
+// 0111 0000
+// 0000 0000
+unsigned char msg_signal_enc[6] = {0x94, 0xd0, 0x14, 0x83, 0x24, 0x94};
+
+// Table G.9: SIGNAL field bits after encoding/interleaving
+// 1001 0100
+// 1101 0000
+// 0001 0100
+// 1000 0011
+// 0010 0100
+// 1001 0100
+unsigned char msg_signal_int[6] = {0xd1, 0xa1, 0x02, 0x3e, 0x70, 0x00};
+
 // Table G.13: first 144 data bits
 unsigned char msg_org144[18] = {    
     0x00, 0x00, 0x20, 0x40, 0x00,

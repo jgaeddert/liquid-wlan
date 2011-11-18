@@ -249,6 +249,7 @@ sandbox_programs =						\
 	sandbox/interleaver_test				\
 	sandbox/packet_codec_test				\
 	sandbox/signalfield_fec_test				\
+	sandbox/signalfield_symbolgen_test			\
 
 sandbox_objects	= $(patsubst %,%.o,$(sandbox_programs))
 sandbox: $(sandbox_programs)
