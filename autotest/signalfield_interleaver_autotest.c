@@ -32,7 +32,7 @@
 #include <getopt.h>
 #include <time.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 int main(int argc, char*argv[])
 {

@@ -22,7 +22,7 @@
 // wlan physical layer convergence procedure (PLCP) data
 //
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 const struct wlanframe_param_s wlanframe_param_ratetab[8] = {
     // rate [MBits/s] modulation scheme  fec scheme            nbpsc ncbps ndbps

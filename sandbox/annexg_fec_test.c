@@ -39,7 +39,7 @@
 #include <liquid/liquid.h>
 #include <fec.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 // use internal wlan codec?
 #define USE_INTERNAL_CODEC 1
@@ -124,7 +124,7 @@ int main(int argc, char*argv[])
     msg_org[0] = 0x00;
     msg_org[1] = 0x00;
     for (i=0; i<length; i++)
-        msg_org[i+2] = liquid_802_11_reverse_byte[msg_data[i]];
+        msg_org[i+2] = liquid_wlan_reverse_byte[msg_data[i]];
     for (i=length+2; i<dec_msg_len; i++)
         msg_org[i] = 0x00;
 
@@ -260,7 +260,7 @@ int main(int argc, char*argv[])
             if (pmatrix[r*P + p]) {
                 // push bit from input
                 bit = (byte_in >> (7-k)) & 0x01;
-                enc_bits[i+r] = bit ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
+                enc_bits[i+r] = bit ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
                 k++;
                 if (k==8) {
                     k = 0;
@@ -269,7 +269,7 @@ int main(int argc, char*argv[])
                 }
             } else {
                 // push erasure
-                enc_bits[i+r] = LIQUID_802_11_SOFTBIT_ERASURE;
+                enc_bits[i+r] = LIQUID_WLAN_SOFTBIT_ERASURE;
             }
         }
         p = (p+1) % P;
@@ -311,7 +311,7 @@ int main(int argc, char*argv[])
 
     // strip SERVICE bits/padding, and reverse bytes
     for (i=0; i<length; i++)
-        msg_rx[i] = liquid_802_11_reverse_byte[ msg_unscrambled[i+2] ];
+        msg_rx[i] = liquid_wlan_reverse_byte[ msg_unscrambled[i+2] ];
 
     // print recovered message
     printf("recovered data (verify with Table G.1):\n");

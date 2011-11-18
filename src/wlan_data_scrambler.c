@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 // scramble data
 //  _msg_dec    :   original data message [size: _n x 1]

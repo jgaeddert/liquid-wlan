@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 // print SIGNAL structure
 void wlan_signal_print(struct wlan_signal_s * _q)

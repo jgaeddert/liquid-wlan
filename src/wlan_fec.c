@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 // r1/2 base generator polynomials (same as V27POLYA, V27POLYB in fec.h)
 const unsigned int wlanconv_genpoly[2] = {0x6d, 0x4f};
@@ -188,7 +188,7 @@ void wlan_fec_decode(unsigned int    _fec_scheme,
                 if (pmatrix[r*P + p]) {
                     // push bit from input
                     bit = (byte_in >> (7-k)) & 0x01;
-                    enc_bits[i+r] = bit ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
+                    enc_bits[i+r] = bit ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
                     k++;
                     if (k==8) {
                         k = 0;
@@ -197,7 +197,7 @@ void wlan_fec_decode(unsigned int    _fec_scheme,
                     }
                 } else {
                     // push erasure
-                    enc_bits[i+r] = LIQUID_802_11_SOFTBIT_ERASURE;
+                    enc_bits[i+r] = LIQUID_WLAN_SOFTBIT_ERASURE;
                 }
             }
             p = (p+1) % P;
@@ -205,14 +205,14 @@ void wlan_fec_decode(unsigned int    _fec_scheme,
     } else {
         // not punctured; simply unpack
         for (i=0; i<_dec_msg_len*R; i++) {
-            enc_bits[8*i+0] = (_msg_enc[i] >> 7) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+1] = (_msg_enc[i] >> 6) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+2] = (_msg_enc[i] >> 5) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+3] = (_msg_enc[i] >> 4) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+4] = (_msg_enc[i] >> 3) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+5] = (_msg_enc[i] >> 2) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+6] = (_msg_enc[i] >> 1) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-            enc_bits[8*i+7] = (_msg_enc[i]     ) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
+            enc_bits[8*i+0] = (_msg_enc[i] >> 7) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+1] = (_msg_enc[i] >> 6) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+2] = (_msg_enc[i] >> 5) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+3] = (_msg_enc[i] >> 4) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+4] = (_msg_enc[i] >> 3) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+5] = (_msg_enc[i] >> 2) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+6] = (_msg_enc[i] >> 1) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+            enc_bits[8*i+7] = (_msg_enc[i]     ) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
         }
     }
 

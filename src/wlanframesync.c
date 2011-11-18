@@ -28,7 +28,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 #define DEBUG_WLANFRAMESYNC             0
 #define DEBUG_WLANFRAMESYNC_PRINT       0

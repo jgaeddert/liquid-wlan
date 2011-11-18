@@ -22,17 +22,17 @@
 // Run-time library version numbers
 //
 
-#include "liquid-802-11.h"
+#include "liquid-wlan.h"
 
-const char liquid_802_11_version[] = LIQUID_802_11_VERSION;
+const char liquid_wlan_version[] = LIQUID_WLAN_VERSION;
 
-const char * liquid_802_11_libversion(void)
+const char * liquid_wlan_libversion(void)
 {
-    return LIQUID_802_11_VERSION;
+    return LIQUID_WLAN_VERSION;
 }
 
-int liquid_802_11_libversion_number(void)
+int liquid_wlan_libversion_number(void)
 {
-    return LIQUID_802_11_VERSION_NUMBER;
+    return LIQUID_WLAN_VERSION_NUMBER;
 }
 

@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "liquid-802-11.internal.h"
+#include "liquid-wlan.internal.h"
 
 // intereleave one OFDM symbol
 //  _ncbps      :   number of coded bits per OFDM symbol

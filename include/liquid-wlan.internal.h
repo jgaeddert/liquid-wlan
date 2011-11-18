@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __LIQUID_802_11_INTERNAL_H__
-#define __LIQUID_802_11_INTERNAL_H__
+#ifndef __LIQUID_WLAN_INTERNAL_H__
+#define __LIQUID_WLAN_INTERNAL_H__
 
 // Configuration file
 #include "config.h"
@@ -27,7 +27,7 @@
 #include <liquid/liquid.h>
 #include <fec.h>
 
-#include "liquid-802-11.h"
+#include "liquid-wlan.h"
 
 // Use fftw library if installed, otherwise use liquid-dsp (less
 // efficient) fft library.
@@ -107,9 +107,9 @@ void wlan_signal_unpack(unsigned char * _signal,
 // encoding/decoding
 //
 
-#define LIQUID_802_11_SOFTBIT_1       (255)
-#define LIQUID_802_11_SOFTBIT_ERASURE (127)
-#define LIQUID_802_11_SOFTBIT_0       (0)
+#define LIQUID_WLAN_SOFTBIT_1       (255)
+#define LIQUID_WLAN_SOFTBIT_ERASURE (127)
+#define LIQUID_WLAN_SOFTBIT_0       (0)
 
 // wlan convolutional encoder/decoder properties
 struct wlanconv_s {
@@ -265,8 +265,8 @@ extern const float complex wlanframe_s1[64]; // time
 //
 
 // reverse byte table
-extern const unsigned char liquid_802_11_reverse_byte[256];
+extern const unsigned char liquid_wlan_reverse_byte[256];
 
 
-#endif // __LIQUID_802_11_INTERNAL_H__
+#endif // __LIQUID_WLAN_INTERNAL_H__
 

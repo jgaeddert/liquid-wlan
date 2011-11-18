@@ -18,23 +18,23 @@
 ## along with liquid.  If not, see <http://www.gnu.org/licenses/>.
 
 # 
-# liquid 802.11 library configure
+# liquid WLAN library configure
 # Process with autoconf to generate configure script
 #
 
-AC_INIT([liquid-802.11],[0.0.0],[liquid@vt.edu])
-AC_CONFIG_SRCDIR([src/libliquid_802_11.c])
+AC_INIT([liquid-wlan],[0.0.0],[liquid@vt.edu])
+AC_CONFIG_SRCDIR([src/libliquid_wlan.c])
 
 # Specify 'C' language
 AC_LANG(C)
 
 AC_CONFIG_HEADER(config.h)
 AH_TOP([
-#ifndef __LIQUID_802_11_CONFIG_H__
-#define __LIQUID_802_11_CONFIG_H__
+#ifndef __LIQUID_WLAN_CONFIG_H__
+#define __LIQUID_WLAN_CONFIG_H__
 ])
 AH_BOTTOM([
-#endif // __LIQUID_802_11_CONFIG_H__
+#endif // __LIQUID_WLAN_CONFIG_H__
 ])
 
 # Check for necessary programs
@@ -115,11 +115,11 @@ esac
 
 case $target_os in
 darwin*)
-    SH_LIB=libliquid-802-11.dylib
+    SH_LIB=libliquid-wlan.dylib
     REBIND=""
     ;;
 *)
-    SH_LIB=libliquid-802-11.so
+    SH_LIB=libliquid-wlan.so
     REBIND=ldconfig
     ;;
 esac

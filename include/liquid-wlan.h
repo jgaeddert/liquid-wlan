@@ -17,45 +17,45 @@
  * You should have received a copy of the GNU General Public License
  * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __LIQUID_802_11_H__
-#define __LIQUID_802_11_H__
+#ifndef __LIQUID_WLAN_H__
+#define __LIQUID_WLAN_H__
 
 /*
  * Make sure the version and version number macros weren't defined by
  * some prevoiusly included header file.
  */
-#ifdef LIQUID_802_11_VERSION
-#  undef LIQUID_802_11_VERSION
+#ifdef LIQUID_WLAN_VERSION
+#  undef LIQUID_WLAN_VERSION
 #endif
-#ifdef LIQUID_802_11_VERSION_NUMBER
-#  undef LIQUID_802_11_VERSION_NUMBER
+#ifdef LIQUID_WLAN_VERSION_NUMBER
+#  undef LIQUID_WLAN_VERSION_NUMBER
 #endif
 
 /*
  * Compile-time version numbers
  * 
- * LIQUID_802_11_VERSION = "X.Y.Z"
- * LIQUID_802_11_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
+ * LIQUID_WLAN_VERSION = "X.Y.Z"
+ * LIQUID_WLAN_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
  */
-#define LIQUID_802_11_VERSION          "0.0.1"
-#define LIQUID_802_11_VERSION_NUMBER   1
+#define LIQUID_WLAN_VERSION          "0.0.1"
+#define LIQUID_WLAN_VERSION_NUMBER   1
 
 /*
  * Run-time library version numbers
  */
-extern const char liquid_802_11_version[];
-const char * liquid_802_11_libversion(void);
-int liquid_802_11_libversion_number(void);
+extern const char liquid_wlan_version[];
+const char * liquid_wlan_libversion(void);
+int liquid_wlan_libversion_number(void);
 
 #ifdef __cplusplus
 extern "C" {
-#   define LIQUID_802_11_USE_COMPLEX_H 0
+#   define LIQUID_WLAN_USE_COMPLEX_H 0
 #else
-#   define LIQUID_802_11_USE_COMPLEX_H 1
+#   define LIQUID_WLAN_USE_COMPLEX_H 1
 #endif /* __cplusplus */
 
-#define LIQUID_802_11_CONCAT(prefix, name) prefix ## name
-#define LIQUID_802_11_VALIDATE_INPUT
+#define LIQUID_WLAN_CONCAT(prefix, name) prefix ## name
+#define LIQUID_WLAN_VALIDATE_INPUT
 
 /* 
  * Compile-time complex data type definitions
@@ -64,17 +64,17 @@ extern "C" {
  * define complex type compatible with the C++ complex standard,
  * otherwise resort to defining binary compatible array.
  */
-#if LIQUID_802_11_USE_COMPLEX_H==1
+#if LIQUID_WLAN_USE_COMPLEX_H==1
 #   include <complex.h>
-#   define LIQUID_802_11_DEFINE_COMPLEX(R,C) typedef R _Complex C
+#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef R _Complex C
 #elif defined _GLIBCXX_COMPLEX
-#   define LIQUID_802_11_DEFINE_COMPLEX(R,C) typedef std::complex<R> C
+#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef std::complex<R> C
 #else
-#   define LIQUID_802_11_DEFINE_COMPLEX(R,C) typedef struct {R real; R imag;} C;
+#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef struct {R real; R imag;} C;
 #endif
-//#   define LIQUID_802_11_DEFINE_COMPLEX(R,C) typedef R C[2]
+//#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef R C[2]
 
-LIQUID_802_11_DEFINE_COMPLEX(float,  liquid_float_complex);
+LIQUID_WLAN_DEFINE_COMPLEX(float,  liquid_float_complex);
 
 // rates
 // TODO : overlap with struct wlan_signal_s
@@ -169,5 +169,5 @@ float wlanframesync_get_cfo(wlanframesync _q);  // carrier offset estimate
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif // __LIQUID_802_11_H__
+#endif // __LIQUID_WLAN_H__
 
