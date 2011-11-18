@@ -77,7 +77,6 @@ extern "C" {
 LIQUID_WLAN_DEFINE_COMPLEX(float,  liquid_float_complex);
 
 // rates
-// TODO : overlap with struct wlan_signal_s
 #define WLANFRAME_RATE_6        (0) // BPSK,   r1/2, 1101
 #define WLANFRAME_RATE_9        (1) // BPSK,   r3/4, 1111
 #define WLANFRAME_RATE_12       (2) // QPSK,   r1/2, 0101

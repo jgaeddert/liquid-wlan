@@ -38,10 +38,9 @@
 int main(int argc, char*argv[])
 {
     // initialize SIGNAL structure
-    struct wlan_signal_s signal_org;
-    signal_org.rate   = WLAN_SIGNAL_RATE_36;    // rate
-    signal_org.R      = 0;                      // reserved
-    signal_org.length = 100;                    // data length
+    unsigned int rate   = WLANFRAME_RATE_36;    // rate
+    unsigned int R      = 0;                    // reserved
+    unsigned int length = 100;                  // data length
     
     // test data
     //  0   1   RATE:R1         8   0   -               16  0   LENGTH (MSB)
@@ -52,15 +51,14 @@ int main(int argc, char*argv[])
     //  5   0   LENGTH(LSB)     13  0   -               21  0   SIGNAL TAIL
     //  6   0   -               14  0   -               22  0   SIGNAL TAIL
     //  7   1   -               15  0   -               23  0   SIGNAL TAIL
-    //      1011 0001               0011 0000               0000 0000
+    //      1011 0001 (0xb1)        0011 0000 (0x30)        0000 0000 (0x00)
     unsigned char signal_packed_test[3] = {0xb1, 0x30, 0x00};
     unsigned char signal_packed[3];
-    struct wlan_signal_s signal_rec;
 
     unsigned int i;
 
     // pack signal
-    wlan_signal_pack(&signal_org, signal_packed);
+    wlan_signal_pack(rate, R, length, signal_packed);
 
     // print packed message
     printf("decoded message:\n");
@@ -74,7 +72,10 @@ int main(int argc, char*argv[])
     }
 
     // unpack signal field
-    wlan_signal_unpack(signal_packed, &signal_rec);
+    unsigned int rate_rx;
+    unsigned int R_rx;
+    unsigned int length_rx;
+    wlan_signal_unpack(signal_packed, &rate_rx, &R_rx, &length_rx);
 
 #if 0
     // print decoded message
@@ -84,9 +85,9 @@ int main(int argc, char*argv[])
 #endif
 
     // check result
-    if (signal_rec.rate   != signal_org.rate ||
-        signal_rec.R      != signal_org.R    ||
-        signal_rec.length != signal_org.length)
+    if (rate_rx   != rate ||
+        R_rx      != R    ||
+        length_rx != length)
     {
         fprintf(stderr,"fail: %s, unpacking failure\n", __FILE__);
         exit(1);

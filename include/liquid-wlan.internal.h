@@ -71,36 +71,36 @@ extern const struct wlanframe_param_s wlanframe_ratetab[8];
 // signal definition
 //
 
-struct wlan_signal_s {
-    // Data rate (RATE)
-    enum {
-        WLAN_SIGNAL_RATE_6  = 13,   // BPSK,   r1/2, 1101
-        WLAN_SIGNAL_RATE_9  = 15,   // BPSK,   r3/4, 1111
-        WLAN_SIGNAL_RATE_12 =  5,   // QPSK,   r1/2, 0101
-        WLAN_SIGNAL_RATE_18 =  7,   // QPSK,   r3/4, 0111
-        WLAN_SIGNAL_RATE_24 =  9,   // 16-QAM, r1/2, 1001
-        WLAN_SIGNAL_RATE_36 = 11,   // 16-QAM, r3/4, 1011
-        WLAN_SIGNAL_RATE_48 =  1,   // 64-QAM, r2/3, 0001
-        WLAN_SIGNAL_RATE_54 =  3,   // 64-QAM, r3/4, 0011
-    } rate;
-
-    // reserved bit
-    unsigned char R;
-
-    // 12-bit data length
-    unsigned int length;
-};
-
-// print SIGNAL structure
-void wlan_signal_print(struct wlan_signal_s * _q);
+// signal field rate encoding table (see Table 80)
+//    WLANFRAME_RATE_6  = 13 : 1101
+//    WLANFRAME_RATE_9  = 15 : 1111
+//    WLANFRAME_RATE_12 =  5 : 0101
+//    WLANFRAME_RATE_18 =  7 : 0111
+//    WLANFRAME_RATE_24 =  9 : 1001
+//    WLANFRAME_RATE_36 = 11 : 1011
+//    WLANFRAME_RATE_48 =  1 : 0001
+//    WLANFRAME_RATE_54 =  3 : 0011
+extern const unsigned char wlan_signal_R1_R4[8];
 
 // pack SIGNAL structure into 3-byte array
-void wlan_signal_pack(struct wlan_signal_s * _q,
+//  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
+//  _R          :   reserved bit
+//  _length     :   length of payload (1-4095)
+//  _signal     :   output signal, packed [size: 3 x 1]
+void wlan_signal_pack(unsigned int    _rate,
+                      unsigned int    _R,
+                      unsigned int    _length,
                       unsigned char * _signal);
 
 // unpack SIGNAL structure from 3-byte array
+//  _signal     :   input signal, packed [size: 3 x 1]
+//  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
+//  _R          :   reserved bit
+//  _length     :   length of payload (1-4095)
 void wlan_signal_unpack(unsigned char * _signal,
-                        struct wlan_signal_s * _q);
+                      unsigned int    * _rate,
+                      unsigned int    * _R,
+                      unsigned int    * _length);
 
 
 // 

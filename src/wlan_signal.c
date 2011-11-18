@@ -27,42 +27,66 @@
 
 #include "liquid-wlan.internal.h"
 
-// print SIGNAL structure
-void wlan_signal_print(struct wlan_signal_s * _q)
-{
-    printf("wlan signal field:\n");
-}
+// signal field rate encoding table (see Table 80)
+//    WLANFRAME_RATE_6  = 13 : 1101
+//    WLANFRAME_RATE_9  = 15 : 1111
+//    WLANFRAME_RATE_12 =  5 : 0101
+//    WLANFRAME_RATE_18 =  7 : 0111
+//    WLANFRAME_RATE_24 =  9 : 1001
+//    WLANFRAME_RATE_36 = 11 : 1011
+//    WLANFRAME_RATE_48 =  1 : 0001
+//    WLANFRAME_RATE_54 =  3 : 0011
+const unsigned char wlan_signal_R1_R4[8] = {
+    13, 15, 5, 7, 9, 11, 1, 3};
 
 // pack SIGNAL structure into 3-byte array
-void wlan_signal_pack(struct wlan_signal_s * _q,
+//  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
+//  _R          :   reserved bit
+//  _length     :   length of payload (1-4095)
+//  _signal     :   output signal, packed [size: 3 x 1]
+void wlan_signal_pack(unsigned int    _rate,
+                      unsigned int    _R,
+                      unsigned int    _length,
                       unsigned char * _signal)
 {
+    // validate input
+    if (_rate > 7) {
+        fprintf(stderr,"error: wlan_signal_pack(), invalid data rate field\n");
+        exit(1);
+    } else if (_R > 1) {
+        fprintf(stderr,"error: wlan_signal_pack(), invalid reserved bit field\n");
+        exit(1);
+    } else if (_length == 0 || _length > 4095) {
+        fprintf(stderr,"error: wlan_signal_pack(), invalid data length field\n");
+        exit(1);
+    }
+
     // initialize output array
     _signal[0] = 0x00;
     _signal[1] = 0x00;
     _signal[2] = 0x00;
 
     // pack 'rate'
-    _signal[0] |= (_q->rate << 4) & 0xf0;
+    _signal[0] |= ( wlan_signal_R1_R4[_rate] << 4) & 0xf0;
 
     // pack 'reserved' bit
-    _signal[0] |= _q->R ? 0x08 : 0;
+    _signal[0] |= _R ? 0x08 : 0;
 
     // pack 'length' (LSB first)
-    _signal[0] |= (_q->length & 0x001) ? 0x04 : 0;
-    _signal[0] |= (_q->length & 0x002) ? 0x02 : 0;
-    _signal[0] |= (_q->length & 0x004) ? 0x01 : 0;
+    _signal[0] |= (_length & 0x001) ? 0x04 : 0;
+    _signal[0] |= (_length & 0x002) ? 0x02 : 0;
+    _signal[0] |= (_length & 0x004) ? 0x01 : 0;
     
-    _signal[1] |= (_q->length & 0x008) ? 0x80 : 0;
-    _signal[1] |= (_q->length & 0x010) ? 0x40 : 0;
-    _signal[1] |= (_q->length & 0x020) ? 0x20 : 0;
-    _signal[1] |= (_q->length & 0x040) ? 0x10 : 0;
-    _signal[1] |= (_q->length & 0x080) ? 0x08 : 0;
-    _signal[1] |= (_q->length & 0x100) ? 0x04 : 0;
-    _signal[1] |= (_q->length & 0x200) ? 0x02 : 0;
-    _signal[1] |= (_q->length & 0x400) ? 0x01 : 0;
+    _signal[1] |= (_length & 0x008) ? 0x80 : 0;
+    _signal[1] |= (_length & 0x010) ? 0x40 : 0;
+    _signal[1] |= (_length & 0x020) ? 0x20 : 0;
+    _signal[1] |= (_length & 0x040) ? 0x10 : 0;
+    _signal[1] |= (_length & 0x080) ? 0x08 : 0;
+    _signal[1] |= (_length & 0x100) ? 0x04 : 0;
+    _signal[1] |= (_length & 0x200) ? 0x02 : 0;
+    _signal[1] |= (_length & 0x400) ? 0x01 : 0;
     
-    _signal[2] |= (_q->length & 0x800) ? 0x80 : 0;
+    _signal[2] |= (_length & 0x800) ? 0x80 : 0;
 
     // compute parity and add to message
     unsigned int parity = ( liquid_count_ones(_signal[0]) +
@@ -72,8 +96,14 @@ void wlan_signal_pack(struct wlan_signal_s * _q,
 }
 
 // unpack SIGNAL structure from 3-byte array
+//  _signal     :   input signal, packed [size: 3 x 1]
+//  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
+//  _R          :   reserved bit
+//  _length     :   length of payload (1-4095)
 void wlan_signal_unpack(unsigned char * _signal,
-                        struct wlan_signal_s * _q)
+                      unsigned int    * _rate,
+                      unsigned int    * _R,
+                      unsigned int    * _length)
 {
     // compute parity (last byte masked with 6 'tail' bits)
     unsigned int parity = ( liquid_count_ones(_signal[0]) +
@@ -87,27 +117,27 @@ void wlan_signal_unpack(unsigned char * _signal,
         // TODO : return flag
     }
 
-    // strip rate
-    unsigned int rate = (_signal[0] >> 4) & 0x0f;
-    switch (rate) {
-    case WLAN_SIGNAL_RATE_6:
-    case WLAN_SIGNAL_RATE_9:
-    case WLAN_SIGNAL_RATE_12:
-    case WLAN_SIGNAL_RATE_18:
-    case WLAN_SIGNAL_RATE_24:
-    case WLAN_SIGNAL_RATE_36:
-    case WLAN_SIGNAL_RATE_48:
-    case WLAN_SIGNAL_RATE_54:
-        _q->rate = rate;
-        break;
+    // strip data rate field
+    // TODO : try to decode even if no match is found
+    // TODO : use table for decoding
+    unsigned int rate_enc = (_signal[0] >> 4) & 0x0f;
+    switch (rate_enc) {
+    case 13: *_rate = WLANFRAME_RATE_6;  break;
+    case 15: *_rate = WLANFRAME_RATE_9;  break;
+    case  5: *_rate = WLANFRAME_RATE_12; break;
+    case  7: *_rate = WLANFRAME_RATE_18; break;
+    case  9: *_rate = WLANFRAME_RATE_24; break;
+    case 11: *_rate = WLANFRAME_RATE_36; break;
+    case  1: *_rate = WLANFRAME_RATE_48; break;
+    case  3: *_rate = WLANFRAME_RATE_54; break;
     default:
         fprintf(stderr,"warning: wlan_signal_unpack(), invalid rate\n");
-        _q->rate = WLAN_SIGNAL_RATE_6;
+        *_rate = WLANFRAME_RATE_6;
         // TODO : return flag
     }
 
     // unpack 'reserved' bit
-    _q->R = _signal[0] & 0x08 ? 1 : 0;
+    *_R = _signal[0] & 0x08 ? 1 : 0;
 
     // unpack message length
     unsigned int length = 0;
@@ -126,7 +156,7 @@ void wlan_signal_unpack(unsigned char * _signal,
     
     length |= (_signal[2] & 0x80) ? 0x800 : 0;
 
-    _q->length = length;
+    *_length = length;
 }
 
 // encode SIGNAL field using half-rate convolutional code
