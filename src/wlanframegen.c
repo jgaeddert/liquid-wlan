@@ -33,6 +33,11 @@
 #define DEBUG_WLANFRAMEGEN            1
 
 struct wlanframegen_s {
+    // options
+    unsigned int rate;      // primitive data rate
+    unsigned int length;    // original data length (bytes)
+    unsigned int seed;      // data scrambler seed
+
     // scaling factors
     float g_data;
 
@@ -48,6 +53,10 @@ struct wlanframegen_s {
     // PLCP long
     float complex * S1;     // long sequence (frequency)
     float complex * s1;     // long sequence (time)
+
+    // data arrays
+    unsigned int enc_msg_len;   // length of encoded message (bytes)
+    unsigned char * msg_enc;    // encoded message
 };
 
 // create WLAN framing generator object
@@ -59,6 +68,10 @@ wlanframegen wlanframegen_create()
     q->X = (float complex*) malloc(64*sizeof(float complex));
     q->x = (float complex*) malloc(64*sizeof(float complex));
     q->ifft = FFT_CREATE_PLAN(64, q->X, q->x, FFT_DIR_BACKWARD, FFT_METHOD);
+
+    // allocate memory for encoded message
+    q->enc_msg_len = 144;
+    q->msg_enc = (unsigned char*) malloc(q->enc_msg_len*sizeof(unsigned char));
 
     // compute scaling factor
     q->g_data = 1.0f / sqrtf(52.0f);
@@ -73,6 +86,9 @@ void wlanframegen_destroy(wlanframegen _q)
     free(_q->X);
     free(_q->x);
     FFT_DESTROY_PLAN(_q->ifft);
+
+    // free memory for encoded message
+    free(_q->msg_enc);
 
     // free main object memory
     free(_q);
@@ -97,6 +113,31 @@ void wlanframegen_assemble(wlanframegen           _q,
                            unsigned char *        _payload,
                            struct wlan_txvector_s _txvector)
 {
+    // validate input
+    if (_txvector.DATARATE > 7) {
+        fprintf(stderr,"error: wlanframegen_assemble(), invalid rate\n");
+        exit(1);
+    } else if (_txvector.LENGTH == 0 || _txvector.LENGTH > 4095) { 
+        fprintf(stderr,"error: wlanframegen_assemble(), invalid data length\n");
+        exit(1);
+    }
+
+    // set internal properties
+    _q->rate   = _txvector.DATARATE;
+    _q->length = _txvector.LENGTH;
+    _q->seed   = 0x5d;  //(_txvector.SERVICE >> 9) & 0x7f;
+    // TODO : strip off TXPWR_LEVEL
+
+    // re-compute encoded message length
+    _q->enc_msg_len = wlan_packet_compute_enc_msg_len(_q->rate, _q->length);
+
+    // re-allocate buffer for encoded message
+    _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
+
+    // encode message
+    wlan_packet_encode(_q->rate, _q->seed, _q->length, _payload, _q->msg_enc);
+
+    // TODO : reset counters...
 }
 
 
