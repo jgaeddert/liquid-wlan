@@ -107,62 +107,82 @@ struct wlan_rxvector_s {
 // 802.11a/g frame generator
 //
 
+// forward declaration of WLAN frame generator
 typedef struct wlanframegen_s * wlanframegen;
 
-// create OFDM framing generator object
+// create WLAN framing generator object
 wlanframegen wlanframegen_create();
 
+// destroy WLAN framing generator object
 void wlanframegen_destroy(wlanframegen _q);
 
+// print WLAN framing generator object internals
 void wlanframegen_print(wlanframegen _q);
 
+// reset WLAN framing generator object internal state
 void wlanframegen_reset(wlanframegen _q);
 
 // assemble frame (see Table 76)
 //  _q          :   framing object
 //  _payload    :   raw payload data [size: _opts.LENGTH x 1]
-//  _opts       :   framing options
-void wlanframegen_assemble(wlanframegen _q,
-                           unsigned char * _payload,
-                           struct wlan_txvector_s _opts);
+//  _txvector   :   framing options
+void wlanframegen_assemble(wlanframegen           _q,
+                           unsigned char *        _payload,
+                           struct wlan_txvector_s _txvector);
 
 // write OFDM symbol, returning '1' when frame is complete
+//  _q          :   framing generator object
+//  _buffer     :   output sample buffer [size: 80 x 1]
 int wlanframegen_writesymbol(wlanframegen           _q,
-                             liquid_float_complex * _buffer,
-                             unsigned int         * _num_written);
-
-void wlanframegen_write_S0(wlanframegen _q,
-                           liquid_float_complex *_y);
-
-void wlanframegen_write_S1(wlanframegen _q,
-                           liquid_float_complex *_y);
-
+                             liquid_float_complex * _buffer);
 
 
 // 
 // 802.11a/g frame synchronizer
 //
 
+// forward declaration of WLAN framing synchronizer
 typedef struct wlanframesync_s * wlanframesync;
 
-typedef int (*wlanframesync_callback)(liquid_float_complex * _y,
-                                      void * _userdata);
+// callback function
+//  _payload    :   received payload
+//  _rxvector   :   received vector (see Table 77)
+//  _userdata   :   user-defined data object
+typedef int (*wlanframesync_callback)(unsigned char *        _payload,
+                                      struct wlan_rxvector_s _rxvector,
+                                      void *                 _userdata);
 
+// create WLAN framing synchronizer object
+//  _callback   :   user-defined callback function
+//  _userdata   :   user-defined data structure
 wlanframesync wlanframesync_create(wlanframesync_callback _callback,
-                                   void * _userdata);
+                                   void *                 _userdata);
 
+// destroy WLAN framing synchronizer object
 void wlanframesync_destroy(wlanframesync _q);
-void wlanframesync_debug_print(wlanframesync _q, const char * _filename);
+
+// print WLAN framing synchronizer object internals
 void wlanframesync_print(wlanframesync _q);
+
+// reset WLAN framing synchronizer object internal state
 void wlanframesync_reset(wlanframesync _q);
-void wlanframesync_execute(wlanframesync _q,
-                           liquid_float_complex * _x,
-                           unsigned int _n);
+
+// execute framing synchronizer on input buffer
+//  _q      :   framing synchronizer object
+//  _buffer :   input buffer [size: _n x 1]
+//  _n      :   input buffer size
+void wlanframesync_execute(wlanframesync          _q,
+                           liquid_float_complex * _buffer,
+                           unsigned int           _n);
 
 // query methods
 float wlanframesync_get_rssi(wlanframesync _q); // received signal strength indication
 float wlanframesync_get_cfo(wlanframesync _q);  // carrier offset estimate
 
+// 
+// internal/debugging methods
+//
+void wlanframesync_debug_print(wlanframesync _q, const char * _filename);
 
 
 #ifdef __cplusplus

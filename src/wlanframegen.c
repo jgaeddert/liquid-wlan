@@ -50,6 +50,7 @@ struct wlanframegen_s {
     float complex * s1;     // long sequence (time)
 };
 
+// create WLAN framing generator object
 wlanframegen wlanframegen_create()
 {
     wlanframegen q = (wlanframegen) malloc(sizeof(struct wlanframegen_s));
@@ -65,6 +66,7 @@ wlanframegen wlanframegen_create()
     return q;
 }
 
+// destroy WLAN framing generator object
 void wlanframegen_destroy(wlanframegen _q)
 {
     // free transform array memory
@@ -76,44 +78,33 @@ void wlanframegen_destroy(wlanframegen _q)
     free(_q);
 }
 
+// print WLAN framing generator object internals
 void wlanframegen_print(wlanframegen _q)
 {
     printf("wlanframegen:\n");
 }
 
+// reset WLAN framing generator object internal state
 void wlanframegen_reset(wlanframegen _q)
 {
-}
-
-void wlanframegen_write_S0(wlanframegen _q,
-                           float complex * _y)
-{
-    //memmove(_y, _q->s0, (_q->M)*sizeof(float complex));
-}
-
-
-void wlanframegen_write_S1(wlanframegen _q,
-                           float complex * _y)
-{
-    //memmove(_y, _q->s1, (_q->M)*sizeof(float complex));
 }
 
 // assemble frame (see Table 76)
 //  _q          :   framing object
 //  _payload    :   raw payload data [size: _opts.LENGTH x 1]
-//  _opts       :   framing options
-void wlanframegen_assemble(wlanframegen _q,
-                           unsigned char * _payload,
-                           struct wlan_txvector_s _opts);
+//  _txvector   :   framing options
+void wlanframegen_assemble(wlanframegen           _q,
+                           unsigned char *        _payload,
+                           struct wlan_txvector_s _txvector)
+{
+}
 
 
-// write OFDM symbol to buffer, returning '1' when frame is complete
-//  _q              :   framing generator object
-//  _buffer         :   output buffer, [size: 80 x 1]
-//  _num_written    :   number of samples written to buffer
+// write OFDM symbol, returning '1' when frame is complete
+//  _q          :   framing generator object
+//  _buffer     :   output sample buffer [size: 80 x 1]
 int wlanframegen_writesymbol(wlanframegen    _q,
-                             float complex * _buffer,
-                             unsigned int  * _num_written)
+                             float complex * _buffer)
 {
 #if 0
     // move frequency data to internal buffer

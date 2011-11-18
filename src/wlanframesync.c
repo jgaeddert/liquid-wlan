@@ -55,8 +55,11 @@ struct wlanframesync_s {
 #endif
 };
 
+// create WLAN framing synchronizer object
+//  _callback   :   user-defined callback function
+//  _userdata   :   user-defined data structure
 wlanframesync wlanframesync_create(wlanframesync_callback _callback,
-                                   void * _userdata)
+                                   void *                 _userdata)
 {
     // allocate main object memory
     wlanframesync q = (wlanframesync) malloc(sizeof(struct wlanframesync_s));
@@ -100,6 +103,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     return q;
 }
 
+// destroy WLAN framing synchronizer object
 void wlanframesync_destroy(wlanframesync _q)
 {
 #if DEBUG_WLANFRAMESYNC
@@ -121,18 +125,24 @@ void wlanframesync_destroy(wlanframesync _q)
     free(_q);
 }
 
+// print WLAN framing synchronizer object internals
 void wlanframesync_print(wlanframesync _q)
 {
     printf("wlanframesync:\n");
 }
 
+// reset WLAN framing synchronizer object internal state
 void wlanframesync_reset(wlanframesync _q)
 {
 }
 
-void wlanframesync_execute(wlanframesync _q,
-                           float complex * _x,
-                           unsigned int _n)
+// execute framing synchronizer on input buffer
+//  _q      :   framing synchronizer object
+//  _buffer :   input buffer [size: _n x 1]
+//  _n      :   input buffer size
+void wlanframesync_execute(wlanframesync          _q,
+                           liquid_float_complex * _buffer,
+                           unsigned int           _n)
 {
 }
 
