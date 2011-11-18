@@ -12,7 +12,7 @@ implementation of the 802.11 a/g physical layer specification.
 =========================================================================
 
 Library Dependencies:
-  * liquid-dsp (https://github.com/jgaeddert/liquid-dsp)
+  * liquid-dsp (http://github.com/jgaeddert/liquid-dsp) revision 231a3088d3
   * libfec     (http://www.ka9q.net/code/fec/)
   * fftw3      (www.fftw.org/)
   * libc/libm  (standard C and math libraries)
