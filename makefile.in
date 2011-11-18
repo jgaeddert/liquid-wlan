@@ -81,6 +81,7 @@ objects :=							\
 	src/wlan_interleaver.o					\
 	src/wlan_fec.o						\
 	src/wlan_data_scrambler.o				\
+	src/wlan_packet.o					\
 	src/wlan_signal.o					\
 	src/wlanframe.common.o					\
 	src/wlanframegen.o					\

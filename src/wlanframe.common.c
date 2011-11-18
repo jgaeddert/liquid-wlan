@@ -24,7 +24,7 @@
 
 #include "liquid-wlan.internal.h"
 
-const struct wlanframe_param_s wlanframe_param_ratetab[8] = {
+const struct wlanframe_param_s wlanframe_ratetab[8] = {
     // rate [MBits/s] modulation scheme  fec scheme            nbpsc ncbps ndbps
     {   6,            LIQUID_MODEM_BPSK, LIQUID_WLAN_FEC_R1_2, 1,     48,   24},
     {   9,            LIQUID_MODEM_BPSK, LIQUID_WLAN_FEC_R3_4, 1,     48,   36},
