@@ -80,7 +80,7 @@ extern const struct wlanframe_param_s wlanframe_ratetab[8];
 //    WLANFRAME_RATE_36 = 11 : 1011
 //    WLANFRAME_RATE_48 =  1 : 0001
 //    WLANFRAME_RATE_54 =  3 : 0011
-extern const unsigned char wlan_signal_R1_R4[8];
+extern const unsigned char wlan_signal_R1R4tab[8];
 
 // pack SIGNAL structure into 3-byte array
 //  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)

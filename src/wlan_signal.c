@@ -36,7 +36,7 @@
 //    WLANFRAME_RATE_36 = 11 : 1011
 //    WLANFRAME_RATE_48 =  1 : 0001
 //    WLANFRAME_RATE_54 =  3 : 0011
-const unsigned char wlan_signal_R1_R4[8] = {
+const unsigned char wlan_signal_R1R4tab[8] = {
     13, 15, 5, 7, 9, 11, 1, 3};
 
 // pack SIGNAL structure into 3-byte array
@@ -67,7 +67,7 @@ void wlan_signal_pack(unsigned int    _rate,
     _signal[2] = 0x00;
 
     // pack 'rate'
-    _signal[0] |= ( wlan_signal_R1_R4[_rate] << 4) & 0xf0;
+    _signal[0] |= ( wlan_signal_R1R4tab[_rate] << 4) & 0xf0;
 
     // pack 'reserved' bit
     _signal[0] |= _R ? 0x08 : 0;
