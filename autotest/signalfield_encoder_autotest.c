@@ -35,6 +35,9 @@
 #include <liquid/liquid.h>
 #include "liquid-wlan.internal.h"
 
+#include "annex-g-data/G7.c"
+#include "annex-g-data/G8.c"
+
 int main(int argc, char*argv[])
 {
     // original data message
@@ -47,7 +50,7 @@ int main(int argc, char*argv[])
     //  6   0   -               14  0   -               22  0   SIGNAL TAIL
     //  7   1   -               15  0   -               23  0   SIGNAL TAIL
     //      1011 0001               0011 0000               0000 0000
-    unsigned char msg_org[3] = {0xb1, 0x30, 0x00};
+    unsigned char * msg_org = annexg_G7;
     unsigned char msg_enc[6];   // encoded message
     unsigned char msg_rec[6];   // received message
     unsigned char msg_dec[3];   // decoded message
@@ -59,7 +62,7 @@ int main(int argc, char*argv[])
     // 0011 1110
     // 0111 0000
     // 0000 0000
-    unsigned char msg_test[6] = {0xd1, 0xa1, 0x02, 0x3e, 0x70, 0x00};
+    unsigned char * msg_test = annexg_G8;
 
     unsigned int i;
 

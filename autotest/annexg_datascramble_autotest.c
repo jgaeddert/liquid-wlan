@@ -35,6 +35,10 @@
 #include <liquid/liquid.h>
 #include "liquid-wlan.internal.h"
 
+// data structures from Annex G
+#include "annex-g-data/G13.c"
+#include "annex-g-data/G16.c"
+
 int main(int argc, char*argv[])
 {
     //
@@ -42,18 +46,10 @@ int main(int argc, char*argv[])
     unsigned int seed = 0x5d;   // 1011101
 
     // first 144 data bits (Table G.13)
-    unsigned char msg_org[18] = {    
-        0x00, 0x00, 0x20, 0x40, 0x00,
-        0x74, 0x00, 0x06, 0x10, 0xb3,
-        0xec, 0x65, 0x00, 0x04, 0x6b,
-        0x80, 0x3c, 0x8f};
+    unsigned char * msg_org = annexg_G13;
 
     // first 144 data bits, scrambled (Table G.16)
-    unsigned char msg_scrambled_test[18] = {    
-        0x6c, 0x19, 0x89, 0x8f, 0x68,
-        0x21, 0xf4, 0xa5, 0x61, 0x4f,
-        0xd7, 0xae, 0x24, 0x0c, 0xf3,
-        0x3a, 0xe4, 0xbc};
+    unsigned char * msg_scrambled_test = annexg_G16;
 
     // arrays
     unsigned char msg_scrambled[18];

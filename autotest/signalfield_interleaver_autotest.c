@@ -34,13 +34,16 @@
 
 #include "liquid-wlan.internal.h"
 
+#include "annex-g-data/G8.c"
+#include "annex-g-data/G9.c"
+
 int main(int argc, char*argv[])
 {
     // input messages
-    unsigned char msg_org[6] = {0xd1, 0xa1, 0x02, 0x3e, 0x70, 0x00};
+    unsigned char * msg_org = annexg_G8;
 
     // interleaved messages (tests)
-    unsigned char msg_test[6] = {0x94, 0xd0, 0x14, 0x83, 0x24, 0x94};
+    unsigned char * msg_test = annexg_G9;
 
     // options...
     unsigned int ncbps = 48;    // number of coded bits per OFDM symbol

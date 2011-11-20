@@ -34,25 +34,16 @@
 
 #include "liquid-wlan.internal.h"
 
+#include "annex-g-data/G18.c"
+#include "annex-g-data/G21.c"
+
 int main(int argc, char*argv[])
 {
-    // input messages
-    unsigned char msg_org[24] = {
-        0x2b, 0x08, 0xa1, 0xf0,
-        0x9d, 0xb5, 0x9a, 0x1d,
-        0x4a, 0xfb, 0xe8, 0xc2,
-        0x8f, 0xc0, 0xc8, 0x73,
-        0xc0, 0x43, 0xe0, 0x19,
-        0xe0, 0xd3, 0xeb, 0xb2};
+    // Table G.18: coded bits of first DATA symbol
+    unsigned char * msg_org = annexg_G18;
 
-    // interleaved message (test)
-    unsigned char msg_test[24] = {
-        0x77, 0xf0, 0xef, 0xc4,
-        0x73, 0x00, 0xbf, 0x11,
-        0x10, 0x9a, 0x1d, 0x12,
-        0x6e, 0x38, 0xf5, 0x69,
-        0x1b, 0x6b, 0x98, 0x43,
-        0x00, 0x0d, 0xb3, 0x6d};
+    // Table G.21: interleaved bits of first DATA symbol
+    unsigned char * msg_test = annexg_G21;
 
     // options...
     unsigned int ncbps = 192;   // number of coded bits per OFDM symbol

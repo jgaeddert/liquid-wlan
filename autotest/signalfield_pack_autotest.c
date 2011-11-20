@@ -35,6 +35,8 @@
 #include <liquid/liquid.h>
 #include "liquid-wlan.internal.h"
 
+#include "annex-g-data/G7.c"
+
 int main(int argc, char*argv[])
 {
     // initialize SIGNAL structure
@@ -52,7 +54,7 @@ int main(int argc, char*argv[])
     //  6   0   -               14  0   -               22  0   SIGNAL TAIL
     //  7   1   -               15  0   -               23  0   SIGNAL TAIL
     //      1011 0001 (0xb1)        0011 0000 (0x30)        0000 0000 (0x00)
-    unsigned char signal_packed_test[3] = {0xb1, 0x30, 0x00};
+    unsigned char * signal_packed_test = annexg_G7;
     unsigned char signal_packed[3];
 
     unsigned int i;
