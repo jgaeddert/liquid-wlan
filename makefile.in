@@ -183,6 +183,26 @@ clean-autoscript :
 ## TARGET : check     - build and run autotest scripts
 ##
 
+annexg_data_src :=		\
+	annex-g-data/G1.c	\
+	annex-g-data/G2.c	\
+	annex-g-data/G3.c	\
+	annex-g-data/G4.c	\
+	annex-g-data/G5.c	\
+	annex-g-data/G6.c	\
+	annex-g-data/G8.c	\
+	annex-g-data/G9.c	\
+	annex-g-data/G11.c	\
+	annex-g-data/G12.c	\
+	annex-g-data/G13.c	\
+	annex-g-data/G14.c	\
+	annex-g-data/G16.c	\
+	annex-g-data/G17.c	\
+	annex-g-data/G18.c	\
+	annex-g-data/G21.c	\
+	annex-g-data/G22.c	\
+	annex-g-data/G24.c	\
+
 autotest_programs :=						\
 	autotest/annexg_datascramble_autotest			\
 	autotest/datascrambler_autotest				\
@@ -196,7 +216,7 @@ autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 AUTOTEST_LDFLAGS = $(LDFLAGS)
 
 # NOTE: linked libraries must come _after_ the target program
-$(autotest_objects): %.o : %.c
+$(autotest_objects): %.o : %.c $(autotest_data_src)
 
 $(autotest_programs): % : %.o libliquid-wlan.a
 
