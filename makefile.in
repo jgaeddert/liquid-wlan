@@ -190,6 +190,7 @@ annexg_data_src :=		\
 	annex-g-data/G4.c	\
 	annex-g-data/G5.c	\
 	annex-g-data/G6.c	\
+	annex-g-data/G7.c	\
 	annex-g-data/G8.c	\
 	annex-g-data/G9.c	\
 	annex-g-data/G11.c	\
