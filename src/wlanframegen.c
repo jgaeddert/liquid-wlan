@@ -65,7 +65,9 @@ struct wlanframegen_s {
     unsigned int npad;              // number of pad bits
 
     // data arrays
-    unsigned char * msg_enc;    // encoded message
+    unsigned char   signal_dec[3];  // decoded message (SIGNAL field)
+    unsigned char   signal_enc[6];  // enccoded message (SIGNAL field)
+    unsigned char * msg_enc;        // encoded message (DATA field)
     
     // counters/states
     enum {
@@ -128,8 +130,19 @@ void wlanframegen_print(wlanframegen _q)
 {
     printf("wlanframegen:\n");
     if (_q->frame_assembled) {
-        printf("    rate    :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
-        printf("    payload :   %3u bytes\n", _q->length);
+        printf("    rate        :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
+        printf("    payload     :   %3u bytes\n", _q->length);
+        printf("    signal dec  :   [%.2x %.2x %.2x]\n",
+                _q->signal_dec[0],
+                _q->signal_dec[1],
+                _q->signal_dec[2]);
+        printf("    signal enc  :   [%.2x %.2x %.2x %.2x %.2x %.2x]\n",
+                _q->signal_enc[0],
+                _q->signal_enc[1],
+                _q->signal_enc[2],
+                _q->signal_enc[3],
+                _q->signal_enc[4],
+                _q->signal_enc[5]);
     }
 }
 
@@ -165,6 +178,13 @@ void wlanframegen_assemble(wlanframegen           _q,
     _q->seed   = 0x5d;  //(_txvector.SERVICE >> 9) & 0x7f;
     // TODO : strip off TXPWR_LEVEL
 
+    // pack SIGNAL field
+    unsigned int R = 0; // 'reserved' bit
+    wlan_signal_pack(_q->rate, R, _q->length, _q->signal_dec);
+
+    // encode SIGNAL field
+    wlan_fec_signal_encode(_q->signal_dec, _q->signal_enc);
+
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
     _q->ncbps  = wlanframe_ratetab[_q->rate].ncbps; // number of coded bits per OFDM symbol
@@ -196,7 +216,7 @@ void wlanframegen_assemble(wlanframegen           _q,
     // encode message
     wlan_packet_encode(_q->rate, _q->seed, _q->length, _payload, _q->msg_enc);
 
-    // TODO : reset counters...
+    // flag frame as being assembled
     _q->frame_assembled = 1;
 }
 
