@@ -80,7 +80,8 @@ struct wlanframegen_s {
         WLANFRAMEGEN_STATE_S1A,     // write first block of 'long' symbols
         WLANFRAMEGEN_STATE_S1B,     // write second block of 'long' symbols
         WLANFRAMEGEN_STATE_SIGNAL,  // write SIGNAL symbol
-        WLANFRAMEGEN_STATE_PAYLOAD  // write payload symbols
+        WLANFRAMEGEN_STATE_DATA,    // write payload symbols
+        WLANFRAMEGEN_STATE_NULL,    // write null (effectively ramp-down) symbol
     } state;
     int frame_assembled;            // frame assembled flag
     unsigned int data_symbol_counter;
@@ -334,19 +335,24 @@ int wlanframegen_writesymbol(wlanframegen    _q,
         printf("wlanframegen_writesymbol(), generating SIGNAL symbol\n");
 #endif
         wlanframegen_writesymbol_signal(_q, _buffer);
-        _q->state = WLANFRAMEGEN_STATE_PAYLOAD;
+        _q->state = WLANFRAMEGEN_STATE_DATA;
         return 0;
-    case WLANFRAMEGEN_STATE_PAYLOAD:
+    case WLANFRAMEGEN_STATE_DATA:
 #if DEBUG_WLANFRAMEGEN
         printf("wlanframegen_writesymbol(), generating data symbol [%3u]\n", _q->data_symbol_counter);
 #endif
         wlanframegen_writesymbol_data(_q, _buffer);
         _q->data_symbol_counter++;
 
-        if (_q->data_symbol_counter < _q->nsym)
-            return 0;
-        else
-            break;
+        if (_q->data_symbol_counter == _q->nsym)
+            _q->state = WLANFRAMEGEN_STATE_NULL;
+        return 0;
+    case WLANFRAMEGEN_STATE_NULL:
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating null symbol\n");
+#endif
+        wlanframegen_writesymbol_null(_q, _buffer);
+        return 1;
     default:
         // should never get to this point
         fprintf(stderr,"error: wlanframegen_writesymbol(), invalid state\n");
