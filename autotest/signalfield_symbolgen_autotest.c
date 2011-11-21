@@ -19,7 +19,7 @@
  */
 
 //
-// signalfield_symbolgen_test.c
+// signalfield_symbolgen_autotest.c
 //
 // Test SIGNAL field modulation; data obtained from
 // Annex G in 1999 specification (Tables G.9-G.12)
@@ -41,8 +41,15 @@
 #include <liquid/liquid.h>
 #include "liquid-wlan.internal.h"
 
+#include "annex-g-data/G9.c"    // data after encoding
+#include "annex-g-data/G11.c"   // freq-domain SIGNAL field symbol (with pilots)
+#include "annex-g-data/G12.c"   // time-domain SIGNAL field symbol
+
 int main(int argc, char*argv[])
 {
+    // error tolerance (needs to be high due to low precision of table data)
+    float tol = 2e-3f;
+
     // after encoding, interleaving (Table G.9)
     // 1001 0100
     // 1101 0000
@@ -50,7 +57,7 @@ int main(int argc, char*argv[])
     // 1000 0011
     // 0010 0100
     // 1001 0100
-    unsigned char msg_signal[6] = {0x94, 0xd0, 0x14, 0x83, 0x24, 0x94};
+    unsigned char * msg_signal = annexg_G9;
 
     unsigned int i;
 
@@ -105,7 +112,23 @@ int main(int argc, char*argv[])
     for (i=0; i<64; i++) {
         int j = (int)i - 32;
         unsigned int k = (i+32)%64;
-        printf("  X[%3d] = %8.4f + j*%8.4f\n", j, crealf(X[k]), cimagf(X[k]));
+
+        // compute error
+        float e = cabsf( X[k] - annexg_G11[k] );
+
+        // print results
+        printf("  X[%3d] = %8.4f + j*%8.4f, (%8.4f + j*%8.4f), e = %12.4e\n",
+                j,
+                crealf(X[k]), cimagf(X[k]),
+                crealf(annexg_G11[k]), cimagf(annexg_G11[k]),
+                e);
+
+        // check tolerance
+        if (e > tol) {
+            fprintf(stderr,"fail: %s, failure\n", __FILE__);
+            exit(1);
+        }
+
     }
 
     // compute inverse transform
@@ -134,8 +157,23 @@ int main(int argc, char*argv[])
         symbol[i] /= 64.0f;
 
     printf("time-domain SIGNAL symbol (verify with Table G.12):\n");
-    for (i=0; i<81; i++)
-        printf("  s[%3d] = %8.4f + j*%8.4f\n", i, crealf(symbol[i]), cimagf(symbol[i]));
+    for (i=0; i<81; i++) {
+        // compute error
+        float e = cabsf( symbol[i] - annexg_G12[i] );
+
+        // print results
+        printf("  s[%3d] = %8.4f + j*%8.4f, (%8.4f + j*%8.4f), e = %12.4e\n",
+                i,
+                crealf(symbol[i]), cimagf(symbol[i]),
+                crealf(annexg_G12[i]), cimagf(annexg_G12[i]),
+                e);
+
+        // check tolerance
+        if (e > tol) {
+            fprintf(stderr,"fail: %s, failure\n", __FILE__);
+            exit(1);
+        }
+    }
 
     printf("done.\n");
     return 0;
