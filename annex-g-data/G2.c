@@ -22,7 +22,7 @@
 // NOTE : data are fft-shifted from table listing. Here the data are listed
 //        as the IFFT input such that the first element corresponds to the
 //        DC subcarrier.
-float complex annexg_G22[64] = {
+float complex annexg_G2[64] = {
       0.0000 +  0.0000*_Complex_I,
       0.0000 +  0.0000*_Complex_I,
       0.0000 +  0.0000*_Complex_I,
