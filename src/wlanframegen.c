@@ -426,17 +426,45 @@ void wlanframegen_writesymbol_S0b(wlanframegen _q,
 }
 
 // write first PLCP long sequence 'symbol' to buffer
+//
+//  0         32        64        96       128       160
+//  +----+----+----+----+----+----+----+----+----+----+
+//  |/////////|       s1[0]       |       s1[1]       | ...
+//  +----+----+----+----+----+----+----+----+----+----+-----> time
+//       |<-  first input  ->|    |<-  second input ->|
+//
 void wlanframegen_writesymbol_S1a(wlanframegen _q,
                                   float complex * _buffer)
 {
-    wlanframegen_writesymbol_null(_q, _buffer);
+    // NOTE : the 'long' sequence is like a 128-sample symbol with
+    //        a 32-sample cyclic prefix; need to split appropriately
+    //        (see diagram above)
+    memmove(&_q->x[ 0], &wlanframe_s1[48], 16*sizeof(float complex));
+    memmove(&_q->x[16], &wlanframe_s1[ 0], 48*sizeof(float complex));
+    
+    // generate first 'long sequence' symbol
+    wlanframegen_gensymbol(_q->x,
+                           _q->postfix,
+                           _q->rampup,
+                           _q->rampup_len,
+                           _buffer);
 }
 
 // write second PLCP long sequence 'symbol' to buffer
 void wlanframegen_writesymbol_S1b(wlanframegen _q,
                                   float complex * _buffer)
 {
-    wlanframegen_writesymbol_null(_q, _buffer);
+    // NOTE : the 'long' sequence is like a 128-sample symbol with
+    //        a 32-sample cyclic prefix; need to split appropriately
+    //        (see diagram above)
+    memmove(_q->x, wlanframe_s1, 64*sizeof(float complex));
+    
+    // generate first 'long sequence' symbol
+    wlanframegen_gensymbol(_q->x,
+                           _q->postfix,
+                           _q->rampup,
+                           _q->rampup_len,
+                           _buffer);
 }
 
 // write SIGNAL symbol

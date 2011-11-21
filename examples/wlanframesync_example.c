@@ -94,6 +94,12 @@ int main(int argc, char*argv[])
             fprintf(fid,"x(%4u) = %12.4e + j*%12.4e;\n", n++, crealf(buffer[i]), cimagf(buffer[i]));
     }
 
+    // plot results
+    fprintf(fid,"\n");
+    fprintf(fid,"figure;\n");
+    fprintf(fid,"t = 0:(length(x)-1);\n");
+    fprintf(fid,"plot(t,real(x), t,imag(x));\n");
+
     fclose(fid);
     printf("results written to '%s'\n", OUTPUT_FILENAME);
 
