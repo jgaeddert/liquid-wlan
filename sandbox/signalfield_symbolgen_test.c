@@ -95,11 +95,11 @@ int main(int argc, char*argv[])
     }
 
     // add pilot subcarriers
-    unsigned int pilot_phase = 1;
-    X[43] = pilot_phase ?  1.0f : -1.0f;
-    X[57] = pilot_phase ?  1.0f : -1.0f;
-    X[ 7] = pilot_phase ?  1.0f : -1.0f;
-    X[21] = pilot_phase ? -1.0f :  1.0f;
+    unsigned int pilot_phase = 0;
+    X[43] = pilot_phase ? -1.0f :  1.0f;
+    X[57] = pilot_phase ? -1.0f :  1.0f;
+    X[ 7] = pilot_phase ? -1.0f :  1.0f;
+    X[21] = pilot_phase ?  1.0f : -1.0f;
     
     printf("frequency-domain SIGNAL symbol with pilots (verify with Table G.11):\n");
     for (i=0; i<64; i++) {
