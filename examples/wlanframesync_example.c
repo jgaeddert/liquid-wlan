@@ -56,14 +56,14 @@ int main(int argc, char*argv[])
 
     // create frame generator
     wlanframegen fg = wlanframegen_create();
-    wlanframegen_print(fg);
 
     // create frame synchronizer
     wlanframesync fs = wlanframesync_create(callback, NULL);
-    wlanframesync_print(fs);
+    //wlanframesync_print(fs);
 
-    // assemble frame
+    // assemble frame and print
     wlanframegen_assemble(fg, msg_org, txvector);
+    wlanframegen_print(fg);
 
     // generate/synchronize frame
     int last_frame = 0;

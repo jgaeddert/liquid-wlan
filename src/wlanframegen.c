@@ -127,6 +127,10 @@ void wlanframegen_destroy(wlanframegen _q)
 void wlanframegen_print(wlanframegen _q)
 {
     printf("wlanframegen:\n");
+    if (_q->frame_assembled) {
+        printf("    rate    :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
+        printf("    payload :   %3u bytes\n", _q->length);
+    }
 }
 
 // reset WLAN framing generator object internal state
@@ -204,7 +208,7 @@ int wlanframegen_writesymbol(wlanframegen    _q,
                              float complex * _buffer)
 {
     // validate input
-    if (_q->frame_assembled == 0) {
+    if (!_q->frame_assembled) {
         fprintf(stderr,"error: wlanframegen_writesymbol(), frame not assembled\n");
         exit(1);
     }
