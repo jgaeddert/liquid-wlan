@@ -65,7 +65,8 @@ struct wlanframegen_s {
 
     // data arrays
     unsigned char   signal_dec[3];  // decoded message (SIGNAL field)
-    unsigned char   signal_enc[6];  // enccoded message (SIGNAL field)
+    unsigned char   signal_enc[6];  // encoded message (SIGNAL field)
+    unsigned char   signal_int[6];  // interleaved message (SIGNAL field)
     unsigned char * msg_enc;        // encoded message (DATA field)
     
     // counters/states
@@ -175,6 +176,13 @@ void wlanframegen_print(wlanframegen _q)
                 _q->signal_enc[3],
                 _q->signal_enc[4],
                 _q->signal_enc[5]);
+        printf("    signal int  :   [%.2x %.2x %.2x %.2x %.2x %.2x]\n",
+                _q->signal_int[0],
+                _q->signal_int[1],
+                _q->signal_int[2],
+                _q->signal_int[3],
+                _q->signal_int[4],
+                _q->signal_int[5]);
     }
 }
 
@@ -224,6 +232,9 @@ void wlanframegen_assemble(wlanframegen           _q,
 
     // encode SIGNAL field
     wlan_fec_signal_encode(_q->signal_dec, _q->signal_enc);
+
+    // interleave SIGNAL field
+    wlan_interleaver_encode_symbol(48, 1, _q->signal_enc, _q->signal_int);
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
@@ -386,6 +397,7 @@ void wlanframegen_compute_symbol(wlanframegen _q)
     _q->X[21] = pilot_phase ?  1.0f : -1.0f;
 
     // force NULL subcarriers to zero
+    // TODO : move this into reset() method and never re-compute it
     _q->X[ 0] = 0.0f;
     _q->X[27] = 0.0f;
     _q->X[28] = 0.0f;
@@ -513,7 +525,79 @@ void wlanframegen_writesymbol_S1b(wlanframegen _q,
 void wlanframegen_writesymbol_signal(wlanframegen _q,
                                      float complex * _buffer)
 {
-    wlanframegen_writesymbol_null(_q, _buffer);
+    // load 48 SIGNAL BPSK symbols onto appropriate subcarriers
+    _q->X[38] = ((_q->signal_int[0] >> 7) & 0x01) ? 1.0f : -1.0f;
+    _q->X[39] = ((_q->signal_int[0] >> 6) & 0x01) ? 1.0f : -1.0f;
+    _q->X[40] = ((_q->signal_int[0] >> 5) & 0x01) ? 1.0f : -1.0f;
+    _q->X[41] = ((_q->signal_int[0] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[42] = ((_q->signal_int[0] >> 3) & 0x01) ? 1.0f : -1.0f;
+    //    43  : pilot
+    _q->X[44] = ((_q->signal_int[0] >> 2) & 0x01) ? 1.0f : -1.0f;
+    _q->X[45] = ((_q->signal_int[0] >> 1) & 0x01) ? 1.0f : -1.0f;
+    _q->X[46] = ((_q->signal_int[0]     ) & 0x01) ? 1.0f : -1.0f;
+    _q->X[47] = ((_q->signal_int[1] >> 7) & 0x01) ? 1.0f : -1.0f;
+    _q->X[48] = ((_q->signal_int[1] >> 6) & 0x01) ? 1.0f : -1.0f;
+    _q->X[49] = ((_q->signal_int[1] >> 5) & 0x01) ? 1.0f : -1.0f;
+    _q->X[50] = ((_q->signal_int[1] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[51] = ((_q->signal_int[1] >> 3) & 0x01) ? 1.0f : -1.0f;
+    _q->X[52] = ((_q->signal_int[1] >> 2) & 0x01) ? 1.0f : -1.0f;
+    _q->X[53] = ((_q->signal_int[1] >> 1) & 0x01) ? 1.0f : -1.0f;
+    _q->X[54] = ((_q->signal_int[1]     ) & 0x01) ? 1.0f : -1.0f;
+    _q->X[55] = ((_q->signal_int[2] >> 7) & 0x01) ? 1.0f : -1.0f;
+    _q->X[56] = ((_q->signal_int[2] >> 6) & 0x01) ? 1.0f : -1.0f;
+    //    57  : pilot
+    _q->X[58] = ((_q->signal_int[2] >> 5) & 0x01) ? 1.0f : -1.0f;
+    _q->X[58] = ((_q->signal_int[2] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[60] = ((_q->signal_int[2] >> 3) & 0x01) ? 1.0f : -1.0f;
+    _q->X[61] = ((_q->signal_int[2] >> 2) & 0x01) ? 1.0f : -1.0f;
+    _q->X[62] = ((_q->signal_int[2] >> 1) & 0x01) ? 1.0f : -1.0f;
+    _q->X[63] = ((_q->signal_int[2]     ) & 0x01) ? 1.0f : -1.0f;
+    //     0  : NULL
+    _q->X[ 1] = ((_q->signal_int[3] >> 7) & 0x01) ? 1.0f : -1.0f;
+    _q->X[ 2] = ((_q->signal_int[3] >> 6) & 0x01) ? 1.0f : -1.0f;
+    _q->X[ 3] = ((_q->signal_int[3] >> 5) & 0x01) ? 1.0f : -1.0f;
+    _q->X[ 4] = ((_q->signal_int[3] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[ 5] = ((_q->signal_int[3] >> 3) & 0x01) ? 1.0f : -1.0f;
+    _q->X[ 6] = ((_q->signal_int[3] >> 2) & 0x01) ? 1.0f : -1.0f;
+    //     7  : pilot
+    _q->X[ 8] = ((_q->signal_int[3] >> 1) & 0x01) ? 1.0f : -1.0f;
+    _q->X[ 9] = ((_q->signal_int[3]     ) & 0x01) ? 1.0f : -1.0f;
+    _q->X[10] = ((_q->signal_int[4] >> 7) & 0x01) ? 1.0f : -1.0f;
+    _q->X[11] = ((_q->signal_int[4] >> 6) & 0x01) ? 1.0f : -1.0f;
+    _q->X[12] = ((_q->signal_int[4] >> 5) & 0x01) ? 1.0f : -1.0f;
+    _q->X[13] = ((_q->signal_int[4] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[14] = ((_q->signal_int[4] >> 3) & 0x01) ? 1.0f : -1.0f;
+    _q->X[15] = ((_q->signal_int[4] >> 2) & 0x01) ? 1.0f : -1.0f;
+    _q->X[16] = ((_q->signal_int[4] >> 1) & 0x01) ? 1.0f : -1.0f;
+    _q->X[17] = ((_q->signal_int[4]     ) & 0x01) ? 1.0f : -1.0f;
+    _q->X[18] = ((_q->signal_int[5] >> 7) & 0x01) ? 1.0f : -1.0f;
+    _q->X[19] = ((_q->signal_int[5] >> 6) & 0x01) ? 1.0f : -1.0f;
+    _q->X[20] = ((_q->signal_int[5] >> 5) & 0x01) ? 1.0f : -1.0f;
+    //    21  : pilot
+    _q->X[22] = ((_q->signal_int[5] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[23] = ((_q->signal_int[5] >> 3) & 0x01) ? 1.0f : -1.0f;
+    _q->X[24] = ((_q->signal_int[5] >> 2) & 0x01) ? 1.0f : -1.0f;
+    _q->X[25] = ((_q->signal_int[5] >> 1) & 0x01) ? 1.0f : -1.0f;
+    _q->X[26] = ((_q->signal_int[5]     ) & 0x01) ? 1.0f : -1.0f;
+
+    // run transform
+    wlanframegen_compute_symbol(_q);
+
+    // validate against Table G.11
+
+    // apply gain
+    unsigned int i;
+    for (i=0; i<64; i++)
+        _q->x[i] /= sqrtf(64.0f);
+    
+    // validate against Table G.12
+
+    // generate SIGNAL symbol
+    wlanframegen_gensymbol(_q->x,
+                           _q->postfix,
+                           _q->rampup,
+                           _q->rampup_len,
+                           _buffer);
 }
 
 // write data symbol(s)
