@@ -238,3 +238,23 @@ void wlan_fec_signal_decode(unsigned char * _msg_enc,
 #endif
 }
 
+#if 0
+// interleave SIGNAL field
+//  _msg_dec    :   48-bit signal field [size: 6 x 1]
+//  _msg_enc    :   48-bit signal field [size: 6 x 1] (interleaved)
+void wlan_interleaver_encode_signal(unsigned char * _msg_dec,
+                                    unsigned char * _msg_enc)
+
+{
+    wlan_interleaver_encode_symbol(48, 1, _msg_dec, _msg_enc);
+}
+
+// de-interleave SIGNAL field
+//  _msg_enc    :   48-bit signal field [size: 6 x 1] (interleaved)
+//  _msg_dec    :   48-bit signal field [size: 6 x 1] (de-interleaved)
+void wlan_interleaver_decode_signal(unsigned char * _msg_enc,
+                                    unsigned char * _msg_dec)
+{
+    wlan_interleaver_decode_symbol(48, 1, _msg_enc, _msg_dec);
+}
+#endif
