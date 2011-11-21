@@ -33,6 +33,8 @@
 
 #include "liquid-wlan.h"
 
+#include "annex-g-data/G1.c"
+
 static int callback(unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata);
@@ -40,6 +42,17 @@ static int callback(unsigned char *        _payload,
 int main(int argc, char*argv[])
 {
     srand(time(NULL));
+
+    // options
+    unsigned char * msg_org = annexg_G1;
+    struct wlan_txvector_s txvector;
+    txvector.LENGTH      = 100;
+    txvector.DATARATE    = WLANFRAME_RATE_36;
+    txvector.SERVICE     = 0;
+    txvector.TXPWR_LEVEL = 0;
+    
+    // arrays
+    float complex buffer[80];   // data buffer
 
     // create frame generator
     wlanframegen fg = wlanframegen_create();
@@ -49,10 +62,22 @@ int main(int argc, char*argv[])
     wlanframesync fs = wlanframesync_create(callback, NULL);
     wlanframesync_print(fs);
 
+    // assemble frame
+    wlanframegen_assemble(fg, msg_org, txvector);
+
+    // generate/synchronize frame
+    int last_frame = 0;
+    while (!last_frame) {
+        // write symbol
+        last_frame = wlanframegen_writesymbol(fg, buffer);
+
+        // run through synchronize
+        wlanframesync_execute(fs, buffer, 80);
+    }
+
     // destroy objects
     wlanframegen_destroy(fg);
     wlanframesync_destroy(fs);
-
 
     printf("done.\n");
     return 0;
