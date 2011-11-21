@@ -276,6 +276,20 @@ extern const float complex wlanframe_s1[64]; // time
 //
 // wi-fi frame generator (internal methods)
 //
+
+// generate symbol
+//  _x          :   input time-domain symbol [size: 64 x 1]
+//  _x_prime    :   post-fix from previous symbol [size: _p x 1], output
+//                  post-fix from this new symbol
+//  _rampup     :   ramp up window; ramp down is time-reversed [size: _p x 1]
+//  _p          :   post-fix size
+//  _symbol     :   output symbol [size: 80 x 1]
+void wlanframegen_gensymbol(float complex * _x,
+                            float complex * _x_prime,
+                            float         * _rampup,
+                            unsigned int    _p,
+                            float complex * _symbol);
+
 void wlanframegen_writesymbol_S0a(wlanframegen _q, float complex * _buffer);
 void wlanframegen_writesymbol_S0b(wlanframegen _q, float complex * _buffer);
 void wlanframegen_writesymbol_S1a(wlanframegen _q, float complex * _buffer);
