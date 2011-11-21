@@ -46,6 +46,7 @@ struct wlanframegen_s {
     float complex * X;      // frequency-domain buffer
     float complex * x;      // time-domain buffer
 
+#if 0
     // PLCP short
     float complex * S0;     // short sequence (frequency)
     float complex * s0;     // short sequence (time)
@@ -53,6 +54,12 @@ struct wlanframegen_s {
     // PLCP long
     float complex * S1;     // long sequence (frequency)
     float complex * s1;     // long sequence (time)
+#endif
+
+    // window transition
+    unsigned int rampup_len;        // number of samples in overlapping symbols
+    float * rampup;                 // ramp up window (ramp down is time-reversed)
+    float complex * postfix;        // overlapping symbol buffer
 
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
@@ -92,6 +99,29 @@ wlanframegen wlanframegen_create()
     q->x = (float complex*) malloc(64*sizeof(float complex));
     q->ifft = FFT_CREATE_PLAN(64, q->X, q->x, FFT_DIR_BACKWARD, FFT_METHOD);
 
+    // create transition window/buffer
+    // NOTE : ramp length must be less than cyclic prefix length (default: 1)
+    // TODO : make ramp length an input parameter
+    q->rampup_len = 1;
+    q->rampup = (float*) malloc( q->rampup_len * sizeof(float) );
+    q->postfix = (float complex*) malloc( q->rampup_len * sizeof(float complex) );
+
+    // initialize ramp/up transition
+    unsigned int i;
+    for (i=0; i<q->rampup_len; i++) {
+        float t = ((float)(i) + 0.5f) / (float)(q->rampup_len);
+        float g = sinf(M_PI_2*t);
+        q->rampup[i] = g*g;
+    }
+    
+#if DEBUG_WLANFRAMEGEN
+    // validate window symmetry
+    for (i=0; i<q->rampup_len; i++) {
+        printf("    ramp/up[%2u] = %12.8f (%12.8f)\n", i, q->rampup[i],
+            q->rampup[i] + q->rampup[q->rampup_len - i - 1]);
+    }
+#endif
+
     // set initial properties
     q->rate   = WLANFRAME_RATE_6;
     q->length = 100;
@@ -117,6 +147,10 @@ void wlanframegen_destroy(wlanframegen _q)
     free(_q->X);
     free(_q->x);
     FFT_DESTROY_PLAN(_q->ifft);
+
+    // free transition window ramp array and postfix buffer
+    free(_q->rampup);
+    free(_q->postfix);
 
     // free memory for encoded message
     free(_q->msg_enc);
@@ -153,6 +187,11 @@ void wlanframegen_reset(wlanframegen _q)
     _q->frame_assembled = 0;
     _q->state = WLANFRAMEGEN_STATE_S0A;
     _q->data_symbol_counter = 0;
+
+    // clear internal postfix buffer
+    unsigned int i;
+    for (i=0; i<_q->rampup_len; i++)
+        _q->postfix[i] = 0.0f;
 }
 
 // assemble frame (see Table 76)
