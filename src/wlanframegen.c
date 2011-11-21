@@ -54,8 +54,17 @@ struct wlanframegen_s {
     float complex * S1;     // long sequence (frequency)
     float complex * s1;     // long sequence (time)
 
+    // lengths
+    unsigned int ndbps;             // number of data bits per OFDM symbol
+    unsigned int ncbps;             // number of coded bits per OFDM symbol
+    unsigned int nbpsc;             // number of bits per subcarrier (modulation depth)
+    unsigned int dec_msg_len;       // length of decoded message (bytes)
+    unsigned int enc_msg_len;       // length of encoded message (bytes)
+    unsigned int nsym;              // number of OFDM symbols in the DATA field
+    unsigned int ndata;             // number of bits in the DATA field
+    unsigned int npad;              // number of pad bits
+
     // data arrays
-    unsigned int enc_msg_len;   // length of encoded message (bytes)
     unsigned char * msg_enc;    // encoded message
     
     // counters/states
@@ -152,8 +161,30 @@ void wlanframegen_assemble(wlanframegen           _q,
     _q->seed   = 0x5d;  //(_txvector.SERVICE >> 9) & 0x7f;
     // TODO : strip off TXPWR_LEVEL
 
-    // re-compute encoded message length
-    _q->enc_msg_len = wlan_packet_compute_enc_msg_len(_q->rate, _q->length);
+    // compute frame parameters
+    _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
+    _q->ncbps  = wlanframe_ratetab[_q->rate].ncbps; // number of coded bits per OFDM symbol
+    _q->nbpsc  = wlanframe_ratetab[_q->rate].nbpsc; // number of bits per subcarrier (modulation depth)
+
+    // compute number of OFDM symbols
+    div_t d = div(16 + 8*_q->length + 6, _q->ndbps);
+    _q->nsym = d.quot + (d.rem == 0 ? 0 : 1);
+
+    // compute number of bits in the DATA field
+    _q->ndata = _q->nsym * _q->ndbps;
+
+    // compute number of pad bits
+    _q->npad = _q->ndata - (16 + 8*_q->length + 6);
+
+    // compute decoded message length (number of data bytes)
+    // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
+    _q->dec_msg_len = _q->ndata / 8;
+
+    // compute encoded message length (number of data bytes)
+    _q->enc_msg_len = (_q->dec_msg_len * _q->ncbps) / _q->ndbps;
+
+    // validate encoded message length
+    //assert(_q->enc_msg_len == wlan_packet_compute_enc_msg_len(_q->rate, _q->length));
 
     // re-allocate buffer for encoded message
     _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
@@ -222,7 +253,7 @@ int wlanframegen_writesymbol(wlanframegen    _q,
         wlanframegen_writesymbol_data(_q, _buffer);
         _q->data_symbol_counter++;
 
-        if (_q->data_symbol_counter < 10)
+        if (_q->data_symbol_counter < _q->nsym)
             return 0;
         else
             break;
