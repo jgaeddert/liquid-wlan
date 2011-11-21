@@ -42,11 +42,33 @@ struct wlanframesync_s {
     wlanframesync_callback callback;
     void * userdata;
 
+    // options
+    unsigned int rate;      // primitive data rate
+    unsigned int length;    // original data length (bytes)
+    unsigned int seed;      // data scrambler seed
+
     // transform object
     FFT_PLAN fft;           // ifft object
     float complex * X;      // frequency-domain buffer
     float complex * x;      // time-domain buffer
     windowcf input_buffer;  // input sequence buffer
+
+    // lengths
+    unsigned int ndbps;             // number of data bits per OFDM symbol
+    unsigned int ncbps;             // number of coded bits per OFDM symbol
+    unsigned int nbpsc;             // number of bits per subcarrier (modulation depth)
+    unsigned int dec_msg_len;       // length of decoded message (bytes)
+    unsigned int enc_msg_len;       // length of encoded message (bytes)
+    unsigned int nsym;              // number of OFDM symbols in the DATA field
+    unsigned int ndata;             // number of bits in the DATA field
+    unsigned int npad;              // number of pad bits
+
+    // data arrays
+    unsigned char   signal_int[6];  // interleaved message (SIGNAL field)
+    unsigned char   signal_enc[6];  // encoded message (SIGNAL field)
+    unsigned char   signal_dec[3];  // decoded message (SIGNAL field)
+    unsigned char * msg_enc;        // encoded message (DATA field)
+    unsigned char   modem_syms[48]; // modem symbols
 
 #if DEBUG_WLANFRAMESYNC
     agc_crcf agc_rx;        // automatic gain control (rssi)
@@ -76,15 +98,14 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // create input buffer the length of the transform
     q->input_buffer = windowcf_create(80);
 
-#if 0
-    // allocate memory for PLCP arrays
-    q->S0 = (float complex*) malloc(64*sizeof(float complex));
-    q->s0 = (float complex*) malloc(64*sizeof(float complex));
-    q->S1 = (float complex*) malloc(64*sizeof(float complex));
-    q->s1 = (float complex*) malloc(64*sizeof(float complex));
-    wlanframe_init_S0(q->p, q->M, q->S0, q->s0, &q->M_S0);
-    wlanframe_init_S1(q->p, q->M, q->S1, q->s1, &q->M_S1);
-#endif
+    // set initial properties
+    q->rate   = WLANFRAME_RATE_6;
+    q->length = 100;
+    q->seed   = 0x5d;
+
+    // allocate memory for encoded message
+    q->enc_msg_len = wlan_packet_compute_enc_msg_len(q->rate, q->length);
+    q->msg_enc = (unsigned char*) malloc(q->enc_msg_len*sizeof(unsigned char));
 
     // reset object
     wlanframesync_reset(q);
@@ -120,6 +141,9 @@ void wlanframesync_destroy(wlanframesync _q)
     free(_q->X);
     free(_q->x);
     FFT_DESTROY_PLAN(_q->fft);
+
+    // free memory for encoded message
+    free(_q->msg_enc);
 
     // free main object memory
     free(_q);
