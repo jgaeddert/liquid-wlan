@@ -409,11 +409,12 @@ void wlanframegen_gensymbol(float complex * _x,
 void wlanframegen_writesymbol_S0a(wlanframegen _q,
                                   float complex * _buffer)
 {
-    // copy first 64 samples of short sequence
-    memmove(_buffer, wlanframe_s1, 64*sizeof(float complex));
-
-    // copy first 16 samples of short sequence
-    memmove(&_buffer[64], wlanframe_s1, 16*sizeof(float complex));
+    // generate first 'short sequence' symbol
+    wlanframegen_gensymbol((float complex*) wlanframe_s0,
+                           _q->postfix,
+                           _q->rampup,
+                           _q->rampup_len,
+                           _buffer);
 }
 
 // write second PLCP short sequence 'symbol' to buffer
@@ -428,23 +429,47 @@ void wlanframegen_writesymbol_S0b(wlanframegen _q,
 void wlanframegen_writesymbol_S1a(wlanframegen _q,
                                   float complex * _buffer)
 {
+    wlanframegen_writesymbol_null(_q, _buffer);
 }
 
 // write second PLCP long sequence 'symbol' to buffer
 void wlanframegen_writesymbol_S1b(wlanframegen _q,
                                   float complex * _buffer)
 {
+    wlanframegen_writesymbol_null(_q, _buffer);
 }
 
 // write SIGNAL symbol
 void wlanframegen_writesymbol_signal(wlanframegen _q,
                                      float complex * _buffer)
 {
+    wlanframegen_writesymbol_null(_q, _buffer);
 }
 
 // write data symbol(s)
 void wlanframegen_writesymbol_data(wlanframegen _q,
                                    float complex * _buffer)
 {
+    wlanframegen_writesymbol_null(_q, _buffer);
+}
+
+// write null symbol(s)
+void wlanframegen_writesymbol_null(wlanframegen _q,
+                                   float complex * _buffer)
+{
+#if 0
+    memset(_q->x, 0x00, 64*sizeof(float complex));
+#else
+    unsigned int i;
+    for (i=0; i<64; i++)
+        _q->x[i] = 0.0f;
+#endif
+    
+    // generate symbol
+    wlanframegen_gensymbol(_q->x,
+                           _q->postfix,
+                           _q->rampup,
+                           _q->rampup_len,
+                           _buffer);
 }
 

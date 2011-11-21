@@ -296,6 +296,7 @@ void wlanframegen_writesymbol_S1a(wlanframegen _q, float complex * _buffer);
 void wlanframegen_writesymbol_S1b(wlanframegen _q, float complex * _buffer);
 void wlanframegen_writesymbol_signal(wlanframegen _q, float complex * _buffer);
 void wlanframegen_writesymbol_data(wlanframegen _q, float complex * _buffer);
+void wlanframegen_writesymbol_null(wlanframegen _q, float complex * _buffer);
 
 //
 // wi-fi frame synchronizer (internal methods)
