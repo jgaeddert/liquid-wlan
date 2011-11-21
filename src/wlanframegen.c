@@ -47,6 +47,9 @@ struct wlanframegen_s {
 
     // pilot sequence generator
     msequence ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
+    
+    // DATA field modulator
+    modem mod;
 
     // window transition
     unsigned int rampup_len;        // number of samples in overlapping symbols
@@ -68,6 +71,7 @@ struct wlanframegen_s {
     unsigned char   signal_enc[6];  // encoded message (SIGNAL field)
     unsigned char   signal_int[6];  // interleaved message (SIGNAL field)
     unsigned char * msg_enc;        // encoded message (DATA field)
+    unsigned char   modem_syms[48]; // modem symbols
     
     // counters/states
     enum {
@@ -94,6 +98,9 @@ wlanframegen wlanframegen_create()
 
     // create pilot sequence generator
     q->ms_pilot = msequence_create(7, 0x91, 0x7f);
+
+    // DATA field (payload) modulator
+    q->mod = modem_create(LIQUID_MODEM_BPSK, 1);
 
     // create transition window/buffer
     // NOTE : ramp length must be less than cyclic prefix length (default: 1)
@@ -146,6 +153,9 @@ void wlanframegen_destroy(wlanframegen _q)
     
     // destroy pilot sequence generator
     msequence_destroy(_q->ms_pilot);
+
+    // destroy modulator
+    modem_destroy(_q->mod);
 
     // free transition window ramp array and postfix buffer
     free(_q->rampup);
@@ -225,6 +235,11 @@ void wlanframegen_assemble(wlanframegen           _q,
     _q->length = _txvector.LENGTH;
     _q->seed   = 0x5d;  //(_txvector.SERVICE >> 9) & 0x7f;
     // TODO : strip off TXPWR_LEVEL
+
+    // re-create modem object
+    _q->mod = modem_recreate(_q->mod,
+                             wlanframe_ratetab[_q->rate].mod_scheme,
+                             wlanframe_ratetab[_q->rate].nbpsc);
 
     // pack SIGNAL field
     unsigned int R = 0; // 'reserved' bit
@@ -604,7 +619,48 @@ void wlanframegen_writesymbol_signal(wlanframegen _q,
 void wlanframegen_writesymbol_data(wlanframegen _q,
                                    float complex * _buffer)
 {
-    wlanframegen_writesymbol_null(_q, _buffer);
+    // unpack modem symbols
+    unsigned int bytes_per_symbol = _q->enc_msg_len / _q->nsym;
+    //printf("  %3u = %3u * %3u\n", _q->enc_msg_len, _q->nsym, bytes_per_symbol);
+    unsigned int num_written;
+    liquid_repack_bytes(&_q->msg_enc[_q->data_symbol_counter * bytes_per_symbol], 8, bytes_per_symbol,
+                        _q->modem_syms, _q->nbpsc, 48,
+                        &num_written);
+    assert(num_written == 48);
+
+    // modulate symbols onto subcarriers
+    // TODO : do this more efficiently
+    unsigned int i;
+    unsigned int n=0;
+    for (i=0; i<64; i++) {
+        unsigned int k = (i + 32) % 64;
+
+        if ( k==0 || (k > 26 && k < 38) ) {
+            // NULL subcarrier
+        } else if (k==43 || k==57 || k==7 || k==21) {
+            // PILOT subcarrier
+        } else {
+            // DATA subcarrier
+            assert(n<48);
+            modem_modulate(_q->mod, _q->modem_syms[n], &_q->X[k]);
+            n++;
+        }
+    }
+    assert(n==48);
+
+    // run transform
+    wlanframegen_compute_symbol(_q);
+
+    // apply gain
+    for (i=0; i<64; i++)
+        _q->x[i] /= sqrtf(64.0f);
+    
+    // generate SIGNAL symbol
+    wlanframegen_gensymbol(_q->x,
+                           _q->postfix,
+                           _q->rampup,
+                           _q->rampup_len,
+                           _buffer);
 }
 
 // write null symbol(s)
