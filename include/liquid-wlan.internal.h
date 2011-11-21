@@ -277,7 +277,12 @@ extern const float complex wlanframe_s1[64]; // time
 // wi-fi frame generator (internal methods)
 //
 
-// generate symbol
+// compute symbol: add/update pilots, add nulls and compute transform
+//  * input stored in 'X' (internal ifft input)
+//  * output stored in 'x' (internal ifft output)
+void wlanframegen_compute_symbol(wlanframegen _q);
+
+// generate symbol (add cyclic prefix/postfix, overlap)
 //  _x          :   input time-domain symbol [size: 64 x 1]
 //  _x_prime    :   post-fix from previous symbol [size: _p x 1], output
 //                  post-fix from this new symbol

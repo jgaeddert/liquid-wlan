@@ -38,13 +38,15 @@ struct wlanframegen_s {
     unsigned int length;    // original data length (bytes)
     unsigned int seed;      // data scrambler seed
 
-    // scaling factors
-    float g_data;
+    float g;                // scaling factor (gain)
 
     // transform object
     FFT_PLAN ifft;          // ifft object
     float complex * X;      // frequency-domain buffer
     float complex * x;      // time-domain buffer
+
+    // pilot sequence generator
+    msequence ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
 
 #if 0
     // PLCP short
@@ -99,6 +101,9 @@ wlanframegen wlanframegen_create()
     q->x = (float complex*) malloc(64*sizeof(float complex));
     q->ifft = FFT_CREATE_PLAN(64, q->X, q->x, FFT_DIR_BACKWARD, FFT_METHOD);
 
+    // create pilot sequence generator
+    q->ms_pilot = msequence_create(7, 0x91, 0x7f);
+
     // create transition window/buffer
     // NOTE : ramp length must be less than cyclic prefix length (default: 1)
     // TODO : make ramp length an input parameter
@@ -132,7 +137,7 @@ wlanframegen wlanframegen_create()
     q->msg_enc = (unsigned char*) malloc(q->enc_msg_len*sizeof(unsigned char));
 
     // compute scaling factor
-    q->g_data = 1.0f / sqrtf(52.0f);
+    q->g = 1.0f / 64.0f;
 
     // reset objects
     wlanframegen_reset(q);
@@ -147,6 +152,9 @@ void wlanframegen_destroy(wlanframegen _q)
     free(_q->X);
     free(_q->x);
     FFT_DESTROY_PLAN(_q->ifft);
+    
+    // destroy pilot sequence generator
+    msequence_destroy(_q->ms_pilot);
 
     // free transition window ramp array and postfix buffer
     free(_q->rampup);
@@ -187,6 +195,9 @@ void wlanframegen_reset(wlanframegen _q)
     _q->frame_assembled = 0;
     _q->state = WLANFRAMEGEN_STATE_S0A;
     _q->data_symbol_counter = 0;
+
+    // reset pilot sequence generator
+    msequence_reset(_q->ms_pilot);
 
     // clear internal postfix buffer
     unsigned int i;
@@ -370,7 +381,39 @@ int wlanframegen_writesymbol(wlanframegen    _q,
 // internal methods
 //
 
-// generate symbol
+// compute symbol: add/update pilots, add nulls and compute transform
+//  * input stored in 'X' (internal ifft input)
+//  * output stored in 'x' (internal ifft output)
+void wlanframegen_compute_symbol(wlanframegen _q)
+{
+    // update pilot phase
+    unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
+
+    // set pilots
+    _q->X[43] = pilot_phase ? -1.0f :  1.0f;
+    _q->X[57] = pilot_phase ? -1.0f :  1.0f;
+    _q->X[ 7] = pilot_phase ? -1.0f :  1.0f;
+    _q->X[21] = pilot_phase ?  1.0f : -1.0f;
+
+    // force NULL subcarriers to zero
+    _q->X[ 0] = 0.0f;
+    _q->X[27] = 0.0f;
+    _q->X[28] = 0.0f;
+    _q->X[29] = 0.0f;
+    _q->X[30] = 0.0f;
+    _q->X[31] = 0.0f;
+    _q->X[32] = 0.0f;
+    _q->X[33] = 0.0f;
+    _q->X[34] = 0.0f;
+    _q->X[35] = 0.0f;
+    _q->X[36] = 0.0f;
+    _q->X[37] = 0.0f;
+
+    // run inverse transform
+    FFT_EXECUTE(_q->ifft);
+}
+
+// generate symbol (add cyclic prefix/postfix, overlap)
 //  _x          :   input time-domain symbol [size: 64 x 1]
 //  _x_prime    :   post-fix from previous symbol [size: _p x 1], output
 //                  post-fix from this new symbol
