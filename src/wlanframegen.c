@@ -48,16 +48,6 @@ struct wlanframegen_s {
     // pilot sequence generator
     msequence ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
 
-#if 0
-    // PLCP short
-    float complex * S0;     // short sequence (frequency)
-    float complex * s0;     // short sequence (time)
-
-    // PLCP long
-    float complex * S1;     // long sequence (frequency)
-    float complex * s1;     // long sequence (time)
-#endif
-
     // window transition
     unsigned int rampup_len;        // number of samples in overlapping symbols
     float * rampup;                 // ramp up window (ramp down is time-reversed)
