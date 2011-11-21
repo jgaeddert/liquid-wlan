@@ -35,6 +35,8 @@
 
 #include "annex-g-data/G1.c"
 
+#define OUTPUT_FILENAME "wlanframesync_example.m"
+
 static int callback(unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata);
@@ -65,6 +67,18 @@ int main(int argc, char*argv[])
     wlanframegen_assemble(fg, msg_org, txvector);
     wlanframegen_print(fg);
 
+    // open output file
+    FILE * fid = fopen(OUTPUT_FILENAME,"w");
+    if (!fid) {
+        fprintf(stderr,"error: %s, could not open '%s' for writing\n", argv[0], OUTPUT_FILENAME);
+        exit(1);
+    }
+    fprintf(fid,"%% %s : auto-generated file\n\n", OUTPUT_FILENAME);
+    fprintf(fid,"clear all;\n");
+    fprintf(fid,"close all;\n\n");
+    fprintf(fid,"x = [];\n");
+    unsigned int n = 1;
+
     // generate/synchronize frame
     int last_frame = 0;
     while (!last_frame) {
@@ -73,7 +87,15 @@ int main(int argc, char*argv[])
 
         // run through synchronize
         wlanframesync_execute(fs, buffer, 80);
+
+        // write buffer to file
+        unsigned int i;
+        for (i=0; i<80; i++)
+            fprintf(fid,"x(%4u) = %12.4e + j*%12.4e;\n", n++, crealf(buffer[i]), cimagf(buffer[i]));
     }
+
+    fclose(fid);
+    printf("results written to '%s'\n", OUTPUT_FILENAME);
 
     // destroy objects
     wlanframegen_destroy(fg);
