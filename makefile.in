@@ -211,6 +211,7 @@ autotest_programs :=						\
 	autotest/signalfield_pack_autotest			\
 	autotest/signalfield_encoder_autotest			\
 	autotest/signalfield_interleaver_autotest		\
+	autotest/signalfield_symbolgen_autotest			\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
