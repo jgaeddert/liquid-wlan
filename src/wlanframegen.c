@@ -68,6 +68,7 @@ struct wlanframegen_s {
         WLANFRAMEGEN_STATE_PAYLOAD  // write payload symbols
     } state;
     int frame_assembled;            // frame assembled flag
+    unsigned int data_symbol_counter;
 };
 
 // create WLAN framing generator object
@@ -125,6 +126,7 @@ void wlanframegen_reset(wlanframegen _q)
     // reset state/counters
     _q->frame_assembled = 0;
     _q->state = WLANFRAMEGEN_STATE_S0A;
+    _q->data_symbol_counter = 0;
 }
 
 // assemble frame (see Table 76)
@@ -160,6 +162,7 @@ void wlanframegen_assemble(wlanframegen           _q,
     wlan_packet_encode(_q->rate, _q->seed, _q->length, _payload, _q->msg_enc);
 
     // TODO : reset counters...
+    _q->frame_assembled = 1;
 }
 
 
@@ -169,15 +172,60 @@ void wlanframegen_assemble(wlanframegen           _q,
 int wlanframegen_writesymbol(wlanframegen    _q,
                              float complex * _buffer)
 {
+    // validate input
+    if (_q->frame_assembled == 0) {
+        fprintf(stderr,"error: wlanframegen_writesymbol(), frame not assembled\n");
+        exit(1);
+    }
+
     //
     switch (_q->state) {
     case WLANFRAMEGEN_STATE_S0A:
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating first short sequence\n");
+#endif
+        wlanframegen_writesymbol_S0a(_q, _buffer);
+        _q->state = WLANFRAMEGEN_STATE_S0B;
+        return 0;
     case WLANFRAMEGEN_STATE_S0B:
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating second short sequence\n");
+#endif
+        wlanframegen_writesymbol_S0b(_q, _buffer);
+        _q->state = WLANFRAMEGEN_STATE_S1A;
+        return 0;
     case WLANFRAMEGEN_STATE_S1A:
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating first long sequence\n");
+#endif
+        wlanframegen_writesymbol_S1a(_q, _buffer);
+        _q->state = WLANFRAMEGEN_STATE_S1B;
+        return 0;
     case WLANFRAMEGEN_STATE_S1B:
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating second long sequence\n");
+#endif
+        wlanframegen_writesymbol_S1b(_q, _buffer);
+        _q->state = WLANFRAMEGEN_STATE_SIGNAL;
+        return 0;
     case WLANFRAMEGEN_STATE_SIGNAL:
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating SIGNAL symbol\n");
+#endif
+        wlanframegen_writesymbol_signal(_q, _buffer);
+        _q->state = WLANFRAMEGEN_STATE_PAYLOAD;
+        return 0;
     case WLANFRAMEGEN_STATE_PAYLOAD:
-        break;
+#if DEBUG_WLANFRAMEGEN
+        printf("wlanframegen_writesymbol(), generating data symbol [%3u]\n", _q->data_symbol_counter);
+#endif
+        wlanframegen_writesymbol_data(_q, _buffer);
+        _q->data_symbol_counter++;
+
+        if (_q->data_symbol_counter < 10)
+            return 0;
+        else
+            break;
     default:
         // should never get to this point
         fprintf(stderr,"error: wlanframegen_writesymbol(), invalid state\n");
@@ -216,6 +264,11 @@ int wlanframegen_writesymbol(wlanframegen    _q,
     memmove(&_y[_q->cp_len], _q->x, (_q->M)*sizeof(float complex));
 #endif
 
+    // reset and return
+#if DEBUG_WLANFRAMEGEN
+    printf("wlanframegen_writesymbol(), resetting frame generator\n");
+#endif
+    wlanframegen_reset(_q);
     return 1;
 }
 
@@ -241,5 +294,29 @@ void wlanframegen_writesymbol_S0b(wlanframegen _q,
 {
     // same as first symbol
     wlanframegen_writesymbol_S0a(_q, _buffer);
+}
+
+// write first PLCP long sequence 'symbol' to buffer
+void wlanframegen_writesymbol_S1a(wlanframegen _q,
+                                  float complex * _buffer)
+{
+}
+
+// write second PLCP long sequence 'symbol' to buffer
+void wlanframegen_writesymbol_S1b(wlanframegen _q,
+                                  float complex * _buffer)
+{
+}
+
+// write SIGNAL symbol
+void wlanframegen_writesymbol_signal(wlanframegen _q,
+                                     float complex * _buffer)
+{
+}
+
+// write data symbol(s)
+void wlanframegen_writesymbol_data(wlanframegen _q,
+                                   float complex * _buffer)
+{
 }
 
