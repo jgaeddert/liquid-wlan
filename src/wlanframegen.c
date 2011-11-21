@@ -406,6 +406,14 @@ void wlanframegen_gensymbol(float complex * _x,
 
 // write first PLCP short sequence 'symbol' to buffer; this is the first
 // five 'short' symbols
+//
+//  0         32        64        96       128       160
+//  +----+----+----+----+----+----+----+----+----+----+
+//  | s0 | s0 | s0 | s0 | s0 | s0 | s0 | s0 | s0 | s0 |
+//  +----+----+----+----+----+----+----+----+----+----+-----> time
+//       |                   |    |                   |
+//       |<-     s0[a]     ->|    |<-     s0[b]     ->|
+//
 void wlanframegen_writesymbol_S0a(wlanframegen _q,
                                   float complex * _buffer)
 {
@@ -421,7 +429,7 @@ void wlanframegen_writesymbol_S0a(wlanframegen _q,
 void wlanframegen_writesymbol_S0b(wlanframegen _q,
                                   float complex * _buffer)
 {
-    // same as first symbol
+    // same as s0[a]
     wlanframegen_writesymbol_S0a(_q, _buffer);
 }
 
@@ -431,7 +439,8 @@ void wlanframegen_writesymbol_S0b(wlanframegen _q,
 //  +----+----+----+----+----+----+----+----+----+----+
 //  |/////////|       s1[0]       |       s1[1]       | ...
 //  +----+----+----+----+----+----+----+----+----+----+-----> time
-//       |<-  first input  ->|    |<-  second input ->|
+//       |                   |    |                   |
+//       |<-     s1[a]     ->|    |<-     s1[b]     ->|
 //
 void wlanframegen_writesymbol_S1a(wlanframegen _q,
                                   float complex * _buffer)
