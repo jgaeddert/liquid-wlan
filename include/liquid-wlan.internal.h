@@ -307,6 +307,15 @@ void wlanframegen_writesymbol_null(wlanframegen _q, float complex * _buffer);
 // wi-fi frame synchronizer (internal methods)
 //
 
+void wlanframesync_execute_seekplcp(wlanframesync _q);
+void wlanframesync_execute_rxshort0(wlanframesync _q);
+void wlanframesync_execute_rxshort1(wlanframesync _q);
+void wlanframesync_execute_rxlong0(wlanframesync _q);
+void wlanframesync_execute_rxlong1(wlanframesync _q);
+void wlanframesync_execute_rxsignal(wlanframesync _q);
+void wlanframesync_execute_rxdata(wlanframesync _q);
+
+
 //
 // utility
 //

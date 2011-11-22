@@ -53,6 +53,14 @@ struct wlanframesync_s {
     float complex * x;      // time-domain buffer
     windowcf input_buffer;  // input sequence buffer
 
+    // synchronizer objects
+    nco_crcf nco_rx;        // numerically-controlled oscillator
+    msequence ms_pilot;     // pilot sequence generator
+    modem demod;            // DATA field demodulator
+
+    // gain/equalization
+    float complex G[64];    // complex channel gain
+
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
     unsigned int ncbps;             // number of coded bits per OFDM symbol
@@ -69,6 +77,17 @@ struct wlanframesync_s {
     unsigned char   signal_dec[3];  // decoded message (SIGNAL field)
     unsigned char * msg_enc;        // encoded message (DATA field)
     unsigned char   modem_syms[48]; // modem symbols
+    
+    // counters/states
+    enum {
+        WLANFRAMESYNC_STATE_SEEKPLCP=0, // seek initial PLCP
+        WLANFRAMESYNC_STATE_RXSHORT0,   // receive first 'short' sequence
+        WLANFRAMESYNC_STATE_RXSHORT1,   // receive second 'short' sequence
+        WLANFRAMESYNC_STATE_RXLONG0,    // receive first 'long' sequence
+        WLANFRAMESYNC_STATE_RXLONG1,    // receive second 'long' sequence
+        WLANFRAMESYNC_STATE_RXSIGNAL,   // receive SIGNAL field
+        WLANFRAMESYNC_STATE_DATA,       // receive DATA field
+    } state;
 
 #if DEBUG_WLANFRAMESYNC
     agc_crcf agc_rx;        // automatic gain control (rssi)
@@ -97,6 +116,11 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
  
     // create input buffer the length of the transform
     q->input_buffer = windowcf_create(80);
+
+    // synchronizer objects
+    q->nco_rx = nco_crcf_create(LIQUID_VCO);
+    q->ms_pilot = msequence_create(7, 0x91, 0x7f);
+    q->demod = modem_create(LIQUID_MODEM_BPSK, 1);
 
     // set initial properties
     q->rate   = WLANFRAME_RATE_6;
@@ -141,6 +165,11 @@ void wlanframesync_destroy(wlanframesync _q)
     free(_q->X);
     free(_q->x);
     FFT_DESTROY_PLAN(_q->fft);
+    
+    // destroy synchronizer objects
+    nco_crcf_destroy(_q->nco_rx);       // numerically-controlled oscillator
+    msequence_destroy(_q->ms_pilot);    // pilot sequence generator
+    modem_destroy(_q->demod);           // DATA field (payload) demodulator
 
     // free memory for encoded message
     free(_q->msg_enc);
@@ -158,6 +187,10 @@ void wlanframesync_print(wlanframesync _q)
 // reset WLAN framing synchronizer object internal state
 void wlanframesync_reset(wlanframesync _q)
 {
+    // clear buffer
+    windowcf_clear(_q->input_buffer);
+
+    // reset timers/state
 }
 
 // execute framing synchronizer on input buffer
@@ -193,20 +226,28 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
 }
 
 // frame detection
-void wlanframesync_execute_plcpshort0(wlanframesync _q)
+void wlanframesync_execute_rxshort0(wlanframesync _q)
 {
 }
 
 // frame detection
-void wlanframesync_execute_plcpshort1(wlanframesync _q)
+void wlanframesync_execute_rxshort1(wlanframesync _q)
 {
 }
 
-void wlanframesync_execute_plcplong(wlanframesync _q)
+void wlanframesync_execute_rxlong0(wlanframesync _q)
 {
 }
 
-void wlanframesync_execute_rxsymbols(wlanframesync _q)
+void wlanframesync_execute_rxlong1(wlanframesync _q)
+{
+}
+
+void wlanframesync_execute_rxsignal(wlanframesync _q)
+{
+}
+
+void wlanframesync_execute_rxdata(wlanframesync _q)
 {
 }
 
