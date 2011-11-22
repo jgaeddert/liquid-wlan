@@ -113,7 +113,7 @@ int main(int argc, char*argv[])
     unsigned int n = 0;
 
     // push noise through synchronizer
-    unsigned int d = 2;
+    unsigned int d = 32*64 + 2;
     for (i=0; i<d; i++) {
         buffer[0] = nstd*( randnf() + _Complex_I*randnf() )*M_SQRT1_2;
         wlanframesync_execute(fs, buffer, 1);

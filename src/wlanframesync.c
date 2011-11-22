@@ -61,6 +61,9 @@ struct wlanframesync_s {
     // gain/equalization
     float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
     float complex G[64];            // complex channel gain
+    float g0;                       // nominal gain
+    float complex s0a_hat;          // first 'short' sequence statistic
+    float complex s0b_hat;          // second 'short' sequence statistic
 
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
@@ -140,7 +143,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // agc, rssi
     q->agc_rx = agc_crcf_create();
     agc_crcf_set_bandwidth(q->agc_rx,  1e-2f);
-    agc_crcf_set_gain_limits(q->agc_rx, 1e-5f, 1e5f);
+    agc_crcf_set_gain_limits(q->agc_rx, 1.0f, 1e7f);
 
     q->debug_x =        windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
     q->debug_rssi =     windowf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
@@ -292,6 +295,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
     windowcf_read(_q->input_buffer, &rc);
     
     // estimate gain
+    // TODO : use gain from result of FFT
     unsigned int i;
     float g = 0.0f;
     for (i=16; i<80; i+=4) {
@@ -302,6 +306,9 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
         g += crealf(rc[i+3])*crealf(rc[i+3]) + cimagf(rc[i+3])*cimagf(rc[i+3]);
     }
     g = 64.0f / (g + 1e-12f);
+    
+    // save gain (permits dynamic invocation of get_rssi() method)
+    _q->g0 = g;
 
     // estimate S0 gain
     wlanframesync_estimate_gain_S0(_q, &rc[16], _q->G0a);
@@ -327,7 +334,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
         int dt = (int)roundf(tau_hat);
         // set timer appropriately...
         _q->timer = (16 + dt) % 16;
-        _q->timer += 32; // add delay to help ensure good S0 estimate (multiple of 16)
+        //_q->timer += 32; // add delay to help ensure good S0 estimate (multiple of 16)
         _q->state = WLANFRAMESYNC_STATE_RXSHORT0;
 
 #if DEBUG_WLANFRAMESYNC_PRINT
@@ -344,6 +351,36 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
 // frame detection
 void wlanframesync_execute_rxshort0(wlanframesync _q)
 {
+    _q->timer++;
+    if (_q->timer < 16)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // read contents of input buffer
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // re-estimate S0 gain
+    wlanframesync_estimate_gain_S0(_q, &rc[16], _q->G0a);
+
+    float complex s_hat;
+    wlanframesync_S0_metrics(_q, _q->G0a, &s_hat);
+    //float g = agc_crcf_get_gain(_q->agc_rx);
+    s_hat *= _q->g0;
+
+    // save first 'short' symbol statistic
+    _q->s0a_hat = s_hat;
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    float tau_hat  = cargf(s_hat) * 16.0f / (2*M_PI);
+    printf("********** S0[0] received ************\n");
+    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+    printf("  tau_hat   :   %12.8f\n", tau_hat);
+#endif
+
+    _q->state = WLANFRAMESYNC_STATE_RXSHORT1;
 }
 
 // frame detection
