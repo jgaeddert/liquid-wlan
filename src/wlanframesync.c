@@ -304,6 +304,22 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
     
     // estimate S0 gain
     wlanframesync_estimate_gain_S0(_q, &rc[16], _q->G0a);
+    
+    // compute S0 metrics
+    float complex s_hat;
+    wlanframesync_S0_metrics(_q, _q->G0a, &s_hat);
+    //float g = agc_crcf_get_gain(_q->agc_rx);
+    s_hat *= g;
+
+    float tau_hat  = cargf(s_hat) * (float)(32.0f) / (2*M_PI);
+#if 1 //DEBUG_WLANFRAMESYNC_PRINT
+    printf(" - gain=%12.3f, rssi=%8.4f dB, s_hat=%12.4f <%12.8f>, tau_hat=%8.3f\n",
+            sqrt(g),
+            -10*log10(g),
+            cabsf(s_hat), cargf(s_hat),
+            tau_hat);
+#endif
+
 }
 
 // frame detection
@@ -376,6 +392,33 @@ void wlanframesync_S0_metrics(wlanframesync _q,
                               float complex * _G,
                               float complex * _s_hat)
 {
+    // timing, carrier offset correction
+    float complex s_hat = 0.0f;
+
+    // compute timing estimate, accumulate phase difference across
+    // gains on subsequent pilot subcarriers (note that all the odd
+    // subcarriers are NULL)
+#if 0
+    unsigned int i;
+    for (i=0; i<64; i+=4)
+        s_hat += _G[(i+4)%64]*conjf(_G[i]);
+#else
+    s_hat += _G[44] * conjf(_G[40]);
+    s_hat += _G[48] * conjf(_G[44]);
+    s_hat += _G[52] * conjf(_G[48]);
+    s_hat += _G[56] * conjf(_G[52]);
+    s_hat += _G[60] * conjf(_G[56]);
+    //           0             60
+    //           4              0
+    s_hat += _G[ 8] * conjf(_G[ 4]);
+    s_hat += _G[12] * conjf(_G[ 8]);
+    s_hat += _G[16] * conjf(_G[12]);
+    s_hat += _G[20] * conjf(_G[16]);
+    s_hat += _G[24] * conjf(_G[20]);
+#endif
+
+    // set output values, normalizing by number of elements
+    *_s_hat = s_hat * 0.1f;
 }
 
 
