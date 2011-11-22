@@ -30,7 +30,7 @@
 
 #include "liquid-wlan.internal.h"
 
-#define DEBUG_WLANFRAMEGEN            1
+#define DEBUG_WLANFRAMEGEN            0
 
 struct wlanframegen_s {
     // options

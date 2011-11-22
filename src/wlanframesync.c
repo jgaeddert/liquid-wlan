@@ -31,7 +31,7 @@
 #include "liquid-wlan.internal.h"
 
 #define DEBUG_WLANFRAMESYNC             1
-#define DEBUG_WLANFRAMESYNC_PRINT       0
+#define DEBUG_WLANFRAMESYNC_PRINT       1
 #define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
 
@@ -300,8 +300,6 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
     }
     g = 64.0f / (g + 1e-6f);
 
-    //printf("rssi : %12.8f dB\n", -10*log10f(g));
-    
     // estimate S0 gain
     wlanframesync_estimate_gain_S0(_q, &rc[16], _q->G0a);
     
@@ -312,13 +310,31 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
     s_hat *= g;
 
     float tau_hat  = cargf(s_hat) * (float)(32.0f) / (2*M_PI);
-#if 1 //DEBUG_WLANFRAMESYNC_PRINT
+#if DEBUG_WLANFRAMESYNC_PRINT
     printf(" - gain=%12.3f, rssi=%8.4f dB, s_hat=%12.4f <%12.8f>, tau_hat=%8.3f\n",
             sqrt(g),
             -10*log10(g),
             cabsf(s_hat), cargf(s_hat),
             tau_hat);
 #endif
+
+    // 
+    if (cabsf(s_hat) > 0.5f) {
+
+        int dt = (int)roundf(tau_hat);
+        // set timer appropriately...
+        _q->timer = (64 + dt) % 32;
+        _q->timer += 64; // add delay to help ensure good S0 estimate
+        _q->state = WLANFRAMESYNC_STATE_RXSHORT0;
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+        printf("********** frame detected! ************\n");
+        printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+        printf("  tau_hat   :   %12.8f\n", tau_hat);
+        printf("    dt      :   %12d\n", dt);
+        printf("    timer   :   %12u\n", _q->timer);
+#endif
+    }
 
 }
 
