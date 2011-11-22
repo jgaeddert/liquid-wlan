@@ -19,9 +19,9 @@
  */
 
 //
-// wlanframesync_example.c
+// wlanframegen_example.c
 //
-// Test generation/synchronization of wlan frame
+// Test generation of wlan frame
 //
 
 #include <stdio.h>
@@ -35,11 +35,7 @@
 
 #include "annex-g-data/G1.c"
 
-#define OUTPUT_FILENAME "wlanframesync_example.m"
-
-static int callback(unsigned char *        _payload,
-                    struct wlan_rxvector_s _rxvector,
-                    void *                 _userdata);
+#define OUTPUT_FILENAME "wlanframegen_example.m"
 
 int main(int argc, char*argv[])
 {
@@ -59,10 +55,6 @@ int main(int argc, char*argv[])
     // create frame generator
     wlanframegen fg = wlanframegen_create();
 
-    // create frame synchronizer
-    wlanframesync fs = wlanframesync_create(callback, NULL);
-    //wlanframesync_print(fs);
-
     // assemble frame and print
     wlanframegen_assemble(fg, msg_org, txvector);
     wlanframegen_print(fg);
@@ -79,14 +71,11 @@ int main(int argc, char*argv[])
     fprintf(fid,"x = [];\n");
     unsigned int n = 1;
 
-    // generate/synchronize frame
+    // generate frame
     int last_frame = 0;
     while (!last_frame) {
         // write symbol
         last_frame = wlanframegen_writesymbol(fg, buffer);
-
-        // run through synchronize
-        wlanframesync_execute(fs, buffer, 80);
 
         // write buffer to file
         unsigned int i;
@@ -105,18 +94,8 @@ int main(int argc, char*argv[])
 
     // destroy objects
     wlanframegen_destroy(fg);
-    wlanframesync_destroy(fs);
 
     printf("done.\n");
-    return 0;
-}
-
-static int callback(unsigned char *        _payload,
-                    struct wlan_rxvector_s _rxvector,
-                    void *                 _userdata)
-{
-    printf("**** callback invoked\n");
-
     return 0;
 }
 
