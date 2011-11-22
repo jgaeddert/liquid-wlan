@@ -446,6 +446,8 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
 
     float nu_hat = 4.0f * cargf(g_hat) / 64.0f;
 #endif
+    // set NCO frequency
+    nco_crcf_set_frequency(_q->nco_rx, nu_hat);
 
 #if DEBUG_WLANFRAMESYNC_PRINT
     printf("   nu_hat   :   %12.8f\n", nu_hat);
