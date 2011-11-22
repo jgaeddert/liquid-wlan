@@ -30,7 +30,7 @@
 
 #include "liquid-wlan.internal.h"
 
-#define DEBUG_WLANFRAMESYNC             0
+#define DEBUG_WLANFRAMESYNC             1
 #define DEBUG_WLANFRAMESYNC_PRINT       0
 #define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
@@ -86,7 +86,7 @@ struct wlanframesync_s {
         WLANFRAMESYNC_STATE_RXLONG0,    // receive first 'long' sequence
         WLANFRAMESYNC_STATE_RXLONG1,    // receive second 'long' sequence
         WLANFRAMESYNC_STATE_RXSIGNAL,   // receive SIGNAL field
-        WLANFRAMESYNC_STATE_DATA,       // receive DATA field
+        WLANFRAMESYNC_STATE_RXDATA,     // receive DATA field
     } state;
 
 #if DEBUG_WLANFRAMESYNC
@@ -191,6 +191,7 @@ void wlanframesync_reset(wlanframesync _q)
     windowcf_clear(_q->input_buffer);
 
     // reset timers/state
+    _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
 }
 
 // execute framing synchronizer on input buffer
@@ -201,6 +202,58 @@ void wlanframesync_execute(wlanframesync          _q,
                            liquid_float_complex * _buffer,
                            unsigned int           _n)
 {
+    unsigned int i;
+    float complex x;
+    for (i=0; i<_n; i++) {
+        x = _buffer[i];
+
+        // correct for carrier frequency offset (only if not in
+        // initial 'seek PLCP' state)
+        if (_q->state != WLANFRAMESYNC_STATE_SEEKPLCP) {
+            nco_crcf_mix_down(_q->nco_rx, x, &x);
+            nco_crcf_step(_q->nco_rx);
+        }
+
+        // save input sample to buffer
+        windowcf_push(_q->input_buffer,x);
+
+#if DEBUG_WLANFRAMESYNC
+        // apply agc (estimate initial signal gain)
+        float complex y;
+        agc_crcf_execute(_q->agc_rx, x, &y);
+
+        windowcf_push(_q->debug_x, x);
+        windowf_push(_q->debug_rssi, agc_crcf_get_rssi(_q->agc_rx));
+#endif
+
+        switch (_q->state) {
+        case WLANFRAMESYNC_STATE_SEEKPLCP:
+            wlanframesync_execute_seekplcp(_q);
+            break;
+        case WLANFRAMESYNC_STATE_RXSHORT0:
+            wlanframesync_execute_rxshort0(_q);
+            break;
+        case WLANFRAMESYNC_STATE_RXSHORT1:
+            wlanframesync_execute_rxshort1(_q);
+            break;
+        case WLANFRAMESYNC_STATE_RXLONG0:
+            wlanframesync_execute_rxlong0(_q);
+            break;
+        case WLANFRAMESYNC_STATE_RXLONG1:
+            wlanframesync_execute_rxlong1(_q);
+            break;
+        case WLANFRAMESYNC_STATE_RXSIGNAL:
+            wlanframesync_execute_rxsignal(_q);
+            break;
+        case WLANFRAMESYNC_STATE_RXDATA:
+            wlanframesync_execute_rxdata(_q);
+            break;
+        default:;
+            // should never get to this point
+            fprintf(stderr,"error: wlanframesync_execute(), invalid state\n");
+            exit(1);
+        }
+    } // for (i=0; i<_n; i++)
 }
 
 // get receiver RSSI
@@ -308,7 +361,7 @@ void wlanframesync_debug_print(wlanframesync _q,
         fprintf(stderr,"error: wlanframe_debug_print(), could not open '%s' for writing\n", _filename);
         return;
     }
-    fprintf(fid,"%% %s : auto-generated file\n", DEBUG_WLANFRAMESYNC_FILENAME);
+    fprintf(fid,"%% %s : auto-generated file\n", _filename);
 #if DEBUG_WLANFRAMESYNC
     fprintf(fid,"close all;\n");
     fprintf(fid,"clear all;\n");
