@@ -315,6 +315,27 @@ void wlanframesync_execute_rxlong1(wlanframesync _q);
 void wlanframesync_execute_rxsignal(wlanframesync _q);
 void wlanframesync_execute_rxdata(wlanframesync _q);
 
+// estimate short sequence gain
+//  _q      :   wlanframesync object
+//  _x      :   input array (time), [size: M x 1]
+//  _G      :   output gain (freq)
+void wlanframesync_estimate_gain_S0(wlanframesync _q,
+                                    float complex * _x,
+                                    float complex * _G);
+
+// compute S0 metrics
+void wlanframesync_S0_metrics(wlanframesync _q,
+                              float complex * _G,
+                              float complex * _s_hat);
+
+// estimate long sequence gain
+//  _q      :   wlanframesync object
+//  _x      :   input array (time), [size: M x 1]
+//  _G      :   output gain (freq)
+void wlanframesync_estimate_gain_S1(wlanframesync _q,
+                                    float complex * _x,
+                                    float complex * _G);
+
 
 //
 // utility

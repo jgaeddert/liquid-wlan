@@ -59,7 +59,8 @@ struct wlanframesync_s {
     modem demod;            // DATA field demodulator
 
     // gain/equalization
-    float complex G[64];    // complex channel gain
+    float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
+    float complex G[64];            // complex channel gain
 
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
@@ -88,6 +89,7 @@ struct wlanframesync_s {
         WLANFRAMESYNC_STATE_RXSIGNAL,   // receive SIGNAL field
         WLANFRAMESYNC_STATE_RXDATA,     // receive DATA field
     } state;
+    signed int timer;                   // sample timer
 
 #if DEBUG_WLANFRAMESYNC
     agc_crcf agc_rx;        // automatic gain control (rssi)
@@ -192,6 +194,7 @@ void wlanframesync_reset(wlanframesync _q)
 
     // reset timers/state
     _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
+    _q->timer = 0;
 }
 
 // execute framing synchronizer on input buffer
@@ -276,6 +279,31 @@ float wlanframesync_get_cfo(wlanframesync _q)
 // frame detection
 void wlanframesync_execute_seekplcp(wlanframesync _q)
 {
+    _q->timer++;
+
+    if (_q->timer < 64)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // read contents of input buffer
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+    
+    // estimate gain
+    unsigned int i;
+    float g = 0.0f;
+    for (i=16; i<80; i++) {
+        // compute |rc[i]|^2 efficiently
+        g += crealf(rc[i])*crealf(rc[i]) + cimagf(rc[i])*cimagf(rc[i]);
+    }
+    g = 64.0f / (g + 1e-6f);
+
+    //printf("rssi : %12.8f dB\n", -10*log10f(g));
+    
+    // estimate S0 gain
+    wlanframesync_estimate_gain_S0(_q, &rc[16], _q->G0a);
 }
 
 // frame detection
@@ -304,13 +332,6 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
 {
 }
 
-// compute S0 metrics
-void wlanframesync_S0_metrics(wlanframesync _q,
-                              float complex * _G,
-                              float complex * _s_hat)
-{
-}
-
 // estimate short sequence gain
 //  _q      :   wlanframesync object
 //  _x      :   input array (time), [size: M x 1]
@@ -319,7 +340,44 @@ void wlanframesync_estimate_gain_S0(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G)
 {
+    // move input array into fft input buffer
+    memmove(_q->x, _x, 64*sizeof(float complex));
+
+    // compute fft, storing result into _q->X
+    FFT_EXECUTE(_q->fft);
+    
+    // compute gain, ignoring NULL subcarriers
+    unsigned int i;
+    float gain = 0.054127f; // sqrt(12)/64 ; sqrtf(_q->M_S0) / (float)(_q->M);
+
+    // clear input
+    for (i=0; i<64; i++) _G[i] = 0.0f;
+
+    // NOTE : if cabsf(_q->S0[i]) == 0 then we can multiply by conjugate
+    //        rather than compute division
+    //_G[i] = _q->X[i] / _q->S0[i];
+    _G[40] = _q->X[40] * conjf(wlanframe_S0[40]) * gain;
+    _G[44] = _q->X[44] * conjf(wlanframe_S0[44]) * gain;
+    _G[48] = _q->X[48] * conjf(wlanframe_S0[48]) * gain;
+    _G[52] = _q->X[52] * conjf(wlanframe_S0[52]) * gain;
+    _G[56] = _q->X[56] * conjf(wlanframe_S0[56]) * gain;
+    _G[60] = _q->X[60] * conjf(wlanframe_S0[60]) * gain;
+    //
+    _G[ 4] = _q->X[ 4] * conjf(wlanframe_S0[ 4]) * gain;
+    _G[ 8] = _q->X[ 8] * conjf(wlanframe_S0[ 8]) * gain;
+    _G[12] = _q->X[12] * conjf(wlanframe_S0[12]) * gain;
+    _G[16] = _q->X[16] * conjf(wlanframe_S0[16]) * gain;
+    _G[20] = _q->X[20] * conjf(wlanframe_S0[20]) * gain;
+    _G[24] = _q->X[24] * conjf(wlanframe_S0[24]) * gain;
 }
+
+// compute S0 metrics
+void wlanframesync_S0_metrics(wlanframesync _q,
+                              float complex * _G,
+                              float complex * _s_hat)
+{
+}
+
 
 // estimate long sequence gain
 //  _q      :   wlanframesync object
