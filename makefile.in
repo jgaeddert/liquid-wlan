@@ -245,6 +245,7 @@ clean-check:
 .PHONY: examples
 example_programs :=						\
 	examples/wlanframegen_example				\
+	examples/wlanframesync_example				\
 
 example_objects	= $(patsubst %,%.o,$(example_programs))
 examples: $(example_programs)
