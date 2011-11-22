@@ -375,7 +375,7 @@ void wlanframesync_execute_rxshort0(wlanframesync _q)
 
 #if DEBUG_WLANFRAMESYNC_PRINT
     float tau_hat  = cargf(s_hat) * 16.0f / (2*M_PI);
-    printf("********** S0[0] received ************\n");
+    printf("********** S0[a] received ************\n");
     printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
     printf("  tau_hat   :   %12.8f\n", tau_hat);
 #endif
@@ -386,14 +386,82 @@ void wlanframesync_execute_rxshort0(wlanframesync _q)
 // frame detection
 void wlanframesync_execute_rxshort1(wlanframesync _q)
 {
+    _q->timer++;
+    if (_q->timer < 16)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // read contents of input buffer
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // estimate S0 gain
+    wlanframesync_estimate_gain_S0(_q, &rc[16], _q->G0b);
+
+    float complex s_hat;
+    wlanframesync_S0_metrics(_q, _q->G0b, &s_hat);
+    //float g = agc_crcf_get_gain(_q->agc_rx);
+    s_hat *= _q->g0;
+
+    // save second 'short' symbol statistic
+    _q->s0b_hat = s_hat;
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    float tau_hat  = cargf(s_hat) * 16.0f / (2*M_PI);
+    printf("********** S0[b] received ************\n");
+    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+    printf("  tau_hat   :   %12.8f\n", tau_hat);
+    
+    // new timing offset estimate
+    tau_hat  = cargf(_q->s0a_hat + _q->s0b_hat) * 16.0f / (2*M_PI);
+    printf("  tau_hat * :   %12.8f\n", tau_hat);
+#endif
+
+#if 0
+    // compute carrier frequency offset estimate using ML method
+    float complex t0 = 0.0f;
+    for (i=0; i<48; i++) {
+        t0 += conjf(rc[i])   *       wlanframe_s0[i] * 
+                    rc[i+16] * conjf(wlanframe_s0[i+16]);
+    }
+    float nu_hat = cargf(t0) / (float)(_q->M2);
+#else
+    // compute carrier frequency offset estimate using freq. domain method
+    float complex g_hat = 0.0f;
+    g_hat += _q->G0b[40] * conjf(_q->G0a[40]);
+    g_hat += _q->G0b[44] * conjf(_q->G0a[44]);
+    g_hat += _q->G0b[48] * conjf(_q->G0a[48]);
+    g_hat += _q->G0b[52] * conjf(_q->G0a[52]);
+    g_hat += _q->G0b[56] * conjf(_q->G0a[56]);
+    g_hat += _q->G0b[60] * conjf(_q->G0a[60]);
+    //
+    g_hat += _q->G0b[ 4] * conjf(_q->G0a[ 4]);
+    g_hat += _q->G0b[ 8] * conjf(_q->G0a[ 8]);
+    g_hat += _q->G0b[12] * conjf(_q->G0a[12]);
+    g_hat += _q->G0b[16] * conjf(_q->G0a[16]);
+    g_hat += _q->G0b[20] * conjf(_q->G0a[20]);
+    g_hat += _q->G0b[24] * conjf(_q->G0a[24]);
+
+    float nu_hat = 4.0f * cargf(g_hat) / 64.0f;
+#endif
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    printf("   nu_hat   :   %12.8f\n", nu_hat);
+#endif
+
+    _q->state = WLANFRAMESYNC_STATE_RXLONG0;
 }
 
 void wlanframesync_execute_rxlong0(wlanframesync _q)
 {
+    // set timer to 16, wait for phase to be relatively small
 }
 
 void wlanframesync_execute_rxlong1(wlanframesync _q)
 {
+    // set timer to 62... (64 with 2-sample back-off)
 }
 
 void wlanframesync_execute_rxsignal(wlanframesync _q)
