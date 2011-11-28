@@ -37,6 +37,14 @@
 
 #define WLANFRAMESYNC_ENABLE_SQUELCH    0
 
+// Thresholds for detecting first long sequence, S1[a]
+#define WLANFRAMESYNC_S1A_ABS_THRESH    (0.5f)
+#define WLANFRAMESYNC_S1A_ARG_THRESH    (0.2f)
+
+// Thresholds for detecting second long sequence, S1[b]
+#define WLANFRAMESYNC_S1B_ABS_THRESH    (0.5f)
+#define WLANFRAMESYNC_S1B_ARG_THRESH    (0.2f)
+
 struct wlanframesync_s {
     // callback
     wlanframesync_callback callback;
@@ -495,7 +503,9 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     // check conditions for s_hat:
     //  1. magnitude should be large (near unity) when aligned
     //  2. phase should be very near zero (time aligned)
-    if (s_hat_abs > 0.7f && fabsf(s_hat_arg) < 0.1f*M_PI ) {
+    if (s_hat_abs        > WLANFRAMESYNC_S1A_ABS_THRESH &&
+        fabsf(s_hat_arg) < WLANFRAMESYNC_S1A_ARG_THRESH)
+    {
         printf("    acquisition S1[a]\n");
         
         // set state
@@ -537,11 +547,29 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     printf("    s_hat   :   %12.4f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
 #endif
 
-    // TODO : check conditions for s_hat
-    // TODO : equalizer with G1a, G1b
-    // TODO : refine CFO estiamte with G1a, G1b
+    // check conditions for s_hat
+    float s_hat_abs = cabsf(s_hat);
+    float s_hat_arg = cargf(s_hat);
+    if (s_hat_arg >  M_PI) s_hat_arg -= M_2_PI;
+    if (s_hat_arg < -M_PI) s_hat_arg += M_2_PI;
         
-    printf("    acquisition S1[b]\n");
+    // check conditions for s_hat:
+    //  1. magnitude should be large (near unity) when aligned
+    //  2. phase should be very near zero (time aligned)
+    if (s_hat_abs        > WLANFRAMESYNC_S1B_ABS_THRESH &&
+        fabsf(s_hat_arg) < WLANFRAMESYNC_S1B_ARG_THRESH)
+    {
+        printf("    acquisition S1[b]\n");
+        
+        // TODO : equalizer with G1a, G1b
+        // TODO : refine CFO estiamte with G1a, G1b
+        
+        // set state
+        _q->state = WLANFRAMESYNC_STATE_RXLONG1;
+
+        // reset timer
+        _q->timer = 0;
+    }
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXSIGNAL;
