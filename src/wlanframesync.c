@@ -455,9 +455,6 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
     printf("   nu_hat[0]:   %12.8f\n", nu_hat);
 #endif
 
-    // set timer (with backoff)
-    _q->timer = 2;
-
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXLONG0;
 }
@@ -477,9 +474,8 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     float complex * rc;
     windowcf_read(_q->input_buffer, &rc);
 
-    // estimate S1 gain
-    // TODO : add backoff in gain estimation
-    wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1a);
+    // estimate S1 gain, adding backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16-2], _q->G1a);
 
     // compute S1 metrics
     float complex s_hat;
@@ -529,9 +525,8 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     float complex * rc;
     windowcf_read(_q->input_buffer, &rc);
 
-    // estimate S1 gain
-    // TODO : add backoff in gain estimation
-    wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1b);
+    // estimate S1 gain, adding backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16-2], _q->G1b);
 
     // compute S1 metrics
     float complex s_hat;
@@ -608,14 +603,12 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
 
     // compute fft, storing result into _q->X
     FFT_EXECUTE(_q->fft);
-   
-    // apply gain
-    unsigned int i;
-    for (i=0; i<64; i++)
-        _q->X[i] *= _q->R[i];
-
-    // demodulate, decode, ...
+  
+    // recover symbol, correcting for gain, pilot phase, etc.
+    wlanframesync_rxsymbol(_q);
     
+    // demodulate, decode, ...
+
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
 }
@@ -824,7 +817,7 @@ void wlanframesync_estimate_eqgain_poly(wlanframesync _q)
             float complex G = _q->G1b[k];
 
             // store resulting...
-            x_eq[n] = (k > 32) ? (float)k - (float)(64) : (float)k;
+            x_eq[n] = (k > 31) ? (float)k - (float)(64) : (float)k;
             x_eq[n] = x_eq[n] / (float)(64);
             y_eq_abs[n] = cabsf(G);
             y_eq_arg[n] = cargf(G);
@@ -858,7 +851,7 @@ void wlanframesync_estimate_eqgain_poly(wlanframesync _q)
             _q->R[i] = 0.0f;
         } else {
             // DATA/PILOT subcarrier (S1 enabled)
-            float freq = (i > 32) ? (float)i - (float)(64) : (float)i;
+            float freq = (i > 31) ? (float)i - (float)(64) : (float)i;
             freq = freq / (float)(64);
             float A     = polyf_val(p_eq_abs, order+1, freq);
             float theta = polyf_val(p_eq_arg, order+1, freq);
@@ -877,6 +870,49 @@ void wlanframesync_estimate_eqgain_poly(wlanframesync _q)
 // recover symbol, correcting for gain, pilot phase, etc.
 void wlanframesync_rxsymbol(wlanframesync _q)
 {
+    // apply gain
+    unsigned int i;
+    for (i=0; i<64; i++)
+        _q->X[i] *= _q->R[i];
+
+    // polynomial curve-fit
+    float x_phase[4] = {-21.0f, -7.0f, 7.0f, 21.0f};
+    float y_phase[4];
+    float p_phase[2];
+
+    // update pilot phase
+    unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
+
+    y_phase[0] = pilot_phase ? -cargf(_q->X[43]) :  cargf(_q->X[43]);
+    y_phase[1] = pilot_phase ? -cargf(_q->X[57]) :  cargf(_q->X[57]);
+    y_phase[2] = pilot_phase ? -cargf(_q->X[ 7]) :  cargf(_q->X[ 7]);
+    y_phase[3] = pilot_phase ? -cargf(_q->X[21]) :  cargf(_q->X[21]);
+
+    // unwrap phase
+    if ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
+    if ( (y_phase[1]-y_phase[0]) < -M_PI_2 ) y_phase[1] += M_PI;
+
+    if ( (y_phase[2]-y_phase[1]) >  M_PI_2 ) y_phase[2] -= M_PI;
+    if ( (y_phase[2]-y_phase[1]) < -M_PI_2 ) y_phase[2] += M_PI;
+
+    if ( (y_phase[3]-y_phase[2]) >  M_PI_2 ) y_phase[3] -= M_PI;
+    if ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
+
+#if 0
+    for (i=0; i<4; i++)
+        printf("    x(%2u) = %12.8f; y(%2u) = %12.8f;\n", i+1, x_phase[i], i+1, y_phase[i]);
+#endif
+
+    // fit phase to 1st-order polynomial (2 coefficients)
+    polyf_fit(x_phase, y_phase, 4, p_phase, 2);
+
+    // compensate for phase offset
+    // TODO : find more computationally efficient way to do this
+    for (i=0; i<64; i++) {
+        float fx    = (i > 31) ? (float)i - (float)(64) : (float)i;
+        float theta = polyf_val(p_phase, 2, fx);
+        _q->X[i] *= cexpf(-_Complex_I*theta);
+    }
 }
 
 

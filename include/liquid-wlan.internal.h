@@ -352,6 +352,9 @@ float wlanframesync_estimate_cfo_S1(float complex * _G1a,
 // estimate equalizer gain from internal S1 gains using polynomial
 void wlanframesync_estimate_eqgain_poly(wlanframesync _q);
 
+// recover symbol, correcting for gain, pilot phase, etc.
+void wlanframesync_rxsymbol(wlanframesync _q);
+
 //
 // utility
 //
