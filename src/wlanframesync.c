@@ -675,26 +675,10 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
     // compute fft, storing result into _q->X
     FFT_EXECUTE(_q->fft);
     
-    // compute gain, ignoring NULL subcarriers
-#if 0
-    unsigned int i;
-    float gain = sqrtf(_q->M_S1) / (float)(_q->M);
-    for (i=0; i<_q->M; i++) {
-        if (_q->p[i] != OFDMOQAMFRAME_SCTYPE_NULL) {
-            // NOTE : if cabsf(_q->S1[i]) == 0 then we can multiply by conjugate
-            //        rather than compute division
-            //_G[i] = _q->X[i] / _q->S1[i];
-            _G[i] = _q->X[i] * conjf(_q->S1[i]);
-        } else {
-            _G[i] = 0.0f;
-        }
-
-        // normalize gain
-        _G[i] *= gain;
-    }
-#else
+    // nominal gain (normalization factor)
     float gain = 0.11267f; // sqrt(52)/64 ; sqrtf(_q->M_S1) / (float)(_q->M);
 
+    // compute gain, ignoring NULL subcarriers
     unsigned int i;
     for (i=0; i<64; i++) {
         if (i == 0 || (i>26 && i<38) ) {
@@ -705,7 +689,6 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
             _G[i] = _q->X[i] * conjf(wlanframe_S1[i]) * gain;
         }
     }
-#endif
 }
 
 // compute S1 metrics
