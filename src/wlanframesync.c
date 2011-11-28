@@ -751,7 +751,18 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
         // decode message
         wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
 
-        // TODO : invoke callback
+        // assemble RX vector
+        struct wlan_rxvector_s rxvector;
+        rxvector.LENGTH     = _q->length;
+        rxvector.RSSI       = 200 + (unsigned int) (10*log10f(_q->g0));
+        rxvector.DATARATE   = _q->rate;
+        rxvector.SERVICE    = 0;
+
+        // invoke callback
+        if (_q->callback != NULL) {
+            //int retval = 
+            _q->callback(_q->msg_dec, rxvector, _q->userdata);
+        }
 
         // reset and return
         wlanframesync_reset(_q);
@@ -1040,9 +1051,7 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     while ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
 
 #if 0
-    printf("----------\n");
-    for (i=0; i<4; i++)
-        printf("    x(%2u) = %3.0f; y(%2u) = %8.5f;\n", i+1, x_phase[i], i+1, y_phase[i]);
+    printf("    x = [-21 -7 7 21]; y = [%6.3f %6.3f %6.3f %6.3f];\n", y_phase[0], y_phase[1], y_phase[2], y_phase[3]);
 #endif
 
     // fit phase to 1st-order polynomial (2 coefficients)
