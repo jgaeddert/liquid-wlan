@@ -60,6 +60,7 @@ struct wlanframesync_s {
 
     // gain/equalization
     float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
+    float complex G1a[64], G1b[64]; // complex channel gain (long sequences)
     float complex G[64];            // complex channel gain
     float g0;                       // nominal gain
     float complex s0a_hat;          // first 'short' sequence statistic
@@ -459,6 +460,39 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
 void wlanframesync_execute_rxlong0(wlanframesync _q)
 {
     // set timer to 16, wait for phase to be relatively small
+    
+    _q->timer++;
+    if (_q->timer < 16)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // estimate S1 gain
+    // TODO : add backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1a);
+
+    // compute detector output
+    float complex g_hat = 0.0f;
+    unsigned int i;
+    for (i=0; i<64; i++) {
+        //g_hat += _q->G[(i+1+_q->M)%_q->M]*conjf(_q->G[(i+_q->M)%_q->M]);
+        g_hat += _q->G1a[(i+1)%64]*conjf(_q->G1a[i]);
+    }
+    g_hat *= 0.019231f; // normalize output (1/_q->M_S1)
+    g_hat *= _q->g0;    // scale output by raw gain estimate
+
+    // rotate by complex phasor relative to timing backoff
+    //g_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    printf("    g_hat   :   %12.4f <%12.8f>\n", cabsf(g_hat), cargf(g_hat));
+#endif
+
 }
 
 void wlanframesync_execute_rxlong1(wlanframesync _q)
@@ -556,6 +590,43 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G)
 {
+    // move input array into fft input buffer
+    memmove(_q->x, _x, 64*sizeof(float complex));
+
+    // compute fft, storing result into _q->X
+    FFT_EXECUTE(_q->fft);
+    
+    // compute gain, ignoring NULL subcarriers
+#if 0
+    unsigned int i;
+    float gain = sqrtf(_q->M_S1) / (float)(_q->M);
+    for (i=0; i<_q->M; i++) {
+        if (_q->p[i] != OFDMOQAMFRAME_SCTYPE_NULL) {
+            // NOTE : if cabsf(_q->S1[i]) == 0 then we can multiply by conjugate
+            //        rather than compute division
+            //_G[i] = _q->X[i] / _q->S1[i];
+            _G[i] = _q->X[i] * conjf(_q->S1[i]);
+        } else {
+            _G[i] = 0.0f;
+        }
+
+        // normalize gain
+        _G[i] *= gain;
+    }
+#else
+    float gain = 0.11267f; // sqrt(52)/64 ; sqrtf(_q->M_S1) / (float)(_q->M);
+
+    unsigned int i;
+    for (i=0; i<64; i++) {
+        if (i == 0 || (i>26 && i<38) ) {
+            // NULL subcarrier
+            _G[i] = 0.0f;
+        } else {
+            // DATA/PILOT subcarrier (S1 enabled)
+            _G[i] = _q->X[i] * conjf(wlanframe_S1[i]) * gain;
+        }
+    }
+#endif
 }
 
 // estimate complex equalizer gain from G0 and G1
