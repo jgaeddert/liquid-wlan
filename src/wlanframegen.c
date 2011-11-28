@@ -568,7 +568,7 @@ void wlanframegen_writesymbol_signal(wlanframegen _q,
     _q->X[56] = ((_q->signal_int[2] >> 6) & 0x01) ? 1.0f : -1.0f;
     //    57  : pilot
     _q->X[58] = ((_q->signal_int[2] >> 5) & 0x01) ? 1.0f : -1.0f;
-    _q->X[58] = ((_q->signal_int[2] >> 4) & 0x01) ? 1.0f : -1.0f;
+    _q->X[59] = ((_q->signal_int[2] >> 4) & 0x01) ? 1.0f : -1.0f;
     _q->X[60] = ((_q->signal_int[2] >> 3) & 0x01) ? 1.0f : -1.0f;
     _q->X[61] = ((_q->signal_int[2] >> 2) & 0x01) ? 1.0f : -1.0f;
     _q->X[62] = ((_q->signal_int[2] >> 1) & 0x01) ? 1.0f : -1.0f;
