@@ -691,7 +691,7 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
     if (_q->timer < 80)
         return;
 
-    printf("    receiving symbol %u...\n", _q->num_symbols);
+    //printf("    receiving symbol %u...\n", _q->num_symbols);
 
     // reset timer
     _q->timer = 0;
@@ -707,24 +707,27 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
     // recover symbol, correcting for gain, pilot phase, etc.
     wlanframesync_rxsymbol(_q);
    
-    // increment number of received symbols
-    _q->num_symbols++;
-
     // demodulate and pack
     unsigned int i;
     unsigned int n=0;
     unsigned int sym;
     for (i=0; i<64; i++) {
-        if (i == 0 || i==43 || i==57 || i==7 || i==21 || (i>26 && i<38) ) {
-            // NULL/PILOT subcarriers
+        unsigned int k = (i + 32) % 64;
+
+        if ( k==0 || (k > 26 && k < 38) ) {
+            // NULL subcarrier
+        } else if (k==43 || k==57 || k==7 || k==21) {
+            // PILOT subcarrier
         } else {
-            // demodulate
+            // DATA subcarrier
             assert(n<48);
-            modem_demodulate(_q->demod, _q->X[i], &sym);
-            _q->modem_syms[n++] = sym;
+            modem_demodulate(_q->demod, _q->X[k], &sym);
+            _q->modem_syms[n] = sym;
+            n++;
 #if DEBUG_WLANFRAMESYNC
-            windowcf_push(_q->debug_framesyms, _q->X[i]);
+            windowcf_push(_q->debug_framesyms, _q->X[k]);
 #endif
+
         }
     }
     assert(n==48);
@@ -738,18 +741,15 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
                         &num_written);
     assert(num_written == bytes_per_symbol);
 
+    // increment number of received symbols
+    _q->num_symbols++;
+
     // check number of symbols
     if (_q->num_symbols == _q->nsym) {
         printf("    FRAME RECEVIED!\n");
 
         // decode message
         wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
-        printf("msg_dec:\n");
-        for (i=0; i<_q->length; i++) {
-            printf(" %.2x", _q->msg_dec[i]);
-            if ( ((i+1)%8)==0 ) printf("\n");
-        }
-        printf("\n");
 
         // TODO : invoke callback
 
@@ -1030,18 +1030,19 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     y_phase[3] = pilot_phase ? -cargf(_q->X[21]) :  cargf(_q->X[21]);
 
     // unwrap phase
-    if ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
-    if ( (y_phase[1]-y_phase[0]) < -M_PI_2 ) y_phase[1] += M_PI;
+    while ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
+    while ( (y_phase[1]-y_phase[0]) < -M_PI_2 ) y_phase[1] += M_PI;
 
-    if ( (y_phase[2]-y_phase[1]) >  M_PI_2 ) y_phase[2] -= M_PI;
-    if ( (y_phase[2]-y_phase[1]) < -M_PI_2 ) y_phase[2] += M_PI;
+    while ( (y_phase[2]-y_phase[1]) >  M_PI_2 ) y_phase[2] -= M_PI;
+    while ( (y_phase[2]-y_phase[1]) < -M_PI_2 ) y_phase[2] += M_PI;
 
-    if ( (y_phase[3]-y_phase[2]) >  M_PI_2 ) y_phase[3] -= M_PI;
-    if ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
+    while ( (y_phase[3]-y_phase[2]) >  M_PI_2 ) y_phase[3] -= M_PI;
+    while ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
 
 #if 0
+    printf("----------\n");
     for (i=0; i<4; i++)
-        printf("    x(%2u) = %12.8f; y(%2u) = %12.8f;\n", i+1, x_phase[i], i+1, y_phase[i]);
+        printf("    x(%2u) = %3.0f; y(%2u) = %8.5f;\n", i+1, x_phase[i], i+1, y_phase[i]);
 #endif
 
     // fit phase to 1st-order polynomial (2 coefficients)
