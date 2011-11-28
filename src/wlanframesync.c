@@ -70,13 +70,15 @@ struct wlanframesync_s {
     msequence ms_pilot;     // pilot sequence generator
     modem demod;            // DATA field demodulator
 
-    // gain
-    float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
-    float complex G1a[64], G1b[64]; // complex channel gain (long sequences)
-    float complex G[64];            // complex channel gain (composite)
+    // gain arrays
     float g0;                       // nominal gain
+    float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
     float complex s0a_hat;          // first 'short' sequence statistic
     float complex s0b_hat;          // second 'short' sequence statistic
+    float complex G1a[64], G1b[64]; // complex channel gain (long sequences)
+    float complex s1a_hat;          // first 'long' sequence statistic
+    float complex s1b_hat;          // second 'long' sequence statistic
+    float complex G[64];            // complex channel gain (composite)
 
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
@@ -479,6 +481,9 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     wlanframesync_S1_metrics(_q, _q->G1a, &s_hat);
     s_hat *= _q->g0;    // scale output by raw gain estimate
 
+    // save first 'long' symbol statistic
+    _q->s1a_hat = s_hat;
+
     // rotate by complex phasor relative to timing backoff
     //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
 
@@ -526,6 +531,9 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     float complex s_hat;
     wlanframesync_S1_metrics(_q, _q->G1b, &s_hat);
     s_hat *= _q->g0;    // scale output by raw gain estimate
+
+    // save second 'long' symbol statistic
+    _q->s1b_hat = s_hat;
 
     // rotate by complex phasor relative to timing backoff
     //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
