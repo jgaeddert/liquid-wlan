@@ -79,6 +79,7 @@ struct wlanframesync_s {
     float complex s1a_hat;          // first 'long' sequence statistic
     float complex s1b_hat;          // second 'long' sequence statistic
     float complex G[64];            // complex channel gain (composite)
+    float complex R[64];            // complex channel correction (composite)
 
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
@@ -591,8 +592,32 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
 
 }
 
+// receive the 'SIGNAL' field
 void wlanframesync_execute_rxsignal(wlanframesync _q)
 {
+    _q->timer++;
+    if (_q->timer < 80)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // compute fft, storing result into _q->X
+    FFT_EXECUTE(_q->fft);
+   
+    // apply gain
+    unsigned int i;
+    for (i=0; i<64; i++)
+        _q->X[i] *= _q->R[i];
+
+    // demodulate, decode, ...
+    
+    // set state
+    _q->state = WLANFRAMESYNC_STATE_RXDATA;
 }
 
 void wlanframesync_execute_rxdata(wlanframesync _q)
@@ -830,13 +855,20 @@ void wlanframesync_estimate_eqgain_poly(wlanframesync _q)
         if (i == 0 || (i>26 && i<38) ) {
             // NULL subcarrier
             _q->G[i] = 0.0f;
+            _q->R[i] = 0.0f;
         } else {
             // DATA/PILOT subcarrier (S1 enabled)
             float freq = (i > 32) ? (float)i - (float)(64) : (float)i;
             freq = freq / (float)(64);
             float A     = polyf_val(p_eq_abs, order+1, freq);
             float theta = polyf_val(p_eq_arg, order+1, freq);
+
+            // composite channel estimation
             _q->G[i] = A * cexpf(_Complex_I*theta);
+
+            // composite channel correction
+            // 0.11267 = sqrt(52)/64
+            _q->R[i] = 0.11267f / (A + 1e-12f) * cexpf(-_Complex_I*theta);
         }
     }
 
@@ -899,7 +931,15 @@ void wlanframesync_debug_print(wlanframesync _q,
         fprintf(fid,"G1b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]),   cimagf(_q->G1b[i]));
         fprintf(fid,"G(%3u)      = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),     cimagf(_q->G[i]));
     }
+    fprintf(fid,"%% apply timing offset (backoff) phase shift\n");
     fprintf(fid,"f = -32:31;\n");
+    fprintf(fid,"b = 2;\n");
+    fprintf(fid,"G0a = G0a.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G0b = G0b.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G1a = G1a.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G1b = G1b.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G   = G.*exp(j*b*2*pi*f/64);\n");
+
     fprintf(fid,"figure;\n");
     fprintf(fid,"subplot(2,1,1);\n");
     fprintf(fid,"  plot(f,abs(G1a),'x', f,abs(G1b),'x', f,abs(G),'-k','LineWidth',2);\n");
@@ -908,6 +948,16 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"  plot(f,arg(G1a),'x', f,arg(G1b),'x', f,arg(G),'-k','LineWidth',2);\n");
     fprintf(fid,"  ylabel('G (phase)');\n");
     
+    // write buffer
+    fprintf(fid,"\n\n");
+    fprintf(fid,"X      = zeros(1,64);\n");
+    for (i=0; i<64; i++)
+        fprintf(fid,"X(%3u)    = %12.8f + j*%12.8f;\n", i+1, crealf(_q->X[i]), cimagf(_q->X[i]));
+    fprintf(fid,"figure;\n");
+    fprintf(fid,"plot(X,'x');\n");
+    fprintf(fid,"axis([-1 1 -1 1]*1.5);\n");
+    fprintf(fid,"axis square;\n");
+    fprintf(fid,"grid on;\n");
 #else
     fprintf(fid,"disp('no debugging info available');\n");
 #endif
