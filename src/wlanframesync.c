@@ -600,6 +600,7 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     // run fft
     float complex * rc;
     windowcf_read(_q->input_buffer, &rc);
+    memmove(_q->x, &rc[16-2], 64*sizeof(float complex));
 
     // compute fft, storing result into _q->X
     FFT_EXECUTE(_q->fft);
@@ -608,6 +609,66 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     wlanframesync_rxsymbol(_q);
     
     // demodulate, decode, ...
+    memset(_q->signal_int, 0x00, 6*sizeof(unsigned char));
+
+    _q->signal_int[0] |= crealf(_q->X[38]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[39]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[40]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[41]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[42]) > 0.0f ? 0x08 : 0x00;
+    //  43 : pilot
+    _q->signal_int[0] |= crealf(_q->X[44]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[45]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[46]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[47]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[48]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[49]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[50]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[51]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[52]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[53]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[54]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[55]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[56]) > 0.0f ? 0x40 : 0x00;
+    //  57 : pilot
+    _q->signal_int[2] |= crealf(_q->X[58]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[59]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[60]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[61]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[62]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[63]) > 0.0f ? 0x01 : 0x00;
+    //   0 : NULL
+    _q->signal_int[3] |= crealf(_q->X[ 1]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 2]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 3]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 4]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 5]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 6]) > 0.0f ? 0x04 : 0x00;
+    //   7 : pilot
+    _q->signal_int[3] |= crealf(_q->X[ 8]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 9]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[10]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[11]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[12]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[13]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[14]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[15]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[16]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[17]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[18]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[19]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[20]) > 0.0f ? 0x20 : 0x00;
+    //  21 : pilot
+    _q->signal_int[5] |= crealf(_q->X[22]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[23]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[24]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[25]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[26]) > 0.0f ? 0x01 : 0x00;
+
+    // print...
+    unsigned int i;
+    for (i=0; i<6; i++)
+        printf("  signal int[%1u] = 0x%.2x\n", i, _q->signal_int[i]);
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
