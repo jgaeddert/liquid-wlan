@@ -548,16 +548,16 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     {
         printf("    acquisition S1[b]\n");
         
-        // TODO : equalizer with G1a, G1b
-        
         // refine CFO estimate with G1a, G1b and adjust NCO appropriately
         float nu_hat = wlanframesync_estimate_cfo_S1(_q->G1a, _q->G1b);
         nco_crcf_adjust_frequency(_q->nco_rx, nu_hat);
 #if DEBUG_WLANFRAMESYNC_PRINT
         printf("   nu_hat[1]:   %12.8f\n", nu_hat);
 #endif
+        // TODO : de-rotate S1b by phase offset (help with equalizer)
 
-
+        // estimate equalizer with G1a, G1b
+        wlanframesync_estimate_eqgain_poly(_q);
         
         // set state
         _q->state = WLANFRAMESYNC_STATE_RXLONG1;
@@ -866,6 +866,31 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"figure;\n");
     fprintf(fid,"plot(agc_rssi)\n");
     fprintf(fid,"ylabel('RSSI [dB]');\n");
+
+    // write gain arrays
+    fprintf(fid,"\n\n");
+    fprintf(fid,"G0a    = zeros(1,64);\n");
+    fprintf(fid,"G0b    = zeros(1,64);\n");
+    fprintf(fid,"G1a    = zeros(1,64);\n");
+    fprintf(fid,"G1b    = zeros(1,64);\n");
+    fprintf(fid,"G      = zeros(1,64);\n");
+    for (i=0; i<64; i++) {
+        unsigned int k = (i + 32) % 64;
+        fprintf(fid,"G0a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0a[i]),   cimagf(_q->G0a[i]));
+        fprintf(fid,"G0b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0b[i]),   cimagf(_q->G0b[i]));
+        fprintf(fid,"G1a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1a[i]),   cimagf(_q->G1a[i]));
+        fprintf(fid,"G1b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]),   cimagf(_q->G1b[i]));
+        fprintf(fid,"G(%3u)      = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),     cimagf(_q->G[i]));
+    }
+    fprintf(fid,"f = -32:31;\n");
+    fprintf(fid,"figure;\n");
+    fprintf(fid,"subplot(2,1,1);\n");
+    fprintf(fid,"  plot(f,abs(G1a),'x', f,abs(G1b),'x', f,abs(G),'-k','LineWidth',2);\n");
+    fprintf(fid,"  ylabel('G (mag)');\n");
+    fprintf(fid,"subplot(2,1,2);\n");
+    fprintf(fid,"  plot(f,arg(G1a),'x', f,arg(G1b),'x', f,arg(G),'-k','LineWidth',2);\n");
+    fprintf(fid,"  ylabel('G (phase)');\n");
+    
 #else
     fprintf(fid,"disp('no debugging info available');\n");
 #endif
