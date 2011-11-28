@@ -328,6 +328,10 @@ void wlanframesync_S0_metrics(wlanframesync _q,
                               float complex * _G,
                               float complex * _s_hat);
 
+// estimate carrier frequency offset from S0 gains
+float wlanframesync_estimate_cfo_S0(float complex * _G0a,
+                                    float complex * _G0b);
+
 // estimate long sequence gain
 //  _q      :   wlanframesync object
 //  _x      :   input array (time), [size: M x 1]
@@ -336,6 +340,23 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G);
 
+// compute S1 metrics
+void wlanframesync_S1_metrics(wlanframesync _q,
+                              float complex * _G,
+                              float complex * _s_hat);
+
+// estimate carrier frequency offset from S1 gains
+float wlanframesync_estimate_cfo_S1(float complex * _G1a,
+                                    float complex * _G1b);
+
+// estimate equalizer gain from internal S1 gains using polynomial
+void wlanframesync_estimate_eqgain_poly(wlanframesync _q);
+
+// recover symbol, correcting for gain, pilot phase, etc.
+void wlanframesync_rxsymbol(wlanframesync _q);
+
+// decode SIGNAL field
+void wlanframesync_decode_signal(wlanframesync _q);
 
 //
 // utility

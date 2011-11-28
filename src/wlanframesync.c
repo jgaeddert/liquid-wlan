@@ -37,6 +37,18 @@
 
 #define WLANFRAMESYNC_ENABLE_SQUELCH    0
 
+// Thresholds for detecting short sequences
+#define WLANFRAMESYNC_S0A_ABS_THRESH    (0.4f)
+//#define WLANFRAMESYNC_S0B_ABS_THRESH    (0.5f)
+
+// Thresholds for detecting first long sequence, S1[a]
+#define WLANFRAMESYNC_S1A_ABS_THRESH    (0.5f)
+#define WLANFRAMESYNC_S1A_ARG_THRESH    (0.2f)
+
+// Thresholds for detecting second long sequence, S1[b]
+#define WLANFRAMESYNC_S1B_ABS_THRESH    (0.5f)
+#define WLANFRAMESYNC_S1B_ARG_THRESH    (0.2f)
+
 struct wlanframesync_s {
     // callback
     wlanframesync_callback callback;
@@ -58,12 +70,16 @@ struct wlanframesync_s {
     msequence ms_pilot;     // pilot sequence generator
     modem demod;            // DATA field demodulator
 
-    // gain/equalization
-    float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
-    float complex G[64];            // complex channel gain
+    // gain arrays
     float g0;                       // nominal gain
+    float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
     float complex s0a_hat;          // first 'short' sequence statistic
     float complex s0b_hat;          // second 'short' sequence statistic
+    float complex G1a[64], G1b[64]; // complex channel gain (long sequences)
+    float complex s1a_hat;          // first 'long' sequence statistic
+    float complex s1b_hat;          // second 'long' sequence statistic
+    float complex G[64];            // complex channel gain (composite)
+    float complex R[64];            // complex channel correction (composite)
 
     // lengths
     unsigned int ndbps;             // number of data bits per OFDM symbol
@@ -80,6 +96,7 @@ struct wlanframesync_s {
     unsigned char   signal_enc[6];  // encoded message (SIGNAL field)
     unsigned char   signal_dec[3];  // decoded message (SIGNAL field)
     unsigned char * msg_enc;        // encoded message (DATA field)
+    unsigned char * msg_dec;        // decoded message (DATA field)
     unsigned char   modem_syms[48]; // modem symbols
     
     // counters/states
@@ -135,6 +152,10 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // allocate memory for encoded message
     q->enc_msg_len = wlan_packet_compute_enc_msg_len(q->rate, q->length);
     q->msg_enc = (unsigned char*) malloc(q->enc_msg_len*sizeof(unsigned char));
+
+    // allocate memory for decoded message
+    q->dec_msg_len = 1;
+    q->msg_dec = (unsigned char*) malloc(q->dec_msg_len*sizeof(unsigned char));
 
     // reset object
     wlanframesync_reset(q);
@@ -284,6 +305,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
 {
     _q->timer++;
 
+    // TODO : only check every 100 - 150 (decimates/reduced complexity)
     if (_q->timer < 64)
         return;
 
@@ -316,7 +338,6 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
     // compute S0 metrics
     float complex s_hat;
     wlanframesync_S0_metrics(_q, _q->G0a, &s_hat);
-    //float g = agc_crcf_get_gain(_q->agc_rx);
     s_hat *= g;
 
     float tau_hat  = cargf(s_hat) * (float)(16.0f) / (2*M_PI);
@@ -329,7 +350,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
 #endif
 
     // 
-    if (cabsf(s_hat) > 0.4f) {
+    if (cabsf(s_hat) > WLANFRAMESYNC_S0A_ABS_THRESH) {
 
         int dt = (int)roundf(tau_hat);
         // set timer appropriately...
@@ -429,43 +450,233 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
     float nu_hat = cargf(t0) / (float)(_q->M2);
 #else
     // compute carrier frequency offset estimate using freq. domain method
-    float complex g_hat = 0.0f;
-    g_hat += _q->G0b[40] * conjf(_q->G0a[40]);
-    g_hat += _q->G0b[44] * conjf(_q->G0a[44]);
-    g_hat += _q->G0b[48] * conjf(_q->G0a[48]);
-    g_hat += _q->G0b[52] * conjf(_q->G0a[52]);
-    g_hat += _q->G0b[56] * conjf(_q->G0a[56]);
-    g_hat += _q->G0b[60] * conjf(_q->G0a[60]);
-    //
-    g_hat += _q->G0b[ 4] * conjf(_q->G0a[ 4]);
-    g_hat += _q->G0b[ 8] * conjf(_q->G0a[ 8]);
-    g_hat += _q->G0b[12] * conjf(_q->G0a[12]);
-    g_hat += _q->G0b[16] * conjf(_q->G0a[16]);
-    g_hat += _q->G0b[20] * conjf(_q->G0a[20]);
-    g_hat += _q->G0b[24] * conjf(_q->G0a[24]);
-
-    float nu_hat = 4.0f * cargf(g_hat) / 64.0f;
+    float nu_hat = wlanframesync_estimate_cfo_S0(_q->G0a, _q->G0b);
 #endif
+
+    // set NCO frequency
+    nco_crcf_set_frequency(_q->nco_rx, nu_hat);
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("   nu_hat   :   %12.8f\n", nu_hat);
+    printf("   nu_hat[0]:   %12.8f\n", nu_hat);
 #endif
 
+    // set state
     _q->state = WLANFRAMESYNC_STATE_RXLONG0;
 }
 
 void wlanframesync_execute_rxlong0(wlanframesync _q)
 {
     // set timer to 16, wait for phase to be relatively small
+    
+    _q->timer++;
+    if (_q->timer < 16)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // estimate S1 gain, adding backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16-2], _q->G1a);
+
+    // compute S1 metrics
+    float complex s_hat;
+    wlanframesync_S1_metrics(_q, _q->G1a, &s_hat);
+    s_hat *= _q->g0;    // scale output by raw gain estimate
+
+    // rotate by complex phasor relative to timing backoff
+    //s_hat *= cexpf(_Complex_I * 2.0f * 2.0f * M_PI / 64.0f);
+    s_hat *= cexpf(_Complex_I * 0.19635f);
+
+    // save first 'long' symbol statistic
+    _q->s1a_hat = s_hat;
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+#endif
+
+    float s_hat_abs = cabsf(s_hat);
+    float s_hat_arg = cargf(s_hat);
+    if (s_hat_arg >  M_PI) s_hat_arg -= 2.0f*M_PI;
+    if (s_hat_arg < -M_PI) s_hat_arg += 2.0f*M_PI;
+    
+    // check conditions for s_hat:
+    //  1. magnitude should be large (near unity) when aligned
+    //  2. phase should be very near zero (time aligned)
+    if (s_hat_abs        > WLANFRAMESYNC_S1A_ABS_THRESH &&
+        fabsf(s_hat_arg) < WLANFRAMESYNC_S1A_ARG_THRESH)
+    {
+        printf("    acquisition S1[a]\n");
+        
+        // set state
+        _q->state = WLANFRAMESYNC_STATE_RXLONG1;
+
+        // reset timer
+        _q->timer = 0;
+    }
+
 }
 
 void wlanframesync_execute_rxlong1(wlanframesync _q)
 {
-    // set timer to 62... (64 with 2-sample back-off)
+    _q->timer++;
+    if (_q->timer < 64)
+        return;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // estimate S1 gain, adding backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16-2], _q->G1b);
+
+    // compute S1 metrics
+    float complex s_hat;
+    wlanframesync_S1_metrics(_q, _q->G1b, &s_hat);
+    s_hat *= _q->g0;    // scale output by raw gain estimate
+
+    // rotate by complex phasor relative to timing backoff
+    //s_hat *= cexpf(_Complex_I * 2.0f * 2.0f * M_PI / 64.0f);
+    s_hat *= cexpf(_Complex_I * 0.19635f);
+
+    // save second 'long' symbol statistic
+    _q->s1b_hat = s_hat;
+
+    // rotate by complex phasor relative to timing backoff
+    //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+#endif
+
+    // check conditions for s_hat
+    float s_hat_abs = cabsf(s_hat);
+    float s_hat_arg = cargf(s_hat);
+    if (s_hat_arg >  M_PI) s_hat_arg -= 2.0f*M_PI;
+    if (s_hat_arg < -M_PI) s_hat_arg += 2.0f*M_PI;
+        
+    // check conditions for s_hat:
+    //  1. magnitude should be large (near unity) when aligned
+    //  2. phase should be very near zero (time aligned)
+    if (s_hat_abs        > WLANFRAMESYNC_S1B_ABS_THRESH &&
+        fabsf(s_hat_arg) < WLANFRAMESYNC_S1B_ARG_THRESH)
+    {
+        printf("    acquisition S1[b]\n");
+        
+        // refine CFO estimate with G1a, G1b and adjust NCO appropriately
+        float nu_hat = wlanframesync_estimate_cfo_S1(_q->G1a, _q->G1b);
+        nco_crcf_adjust_frequency(_q->nco_rx, nu_hat);
+#if DEBUG_WLANFRAMESYNC_PRINT
+        printf("   nu_hat[1]:   %12.8f\n", nu_hat);
+#endif
+        // TODO : de-rotate S1b by phase offset (help with equalizer)
+
+        // estimate equalizer with G1a, G1b
+        wlanframesync_estimate_eqgain_poly(_q);
+        
+        // set state
+        _q->state = WLANFRAMESYNC_STATE_RXLONG1;
+
+        // reset timer
+        _q->timer = 0;
+    }
+
+    // set state
+    _q->state = WLANFRAMESYNC_STATE_RXSIGNAL;
+
+    // reset timer
+    _q->timer = 0;
+
 }
 
+// receive the 'SIGNAL' field
 void wlanframesync_execute_rxsignal(wlanframesync _q)
 {
+    _q->timer++;
+    if (_q->timer < 80)
+        return;
+
+    // reset timer
+    _q->timer = 0;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+    memmove(_q->x, &rc[16-2], 64*sizeof(float complex));
+
+    // compute fft, storing result into _q->X
+    FFT_EXECUTE(_q->fft);
+  
+    // recover symbol, correcting for gain, pilot phase, etc.
+    wlanframesync_rxsymbol(_q);
+    
+    // demodulate, decode, ...
+    memset(_q->signal_int, 0x00, 6*sizeof(unsigned char));
+
+    _q->signal_int[0] |= crealf(_q->X[38]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[39]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[40]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[41]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[42]) > 0.0f ? 0x08 : 0x00;
+    //  43 : pilot
+    _q->signal_int[0] |= crealf(_q->X[44]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[45]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[0] |= crealf(_q->X[46]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[47]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[48]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[49]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[50]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[51]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[52]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[53]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[1] |= crealf(_q->X[54]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[55]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[56]) > 0.0f ? 0x40 : 0x00;
+    //  57 : pilot
+    _q->signal_int[2] |= crealf(_q->X[58]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[59]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[60]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[61]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[62]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[2] |= crealf(_q->X[63]) > 0.0f ? 0x01 : 0x00;
+    //   0 : NULL
+    _q->signal_int[3] |= crealf(_q->X[ 1]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 2]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 3]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 4]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 5]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 6]) > 0.0f ? 0x04 : 0x00;
+    //   7 : pilot
+    _q->signal_int[3] |= crealf(_q->X[ 8]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[3] |= crealf(_q->X[ 9]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[10]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[11]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[12]) > 0.0f ? 0x20 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[13]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[14]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[15]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[16]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[4] |= crealf(_q->X[17]) > 0.0f ? 0x01 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[18]) > 0.0f ? 0x80 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[19]) > 0.0f ? 0x40 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[20]) > 0.0f ? 0x20 : 0x00;
+    //  21 : pilot
+    _q->signal_int[5] |= crealf(_q->X[22]) > 0.0f ? 0x10 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[23]) > 0.0f ? 0x08 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[24]) > 0.0f ? 0x04 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[25]) > 0.0f ? 0x02 : 0x00;
+    _q->signal_int[5] |= crealf(_q->X[26]) > 0.0f ? 0x01 : 0x00;
+
+    // decode SIGNAL field
+    wlanframesync_decode_signal(_q);
+
+    // TODO : validate proper decoding
+
+    // set state
+    _q->state = WLANFRAMESYNC_STATE_RXDATA;
 }
 
 void wlanframesync_execute_rxdata(wlanframesync _q)
@@ -545,6 +756,29 @@ void wlanframesync_S0_metrics(wlanframesync _q,
     *_s_hat = s_hat * 0.1f;
 }
 
+// estimate carrier frequency offset from S0 gains
+float wlanframesync_estimate_cfo_S0(float complex * _G0a,
+                                    float complex * _G0b)
+{
+    // compute carrier frequency offset estimate using freq. domain method
+    float complex g_hat = 0.0f;
+    g_hat += _G0b[40] * conjf(_G0a[40]);
+    g_hat += _G0b[44] * conjf(_G0a[44]);
+    g_hat += _G0b[48] * conjf(_G0a[48]);
+    g_hat += _G0b[52] * conjf(_G0a[52]);
+    g_hat += _G0b[56] * conjf(_G0a[56]);
+    g_hat += _G0b[60] * conjf(_G0a[60]);
+    //
+    g_hat += _G0b[ 4] * conjf(_G0a[ 4]);
+    g_hat += _G0b[ 8] * conjf(_G0a[ 8]);
+    g_hat += _G0b[12] * conjf(_G0a[12]);
+    g_hat += _G0b[16] * conjf(_G0a[16]);
+    g_hat += _G0b[20] * conjf(_G0a[20]);
+    g_hat += _G0b[24] * conjf(_G0a[24]);
+
+    return 4.0f * cargf(g_hat) / 64.0f;
+}
+
 
 // estimate long sequence gain
 //  _q      :   wlanframesync object
@@ -554,7 +788,60 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G)
 {
+    // move input array into fft input buffer
+    memmove(_q->x, _x, 64*sizeof(float complex));
+
+    // compute fft, storing result into _q->X
+    FFT_EXECUTE(_q->fft);
+    
+    // nominal gain (normalization factor)
+    float gain = 0.11267f; // sqrt(52)/64 ; sqrtf(_q->M_S1) / (float)(_q->M);
+
+    // compute gain, ignoring NULL subcarriers
+    unsigned int i;
+    for (i=0; i<64; i++) {
+        if (i == 0 || (i>26 && i<38) ) {
+            // NULL subcarrier
+            _G[i] = 0.0f;
+        } else {
+            // DATA/PILOT subcarrier (S1 enabled)
+            _G[i] = _q->X[i] * conjf(wlanframe_S1[i]) * gain;
+        }
+    }
 }
+
+// compute S1 metrics
+void wlanframesync_S1_metrics(wlanframesync _q,
+                              float complex * _G,
+                              float complex * _s_hat)
+{
+    // compute detector output
+    float complex s_hat = 0.0f;
+
+    unsigned int i;
+    for (i=0; i<64; i++)
+        s_hat += _G[(i+1)%64]*conjf(_G[i]);
+
+    // set output values, normalizing by number of elements
+    *_s_hat = s_hat * 0.019231f;    // 1/52
+}
+
+// estimate carrier frequency offset from S1 gains
+float wlanframesync_estimate_cfo_S1(float complex * _G1a,
+                                    float complex * _G1b)
+{
+    // compute carrier frequency offset estimate using freq. domain method
+    float complex g_hat = 0.0f;
+    unsigned int i;
+    for (i=0; i<64; i++)
+        g_hat += _G1b[i] * conjf(_G1a[i]);
+
+    // return CFO offset estimate
+    // TODO : check if this needs to be negated
+    return cargf(g_hat) / 64.0f;
+}
+
+
 
 // estimate complex equalizer gain from G0 and G1
 //  _q      :   wlanframesync object
@@ -565,18 +852,202 @@ void wlanframesync_estimate_eqgain(wlanframesync _q,
 }
 
 // estimate complex equalizer gain from G0 and G1 using polynomial fit
-//  _q      :   wlanframesync object
-//  _order  :   polynomial order
-void wlanframesync_estimate_eqgain_poly(wlanframesync _q,
-                                        unsigned int _order)
+void wlanframesync_estimate_eqgain_poly(wlanframesync _q)
 {
+    // polynomial order
+    unsigned int order = 2;
+
+    // equalizer (polynomial)
+    float x_eq[52];             // frequency array
+    float y_eq_abs[52];         // magnitude array
+    float y_eq_arg[52];         // phase array
+    float p_eq_abs[order+1];    // polynomial coefficients (magnitude)
+    float p_eq_arg[order+1];    // polynomial coefficients (phase)
+
+    // average complex gains
+    unsigned int i;
+    unsigned int k;
+    unsigned int n=0;
+    for (i=0; i<64; i++) {
+        // start at mid-point (effective fftshift)
+        k = (i + 32) % 64;
+
+        if (k == 0 || (k>26 && k<38) ) {
+            // NULL subcarrier
+        } else {
+            // validate counter
+            assert(n < 52);
+
+            // DATA/PILOT subcarrier (S1 enabled)
+            //float complex G = 0.5f*(_q->G1a + _q->G1b);
+            float complex G = _q->G1b[k];
+
+            // store resulting...
+            x_eq[n] = (k > 31) ? (float)k - (float)(64) : (float)k;
+            x_eq[n] = x_eq[n] / (float)(64);
+            y_eq_abs[n] = cabsf(G);
+            y_eq_arg[n] = cargf(G);
+
+            // update counter
+            n++;
+        }
+    }
+    
+    // validate counter
+    assert(n == 52);
+
+    // try to unwrap phase
+    for (i=1; i<52; i++) {
+        while ((y_eq_arg[i] - y_eq_arg[i-1]) >  M_PI)
+            y_eq_arg[i] -= 2*M_PI;
+        while ((y_eq_arg[i] - y_eq_arg[i-1]) < -M_PI)
+            y_eq_arg[i] += 2*M_PI;
+    }
+
+    // fit to polynomial(s)
+    polyf_fit(x_eq, y_eq_abs, 52, p_eq_abs, order+1);
+    polyf_fit(x_eq, y_eq_arg, 52, p_eq_arg, order+1);
+
+    // compute subcarrier gain
+    for (i=0; i<64; i++) {
+        
+        if (i == 0 || (i>26 && i<38) ) {
+            // NULL subcarrier
+            _q->G[i] = 0.0f;
+            _q->R[i] = 0.0f;
+        } else {
+            // DATA/PILOT subcarrier (S1 enabled)
+            float freq = (i > 31) ? (float)i - (float)(64) : (float)i;
+            freq = freq / (float)(64);
+            float A     = polyf_val(p_eq_abs, order+1, freq);
+            float theta = polyf_val(p_eq_arg, order+1, freq);
+
+            // composite channel estimation
+            _q->G[i] = A * cexpf(_Complex_I*theta);
+
+            // composite channel correction
+            // 0.11267 = sqrt(52)/64
+            _q->R[i] = 0.11267f / (A + 1e-12f) * cexpf(-_Complex_I*theta);
+        }
+    }
+
 }
 
 // recover symbol, correcting for gain, pilot phase, etc.
 void wlanframesync_rxsymbol(wlanframesync _q)
 {
+    // apply gain
+    unsigned int i;
+    for (i=0; i<64; i++)
+        _q->X[i] *= _q->R[i];
+
+    // polynomial curve-fit
+    float x_phase[4] = {-21.0f, -7.0f, 7.0f, 21.0f};
+    float y_phase[4];
+    float p_phase[2];
+
+    // update pilot phase
+    unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
+
+    y_phase[0] = pilot_phase ? -cargf(_q->X[43]) :  cargf(_q->X[43]);
+    y_phase[1] = pilot_phase ? -cargf(_q->X[57]) :  cargf(_q->X[57]);
+    y_phase[2] = pilot_phase ? -cargf(_q->X[ 7]) :  cargf(_q->X[ 7]);
+    y_phase[3] = pilot_phase ? -cargf(_q->X[21]) :  cargf(_q->X[21]);
+
+    // unwrap phase
+    if ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
+    if ( (y_phase[1]-y_phase[0]) < -M_PI_2 ) y_phase[1] += M_PI;
+
+    if ( (y_phase[2]-y_phase[1]) >  M_PI_2 ) y_phase[2] -= M_PI;
+    if ( (y_phase[2]-y_phase[1]) < -M_PI_2 ) y_phase[2] += M_PI;
+
+    if ( (y_phase[3]-y_phase[2]) >  M_PI_2 ) y_phase[3] -= M_PI;
+    if ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
+
+#if 0
+    for (i=0; i<4; i++)
+        printf("    x(%2u) = %12.8f; y(%2u) = %12.8f;\n", i+1, x_phase[i], i+1, y_phase[i]);
+#endif
+
+    // fit phase to 1st-order polynomial (2 coefficients)
+    polyf_fit(x_phase, y_phase, 4, p_phase, 2);
+
+    // compensate for phase offset
+    // TODO : find more computationally efficient way to do this
+    for (i=0; i<64; i++) {
+        float fx    = (i > 31) ? (float)i - (float)(64) : (float)i;
+        float theta = polyf_val(p_phase, 2, fx);
+        _q->X[i] *= cexpf(-_Complex_I*theta);
+    }
 }
 
+void wlanframesync_decode_signal(wlanframesync _q)
+{
+    // de-interleave
+    wlan_interleaver_decode_symbol(48, 1, _q->signal_int, _q->signal_enc);
+
+    // decode
+    wlan_fec_signal_decode(_q->signal_enc, _q->signal_dec);
+
+    // unpack
+    unsigned int R; // 'reserved' bit
+    wlan_signal_unpack(_q->signal_dec,
+                       &_q->rate,
+                       &R,
+                       &_q->length);
+
+    // compute frame parameters
+    _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
+    _q->ncbps  = wlanframe_ratetab[_q->rate].ncbps; // number of coded bits per OFDM symbol
+    _q->nbpsc  = wlanframe_ratetab[_q->rate].nbpsc; // number of bits per subcarrier (modulation depth)
+
+    // compute number of OFDM symbols
+    div_t d = div(16 + 8*_q->length + 6, _q->ndbps);
+    _q->nsym = d.quot + (d.rem == 0 ? 0 : 1);
+
+    // compute number of bits in the DATA field
+    _q->ndata = _q->nsym * _q->ndbps;
+
+    // compute number of pad bits
+    _q->npad = _q->ndata - (16 + 8*_q->length + 6);
+
+    // compute decoded message length (number of data bytes)
+    // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
+    _q->dec_msg_len = _q->ndata / 8;
+
+    // compute encoded message length (number of data bytes)
+    _q->enc_msg_len = (_q->dec_msg_len * _q->ncbps) / _q->ndbps;
+
+    // validate encoded message length
+    //assert(_q->enc_msg_len == wlan_packet_compute_enc_msg_len(_q->rate, _q->length));
+
+    // re-allocate buffer for encoded message
+    _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    // print properties
+    printf("    signal int  :   [%.2x %.2x %.2x %.2x %.2x %.2x]\n",
+            _q->signal_int[0],
+            _q->signal_int[1],
+            _q->signal_int[2],
+            _q->signal_int[3],
+            _q->signal_int[4],
+            _q->signal_int[5]);
+    printf("    signal enc  :   [%.2x %.2x %.2x %.2x %.2x %.2x]\n",
+            _q->signal_enc[0],
+            _q->signal_enc[1],
+            _q->signal_enc[2],
+            _q->signal_enc[3],
+            _q->signal_enc[4],
+            _q->signal_enc[5]);
+    printf("    signal dec  :   [%.2x %.2x %.2x]\n",
+            _q->signal_dec[0],
+            _q->signal_dec[1],
+            _q->signal_dec[2]);
+    printf("    rate        :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
+    printf("    payload     :   %3u bytes\n", _q->length);
+#endif
+}
 
 void wlanframesync_debug_print(wlanframesync _q,
                                const char * _filename)
@@ -613,6 +1084,49 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"figure;\n");
     fprintf(fid,"plot(agc_rssi)\n");
     fprintf(fid,"ylabel('RSSI [dB]');\n");
+
+    // write gain arrays
+    fprintf(fid,"\n\n");
+    fprintf(fid,"G0a    = zeros(1,64);\n");
+    fprintf(fid,"G0b    = zeros(1,64);\n");
+    fprintf(fid,"G1a    = zeros(1,64);\n");
+    fprintf(fid,"G1b    = zeros(1,64);\n");
+    fprintf(fid,"G      = zeros(1,64);\n");
+    for (i=0; i<64; i++) {
+        unsigned int k = (i + 32) % 64;
+        fprintf(fid,"G0a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0a[i]),   cimagf(_q->G0a[i]));
+        fprintf(fid,"G0b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0b[i]),   cimagf(_q->G0b[i]));
+        fprintf(fid,"G1a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1a[i]),   cimagf(_q->G1a[i]));
+        fprintf(fid,"G1b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]),   cimagf(_q->G1b[i]));
+        fprintf(fid,"G(%3u)      = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),     cimagf(_q->G[i]));
+    }
+    fprintf(fid,"%% apply timing offset (backoff) phase shift\n");
+    fprintf(fid,"f = -32:31;\n");
+    fprintf(fid,"b = 2;\n");
+    fprintf(fid,"G0a = G0a.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G0b = G0b.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G1a = G1a.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G1b = G1b.*exp(j*b*2*pi*f/64);\n");
+    fprintf(fid,"G   = G.*exp(j*b*2*pi*f/64);\n");
+
+    fprintf(fid,"figure;\n");
+    fprintf(fid,"subplot(2,1,1);\n");
+    fprintf(fid,"  plot(f,abs(G1a),'x', f,abs(G1b),'x', f,abs(G),'-k','LineWidth',2);\n");
+    fprintf(fid,"  ylabel('G (mag)');\n");
+    fprintf(fid,"subplot(2,1,2);\n");
+    fprintf(fid,"  plot(f,arg(G1a),'x', f,arg(G1b),'x', f,arg(G),'-k','LineWidth',2);\n");
+    fprintf(fid,"  ylabel('G (phase)');\n");
+    
+    // write buffer
+    fprintf(fid,"\n\n");
+    fprintf(fid,"X      = zeros(1,64);\n");
+    for (i=0; i<64; i++)
+        fprintf(fid,"X(%3u)    = %12.8f + j*%12.8f;\n", i+1, crealf(_q->X[i]), cimagf(_q->X[i]));
+    fprintf(fid,"figure;\n");
+    fprintf(fid,"plot(X,'x');\n");
+    fprintf(fid,"axis([-1 1 -1 1]*1.5);\n");
+    fprintf(fid,"axis square;\n");
+    fprintf(fid,"grid on;\n");
 #else
     fprintf(fid,"disp('no debugging info available');\n");
 #endif
