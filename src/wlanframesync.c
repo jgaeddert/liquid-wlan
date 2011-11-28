@@ -670,13 +670,10 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     _q->signal_int[5] |= crealf(_q->X[25]) > 0.0f ? 0x02 : 0x00;
     _q->signal_int[5] |= crealf(_q->X[26]) > 0.0f ? 0x01 : 0x00;
 
-    // print...
-    unsigned int i;
-    for (i=0; i<6; i++)
-        printf("  signal int[%1u] = 0x%.2x\n", i, _q->signal_int[i]);
-
     // decode SIGNAL field
     wlanframesync_decode_signal(_q);
+
+    // TODO : validate proper decoding
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
@@ -999,14 +996,6 @@ void wlanframesync_decode_signal(wlanframesync _q)
                        &R,
                        &_q->length);
 
-    // print properties
-    printf("    rate        :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
-    printf("    payload     :   %3u bytes\n", _q->length);
-    printf("    signal dec  :   [%.2x %.2x %.2x]\n",
-            _q->signal_dec[0],
-            _q->signal_dec[1],
-            _q->signal_dec[2]);
-
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
     _q->ncbps  = wlanframe_ratetab[_q->rate].ncbps; // number of coded bits per OFDM symbol
@@ -1034,6 +1023,30 @@ void wlanframesync_decode_signal(wlanframesync _q)
 
     // re-allocate buffer for encoded message
     _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    // print properties
+    printf("    signal int  :   [%.2x %.2x %.2x %.2x %.2x %.2x]\n",
+            _q->signal_int[0],
+            _q->signal_int[1],
+            _q->signal_int[2],
+            _q->signal_int[3],
+            _q->signal_int[4],
+            _q->signal_int[5]);
+    printf("    signal enc  :   [%.2x %.2x %.2x %.2x %.2x %.2x]\n",
+            _q->signal_enc[0],
+            _q->signal_enc[1],
+            _q->signal_enc[2],
+            _q->signal_enc[3],
+            _q->signal_enc[4],
+            _q->signal_enc[5]);
+    printf("    signal dec  :   [%.2x %.2x %.2x]\n",
+            _q->signal_dec[0],
+            _q->signal_dec[1],
+            _q->signal_dec[2]);
+    printf("    rate        :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
+    printf("    payload     :   %3u bytes\n", _q->length);
+#endif
 }
 
 void wlanframesync_debug_print(wlanframesync _q,
