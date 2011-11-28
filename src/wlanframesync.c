@@ -441,23 +441,9 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
     float nu_hat = cargf(t0) / (float)(_q->M2);
 #else
     // compute carrier frequency offset estimate using freq. domain method
-    float complex g_hat = 0.0f;
-    g_hat += _q->G0b[40] * conjf(_q->G0a[40]);
-    g_hat += _q->G0b[44] * conjf(_q->G0a[44]);
-    g_hat += _q->G0b[48] * conjf(_q->G0a[48]);
-    g_hat += _q->G0b[52] * conjf(_q->G0a[52]);
-    g_hat += _q->G0b[56] * conjf(_q->G0a[56]);
-    g_hat += _q->G0b[60] * conjf(_q->G0a[60]);
-    //
-    g_hat += _q->G0b[ 4] * conjf(_q->G0a[ 4]);
-    g_hat += _q->G0b[ 8] * conjf(_q->G0a[ 8]);
-    g_hat += _q->G0b[12] * conjf(_q->G0a[12]);
-    g_hat += _q->G0b[16] * conjf(_q->G0a[16]);
-    g_hat += _q->G0b[20] * conjf(_q->G0a[20]);
-    g_hat += _q->G0b[24] * conjf(_q->G0a[24]);
-
-    float nu_hat = 4.0f * cargf(g_hat) / 64.0f;
+    float complex nu_hat = wlanframesync_estimate_cfo_S0(_q->G0a, _q->G0b);
 #endif
+
     // set NCO frequency
     nco_crcf_set_frequency(_q->nco_rx, nu_hat);
 
@@ -662,6 +648,29 @@ void wlanframesync_S0_metrics(wlanframesync _q,
 
     // set output values, normalizing by number of elements
     *_s_hat = s_hat * 0.1f;
+}
+
+// estimate carrier frequency offset from S0 gains
+float wlanframesync_estimate_cfo_S0(float complex * _G0a,
+                                    float complex * _G0b)
+{
+    // compute carrier frequency offset estimate using freq. domain method
+    float complex g_hat = 0.0f;
+    g_hat += _G0b[40] * conjf(_G0a[40]);
+    g_hat += _G0b[44] * conjf(_G0a[44]);
+    g_hat += _G0b[48] * conjf(_G0a[48]);
+    g_hat += _G0b[52] * conjf(_G0a[52]);
+    g_hat += _G0b[56] * conjf(_G0a[56]);
+    g_hat += _G0b[60] * conjf(_G0a[60]);
+    //
+    g_hat += _G0b[ 4] * conjf(_G0a[ 4]);
+    g_hat += _G0b[ 8] * conjf(_G0a[ 8]);
+    g_hat += _G0b[12] * conjf(_G0a[12]);
+    g_hat += _G0b[16] * conjf(_G0a[16]);
+    g_hat += _G0b[20] * conjf(_G0a[20]);
+    g_hat += _G0b[24] * conjf(_G0a[24]);
+
+    return 4.0f * cargf(g_hat) / 64.0f;
 }
 
 

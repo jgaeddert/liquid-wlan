@@ -328,6 +328,10 @@ void wlanframesync_S0_metrics(wlanframesync _q,
                               float complex * _G,
                               float complex * _s_hat);
 
+// estimate carrier frequency offset from S0 gains
+float wlanframesync_estimate_cfo_S0(float complex * _G0a,
+                                    float complex * _G0b);
+
 // estimate long sequence gain
 //  _q      :   wlanframesync object
 //  _x      :   input array (time), [size: M x 1]
