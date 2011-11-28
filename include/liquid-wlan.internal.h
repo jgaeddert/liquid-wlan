@@ -336,6 +336,11 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
                                     float complex * _x,
                                     float complex * _G);
 
+// compute S1 metrics
+void wlanframesync_S1_metrics(wlanframesync _q,
+                              float complex * _G,
+                              float complex * _s_hat);
+
 
 //
 // utility

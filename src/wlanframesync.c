@@ -317,7 +317,6 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
     // compute S0 metrics
     float complex s_hat;
     wlanframesync_S0_metrics(_q, _q->G0a, &s_hat);
-    //float g = agc_crcf_get_gain(_q->agc_rx);
     s_hat *= g;
 
     float tau_hat  = cargf(s_hat) * (float)(16.0f) / (2*M_PI);
@@ -476,32 +475,27 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     // TODO : add backoff in gain estimation
     wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1a);
 
-    // compute detector output
-    float complex g_hat = 0.0f;
-    unsigned int i;
-    for (i=0; i<64; i++) {
-        //g_hat += _q->G[(i+1+_q->M)%_q->M]*conjf(_q->G[(i+_q->M)%_q->M]);
-        g_hat += _q->G1a[(i+1)%64]*conjf(_q->G1a[i]);
-    }
-    g_hat *= 0.019231f; // normalize output (1/_q->M_S1)
-    g_hat *= _q->g0;    // scale output by raw gain estimate
+    // compute S1 metrics
+    float complex s_hat;
+    wlanframesync_S1_metrics(_q, _q->G1a, &s_hat);
+    s_hat *= _q->g0;    // scale output by raw gain estimate
 
     // rotate by complex phasor relative to timing backoff
-    //g_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
+    //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("    g_hat   :   %12.4f <%12.8f>\n", cabsf(g_hat), cargf(g_hat));
+    printf("    s_hat   :   %12.4f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
 #endif
 
-    float g_hat_abs = cabsf(g_hat);
-    float g_hat_arg = cargf(g_hat);
-    if (g_hat_arg >  M_PI) g_hat_arg -= M_2_PI;
-    if (g_hat_arg < -M_PI) g_hat_arg += M_2_PI;
+    float s_hat_abs = cabsf(s_hat);
+    float s_hat_arg = cargf(s_hat);
+    if (s_hat_arg >  M_PI) s_hat_arg -= M_2_PI;
+    if (s_hat_arg < -M_PI) s_hat_arg += M_2_PI;
     
-    // check conditions for g_hat:
+    // check conditions for s_hat:
     //  1. magnitude should be large (near unity) when aligned
     //  2. phase should be very near zero (time aligned)
-    if (g_hat_abs > 0.7f && fabsf(g_hat_arg) < 0.1f*M_PI ) {
+    if (s_hat_abs > 0.7f && fabsf(s_hat_arg) < 0.1f*M_PI ) {
         printf("    acquisition S1[a]\n");
         
         // set state
@@ -527,24 +521,23 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     // TODO : add backoff in gain estimation
     wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1b);
 
-    // compute detector output
-    float complex g_hat = 0.0f;
-    unsigned int i;
-    for (i=0; i<64; i++) {
-        //g_hat += _q->G[(i+1+_q->M)%_q->M]*conjf(_q->G[(i+_q->M)%_q->M]);
-        g_hat += _q->G1b[(i+1)%64]*conjf(_q->G1b[i]);
-    }
-    g_hat *= 0.019231f; // normalize output (1/_q->M_S1)
-    g_hat *= _q->g0;    // scale output by raw gain estimate
+    // estimate S1 gain
+    // TODO : add backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1a);
+
+    // compute S1 metrics
+    float complex s_hat;
+    wlanframesync_S1_metrics(_q, _q->G1a, &s_hat);
+    s_hat *= _q->g0;    // scale output by raw gain estimate
 
     // rotate by complex phasor relative to timing backoff
-    //g_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
+    //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("    g_hat   :   %12.4f <%12.8f>\n", cabsf(g_hat), cargf(g_hat));
+    printf("    s_hat   :   %12.4f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
 #endif
 
-    // TODO : check conditions for g_hat
+    // TODO : check conditions for s_hat
     // TODO : equalizer with G1a, G1b
     // TODO : refine CFO estiamte with G1a, G1b
         
@@ -685,6 +678,22 @@ void wlanframesync_estimate_gain_S1(wlanframesync _q,
         }
     }
 #endif
+}
+
+// compute S1 metrics
+void wlanframesync_S1_metrics(wlanframesync _q,
+                              float complex * _G,
+                              float complex * _s_hat)
+{
+    // compute detector output
+    float complex s_hat = 0.0f;
+
+    unsigned int i;
+    for (i=0; i<64; i++)
+        s_hat += _G[(i+1)%64]*conjf(_G[i]);
+
+    // set output values, normalizing by number of elements
+    *_s_hat = s_hat * 0.02f;    // 1/50 (fifty because DC subcarrier is zero)
 }
 
 // estimate complex equalizer gain from G0 and G1
