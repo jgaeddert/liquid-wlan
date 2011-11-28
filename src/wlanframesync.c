@@ -96,6 +96,7 @@ struct wlanframesync_s {
     unsigned char   signal_enc[6];  // encoded message (SIGNAL field)
     unsigned char   signal_dec[3];  // decoded message (SIGNAL field)
     unsigned char * msg_enc;        // encoded message (DATA field)
+    unsigned char * msg_dec;        // decoded message (DATA field)
     unsigned char   modem_syms[48]; // modem symbols
     
     // counters/states
@@ -151,6 +152,10 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // allocate memory for encoded message
     q->enc_msg_len = wlan_packet_compute_enc_msg_len(q->rate, q->length);
     q->msg_enc = (unsigned char*) malloc(q->enc_msg_len*sizeof(unsigned char));
+
+    // allocate memory for decoded message
+    q->dec_msg_len = 1;
+    q->msg_dec = (unsigned char*) malloc(q->dec_msg_len*sizeof(unsigned char));
 
     // reset object
     wlanframesync_reset(q);
@@ -670,6 +675,9 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     for (i=0; i<6; i++)
         printf("  signal int[%1u] = 0x%.2x\n", i, _q->signal_int[i]);
 
+    // decode SIGNAL field
+    wlanframesync_decode_signal(_q);
+
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
 }
@@ -976,6 +984,57 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     }
 }
 
+void wlanframesync_decode_signal(wlanframesync _q)
+{
+    // de-interleave
+    wlan_interleaver_decode_symbol(48, 1, _q->signal_int, _q->signal_enc);
+
+    // decode
+    wlan_fec_signal_decode(_q->signal_enc, _q->signal_dec);
+
+    // unpack
+    unsigned int R; // 'reserved' bit
+    wlan_signal_unpack(_q->signal_dec,
+                       &_q->rate,
+                       &R,
+                       &_q->length);
+
+    // print properties
+    printf("    rate        :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
+    printf("    payload     :   %3u bytes\n", _q->length);
+    printf("    signal dec  :   [%.2x %.2x %.2x]\n",
+            _q->signal_dec[0],
+            _q->signal_dec[1],
+            _q->signal_dec[2]);
+
+    // compute frame parameters
+    _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
+    _q->ncbps  = wlanframe_ratetab[_q->rate].ncbps; // number of coded bits per OFDM symbol
+    _q->nbpsc  = wlanframe_ratetab[_q->rate].nbpsc; // number of bits per subcarrier (modulation depth)
+
+    // compute number of OFDM symbols
+    div_t d = div(16 + 8*_q->length + 6, _q->ndbps);
+    _q->nsym = d.quot + (d.rem == 0 ? 0 : 1);
+
+    // compute number of bits in the DATA field
+    _q->ndata = _q->nsym * _q->ndbps;
+
+    // compute number of pad bits
+    _q->npad = _q->ndata - (16 + 8*_q->length + 6);
+
+    // compute decoded message length (number of data bytes)
+    // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
+    _q->dec_msg_len = _q->ndata / 8;
+
+    // compute encoded message length (number of data bytes)
+    _q->enc_msg_len = (_q->dec_msg_len * _q->ncbps) / _q->ndbps;
+
+    // validate encoded message length
+    //assert(_q->enc_msg_len == wlan_packet_compute_enc_msg_len(_q->rate, _q->length));
+
+    // re-allocate buffer for encoded message
+    _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
+}
 
 void wlanframesync_debug_print(wlanframesync _q,
                                const char * _filename)

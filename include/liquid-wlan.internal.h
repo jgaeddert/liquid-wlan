@@ -355,6 +355,9 @@ void wlanframesync_estimate_eqgain_poly(wlanframesync _q);
 // recover symbol, correcting for gain, pilot phase, etc.
 void wlanframesync_rxsymbol(wlanframesync _q);
 
+// decode SIGNAL field
+void wlanframesync_decode_signal(wlanframesync _q);
+
 //
 // utility
 //
