@@ -37,6 +37,10 @@
 
 #define WLANFRAMESYNC_ENABLE_SQUELCH    0
 
+// Thresholds for detecting short sequences
+#define WLANFRAMESYNC_S0A_ABS_THRESH    (0.4f)
+//#define WLANFRAMESYNC_S0B_ABS_THRESH    (0.5f)
+
 // Thresholds for detecting first long sequence, S1[a]
 #define WLANFRAMESYNC_S1A_ABS_THRESH    (0.5f)
 #define WLANFRAMESYNC_S1A_ARG_THRESH    (0.2f)
@@ -337,7 +341,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
 #endif
 
     // 
-    if (cabsf(s_hat) > 0.4f) {
+    if (cabsf(s_hat) > WLANFRAMESYNC_S0A_ABS_THRESH) {
 
         int dt = (int)roundf(tau_hat);
         // set timer appropriately...
