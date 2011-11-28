@@ -493,11 +493,69 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     printf("    g_hat   :   %12.4f <%12.8f>\n", cabsf(g_hat), cargf(g_hat));
 #endif
 
+    float g_hat_abs = cabsf(g_hat);
+    float g_hat_arg = cargf(g_hat);
+    if (g_hat_arg >  M_PI) g_hat_arg -= M_2_PI;
+    if (g_hat_arg < -M_PI) g_hat_arg += M_2_PI;
+    
+    // check conditions for g_hat:
+    //  1. magnitude should be large (near unity) when aligned
+    //  2. phase should be very near zero (time aligned)
+    if (g_hat_abs > 0.7f && fabsf(g_hat_arg) < 0.1f*M_PI ) {
+        printf("    acquisition S1[a]\n");
+        
+        // set state
+        _q->state = WLANFRAMESYNC_STATE_RXLONG1;
+
+        // reset timer
+        _q->timer = 0;
+    }
+
 }
 
 void wlanframesync_execute_rxlong1(wlanframesync _q)
 {
-    // set timer to 62... (64 with 2-sample back-off)
+    _q->timer++;
+    if (_q->timer < 64)
+        return;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+
+    // estimate S1 gain
+    // TODO : add backoff in gain estimation
+    wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1b);
+
+    // compute detector output
+    float complex g_hat = 0.0f;
+    unsigned int i;
+    for (i=0; i<64; i++) {
+        //g_hat += _q->G[(i+1+_q->M)%_q->M]*conjf(_q->G[(i+_q->M)%_q->M]);
+        g_hat += _q->G1b[(i+1)%64]*conjf(_q->G1b[i]);
+    }
+    g_hat *= 0.019231f; // normalize output (1/_q->M_S1)
+    g_hat *= _q->g0;    // scale output by raw gain estimate
+
+    // rotate by complex phasor relative to timing backoff
+    //g_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
+
+#if DEBUG_WLANFRAMESYNC_PRINT
+    printf("    g_hat   :   %12.4f <%12.8f>\n", cabsf(g_hat), cargf(g_hat));
+#endif
+
+    // TODO : check conditions for g_hat
+    // TODO : equalizer with G1a, G1b
+    // TODO : refine CFO estiamte with G1a, G1b
+        
+    printf("    acquisition S1[b]\n");
+
+    // set state
+    _q->state = WLANFRAMESYNC_STATE_RXSIGNAL;
+
+    // reset timer
+    _q->timer = 0;
+
 }
 
 void wlanframesync_execute_rxsignal(wlanframesync _q)
