@@ -493,8 +493,8 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
 
     float s_hat_abs = cabsf(s_hat);
     float s_hat_arg = cargf(s_hat);
-    if (s_hat_arg >  M_PI) s_hat_arg -= M_2_PI;
-    if (s_hat_arg < -M_PI) s_hat_arg += M_2_PI;
+    if (s_hat_arg >  M_PI) s_hat_arg -= 2.0f*M_PI;
+    if (s_hat_arg < -M_PI) s_hat_arg += 2.0f*M_PI;
     
     // check conditions for s_hat:
     //  1. magnitude should be large (near unity) when aligned
@@ -545,8 +545,8 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     // check conditions for s_hat
     float s_hat_abs = cabsf(s_hat);
     float s_hat_arg = cargf(s_hat);
-    if (s_hat_arg >  M_PI) s_hat_arg -= M_2_PI;
-    if (s_hat_arg < -M_PI) s_hat_arg += M_2_PI;
+    if (s_hat_arg >  M_PI) s_hat_arg -= 2.0f*M_PI;
+    if (s_hat_arg < -M_PI) s_hat_arg += 2.0f*M_PI;
         
     // check conditions for s_hat:
     //  1. magnitude should be large (near unity) when aligned
