@@ -349,6 +349,8 @@ void wlanframesync_S1_metrics(wlanframesync _q,
 float wlanframesync_estimate_cfo_S1(float complex * _G1a,
                                     float complex * _G1b);
 
+// estimate equalizer gain from internal S1 gains using polynomial
+void wlanframesync_estimate_eqgain_poly(wlanframesync _q);
 
 //
 // utility

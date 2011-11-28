@@ -70,10 +70,10 @@ struct wlanframesync_s {
     msequence ms_pilot;     // pilot sequence generator
     modem demod;            // DATA field demodulator
 
-    // gain/equalization
+    // gain
     float complex G0a[64], G0b[64]; // complex channel gain (short sequences)
     float complex G1a[64], G1b[64]; // complex channel gain (long sequences)
-    float complex G[64];            // complex channel gain
+    float complex G[64];            // complex channel gain (composite)
     float g0;                       // nominal gain
     float complex s0a_hat;          // first 'short' sequence statistic
     float complex s0b_hat;          // second 'short' sequence statistic
@@ -751,11 +751,78 @@ void wlanframesync_estimate_eqgain(wlanframesync _q,
 }
 
 // estimate complex equalizer gain from G0 and G1 using polynomial fit
-//  _q      :   wlanframesync object
-//  _order  :   polynomial order
-void wlanframesync_estimate_eqgain_poly(wlanframesync _q,
-                                        unsigned int _order)
+void wlanframesync_estimate_eqgain_poly(wlanframesync _q)
 {
+    // polynomial order
+    unsigned int order = 2;
+
+    // equalizer (polynomial)
+    float x_eq[52];             // frequency array
+    float y_eq_abs[52];         // magnitude array
+    float y_eq_arg[52];         // phase array
+    float p_eq_abs[order+1];    // polynomial coefficients (magnitude)
+    float p_eq_arg[order+1];    // polynomial coefficients (phase)
+
+    // average complex gains
+    unsigned int i;
+    unsigned int k;
+    unsigned int n=0;
+    for (i=0; i<64; i++) {
+        // start at mid-point (effective fftshift)
+        k = (i + 32) % 64;
+
+        if (k == 0 || (k>26 && k<38) ) {
+            // NULL subcarrier
+        } else {
+            // validate counter
+            assert(n < 52);
+
+            // DATA/PILOT subcarrier (S1 enabled)
+            //float complex G = 0.5f*(_q->G1a + _q->G1b);
+            float complex G = _q->G1b[k];
+
+            // store resulting...
+            x_eq[n] = (k > 32) ? (float)k - (float)(64) : (float)k;
+            x_eq[n] = x_eq[n] / (float)(64);
+            y_eq_abs[n] = cabsf(G);
+            y_eq_arg[n] = cargf(G);
+
+            // update counter
+            n++;
+        }
+    }
+    
+    // validate counter
+    assert(n == 52);
+
+    // try to unwrap phase
+    for (i=1; i<52; i++) {
+        while ((y_eq_arg[i] - y_eq_arg[i-1]) >  M_PI)
+            y_eq_arg[i] -= 2*M_PI;
+        while ((y_eq_arg[i] - y_eq_arg[i-1]) < -M_PI)
+            y_eq_arg[i] += 2*M_PI;
+    }
+
+    // fit to polynomial(s)
+    polyf_fit(x_eq, y_eq_abs, 52, p_eq_abs, order+1);
+    polyf_fit(x_eq, y_eq_arg, 52, p_eq_arg, order+1);
+
+    // compute subcarrier gain
+    for (i=0; i<64; i++) {
+        
+        if (i == 0 || (i>26 && i<38) ) {
+            // NULL subcarrier
+            _q->G[i] = 0.0f;
+        } else {
+            // DATA/PILOT subcarrier (S1 enabled)
+            float freq = (i > 32) ? (float)i - (float)(64) : (float)i;
+            freq = freq / (float)(64);
+            float A     = polyf_val(p_eq_abs, order+1, freq);
+            float theta = polyf_val(p_eq_arg, order+1, freq);
+            _q->G[i] = A * cexpf(_Complex_I*theta);
+        }
+    }
+
 }
 
 // recover symbol, correcting for gain, pilot phase, etc.
