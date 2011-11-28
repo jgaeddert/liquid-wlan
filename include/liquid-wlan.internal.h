@@ -345,6 +345,10 @@ void wlanframesync_S1_metrics(wlanframesync _q,
                               float complex * _G,
                               float complex * _s_hat);
 
+// estimate carrier frequency offset from S1 gains
+float wlanframesync_estimate_cfo_S1(float complex * _G1a,
+                                    float complex * _G1b);
+
 
 //
 // utility

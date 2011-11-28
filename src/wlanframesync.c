@@ -441,14 +441,14 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
     float nu_hat = cargf(t0) / (float)(_q->M2);
 #else
     // compute carrier frequency offset estimate using freq. domain method
-    float complex nu_hat = wlanframesync_estimate_cfo_S0(_q->G0a, _q->G0b);
+    float nu_hat = wlanframesync_estimate_cfo_S0(_q->G0a, _q->G0b);
 #endif
 
     // set NCO frequency
     nco_crcf_set_frequency(_q->nco_rx, nu_hat);
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("   nu_hat   :   %12.8f\n", nu_hat);
+    printf("   nu_hat[0]:   %12.8f\n", nu_hat);
 #endif
 
     _q->state = WLANFRAMESYNC_STATE_RXLONG0;
@@ -521,13 +521,9 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     // TODO : add backoff in gain estimation
     wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1b);
 
-    // estimate S1 gain
-    // TODO : add backoff in gain estimation
-    wlanframesync_estimate_gain_S1(_q, &rc[16], _q->G1a);
-
     // compute S1 metrics
     float complex s_hat;
-    wlanframesync_S1_metrics(_q, _q->G1a, &s_hat);
+    wlanframesync_S1_metrics(_q, _q->G1b, &s_hat);
     s_hat *= _q->g0;    // scale output by raw gain estimate
 
     // rotate by complex phasor relative to timing backoff
@@ -552,7 +548,15 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
         printf("    acquisition S1[b]\n");
         
         // TODO : equalizer with G1a, G1b
-        // TODO : refine CFO estiamte with G1a, G1b
+        
+        // refine CFO estimate with G1a, G1b and adjust NCO appropriately
+        float nu_hat = wlanframesync_estimate_cfo_S1(_q->G1a, _q->G1b);
+        nco_crcf_adjust_frequency(_q->nco_rx, nu_hat);
+#if DEBUG_WLANFRAMESYNC_PRINT
+        printf("   nu_hat[1]:   %12.8f\n", nu_hat);
+#endif
+
+
         
         // set state
         _q->state = WLANFRAMESYNC_STATE_RXLONG1;
@@ -719,6 +723,23 @@ void wlanframesync_S1_metrics(wlanframesync _q,
     // set output values, normalizing by number of elements
     *_s_hat = s_hat * 0.02f;    // 1/50 (fifty because DC subcarrier is zero)
 }
+
+// estimate carrier frequency offset from S1 gains
+float wlanframesync_estimate_cfo_S1(float complex * _G1a,
+                                    float complex * _G1b)
+{
+    // compute carrier frequency offset estimate using freq. domain method
+    float complex g_hat = 0.0f;
+    unsigned int i;
+    for (i=0; i<64; i++)
+        g_hat += _G1b[i] * conjf(_G1a[i]);
+
+    // return CFO offset estimate
+    // TODO : check if this needs to be negated
+    return cargf(g_hat) / 64.0f;
+}
+
+
 
 // estimate complex equalizer gain from G0 and G1
 //  _q      :   wlanframesync object
