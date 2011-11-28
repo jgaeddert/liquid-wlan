@@ -454,6 +454,10 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
     printf("   nu_hat[0]:   %12.8f\n", nu_hat);
 #endif
 
+    // set timer (with backoff)
+    _q->timer = 2;
+
+    // set state
     _q->state = WLANFRAMESYNC_STATE_RXLONG0;
 }
 
@@ -481,14 +485,15 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     wlanframesync_S1_metrics(_q, _q->G1a, &s_hat);
     s_hat *= _q->g0;    // scale output by raw gain estimate
 
+    // rotate by complex phasor relative to timing backoff
+    //s_hat *= cexpf(_Complex_I * 2.0f * 2.0f * M_PI / 64.0f);
+    s_hat *= cexpf(_Complex_I * 0.19635f);
+
     // save first 'long' symbol statistic
     _q->s1a_hat = s_hat;
 
-    // rotate by complex phasor relative to timing backoff
-    //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
-
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("    s_hat   :   %12.4f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
 #endif
 
     float s_hat_abs = cabsf(s_hat);
@@ -532,6 +537,10 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     wlanframesync_S1_metrics(_q, _q->G1b, &s_hat);
     s_hat *= _q->g0;    // scale output by raw gain estimate
 
+    // rotate by complex phasor relative to timing backoff
+    //s_hat *= cexpf(_Complex_I * 2.0f * 2.0f * M_PI / 64.0f);
+    s_hat *= cexpf(_Complex_I * 0.19635f);
+
     // save second 'long' symbol statistic
     _q->s1b_hat = s_hat;
 
@@ -539,7 +548,7 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("    s_hat   :   %12.4f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
 #endif
 
     // check conditions for s_hat
@@ -730,7 +739,7 @@ void wlanframesync_S1_metrics(wlanframesync _q,
         s_hat += _G[(i+1)%64]*conjf(_G[i]);
 
     // set output values, normalizing by number of elements
-    *_s_hat = s_hat * 0.02f;    // 1/50 (fifty because DC subcarrier is zero)
+    *_s_hat = s_hat * 0.019231f;    // 1/52
 }
 
 // estimate carrier frequency offset from S1 gains
