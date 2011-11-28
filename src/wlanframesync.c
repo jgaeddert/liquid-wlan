@@ -297,6 +297,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
 {
     _q->timer++;
 
+    // TODO : only check every 100 - 150 (decimates/reduced complexity)
     if (_q->timer < 64)
         return;
 
