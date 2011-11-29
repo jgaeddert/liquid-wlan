@@ -1044,10 +1044,10 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     // update pilot phase
     unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
 
-    y_phase[0] = pilot_phase ? -cargf(_q->X[43]) :  cargf(_q->X[43]);
-    y_phase[1] = pilot_phase ? -cargf(_q->X[57]) :  cargf(_q->X[57]);
-    y_phase[2] = pilot_phase ? -cargf(_q->X[ 7]) :  cargf(_q->X[ 7]);
-    y_phase[3] = pilot_phase ? -cargf(_q->X[21]) :  cargf(_q->X[21]);
+    y_phase[0] = pilot_phase ? cargf(-_q->X[43]) : cargf( _q->X[43]);
+    y_phase[1] = pilot_phase ? cargf(-_q->X[57]) : cargf( _q->X[57]);
+    y_phase[2] = pilot_phase ? cargf(-_q->X[ 7]) : cargf( _q->X[ 7]);
+    y_phase[3] = pilot_phase ? cargf( _q->X[21]) : cargf(-_q->X[21]);
 
     // unwrap phase
     while ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
