@@ -160,6 +160,12 @@ int wlan_signal_unpack(unsigned char * _signal,
     
     length |= (_signal[2] & 0x80) ? 0x800 : 0;
 
+    // test length
+    if (length == 0 || length > 4095) {
+        fprintf(stderr,"warning: wlan_signal_unpack(), invalid length!\n");
+        signal_valid = 0;
+    }
+
     *_length = length;
     
     return signal_valid;
