@@ -45,6 +45,7 @@ void usage()
     printf("  h     : print help\n");
     printf("  s     : signal-to-noise ratio [dB], default: 30\n");
     printf("  F     : carrier frequency offset, default: 0.002\n");
+    printf("  r     : rate {6,9,12,18,24,36,48,54} M bits/s\n");
 }
 
 static int callback(unsigned char *        _payload,
@@ -71,11 +72,26 @@ int main(int argc, char*argv[])
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:F:")) != EOF){
+    while((dopt = getopt(argc,argv,"hs:F:r:")) != EOF){
         switch (dopt) {
         case 'h': usage();                      return 0;
         case 's': SNRdB = atof(optarg);         break;
         case 'F': dphi = atof(optarg);          break;
+        case 'r':
+            switch ( atoi(optarg) ) {
+            case 6:  txvector.DATARATE = WLANFRAME_RATE_6;  break;
+            case 9:  txvector.DATARATE = WLANFRAME_RATE_9;  break;
+            case 12: txvector.DATARATE = WLANFRAME_RATE_12; break;
+            case 18: txvector.DATARATE = WLANFRAME_RATE_18; break;
+            case 24: txvector.DATARATE = WLANFRAME_RATE_24; break;
+            case 36: txvector.DATARATE = WLANFRAME_RATE_36; break;
+            case 48: txvector.DATARATE = WLANFRAME_RATE_48; break;
+            case 54: txvector.DATARATE = WLANFRAME_RATE_54; break;
+            default:
+                fprintf(stderr,"error: %s, invalid rate '%s'\n", argv[0], optarg);
+                exit(1);
+            }
+            break;
         default:
             exit(1);
         }
