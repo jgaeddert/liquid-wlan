@@ -519,7 +519,9 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     if (s_hat_abs        > WLANFRAMESYNC_S1A_ABS_THRESH &&
         fabsf(s_hat_arg) < WLANFRAMESYNC_S1A_ARG_THRESH)
     {
+#if DEBUG_WLANFRAMESYNC_PRINT
         printf("    acquisition S1[a]\n");
+#endif
         
         // set state
         _q->state = WLANFRAMESYNC_STATE_RXLONG1;
