@@ -69,6 +69,7 @@ struct wlanframesync_s {
     nco_crcf nco_rx;        // numerically-controlled oscillator
     msequence ms_pilot;     // pilot sequence generator
     modem demod;            // DATA field demodulator
+    float phi_prime;        // stored pilot phase
 
     // gain arrays
     float g0;                       // nominal gain
@@ -229,6 +230,7 @@ void wlanframesync_reset(wlanframesync _q)
     _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
     _q->timer = 0;
     _q->num_symbols = 0;    // number of received OFDM data symbols
+    _q->phi_prime = 0.0f;   // reset phase offset estimate
 }
 
 // execute framing synchronizer on input buffer
@@ -1075,6 +1077,19 @@ void wlanframesync_rxsymbol(wlanframesync _q)
         float theta = polyf_val(p_phase, 2, fx);
         _q->X[i] *= cexpf(-_Complex_I*theta);
     }
+
+    // adjust NCO frequency based on differential phase
+    if (_q->num_symbols > 0) {
+        // compute phase error (unwrapped)
+        float dphi_prime = p_phase[0] - _q->phi_prime;
+        if (dphi_prime >  M_PI) dphi_prime -= M_2_PI;
+        if (dphi_prime < -M_PI) dphi_prime += M_2_PI;
+
+        // adjust NCO proportionally to phase error
+        nco_crcf_adjust_frequency(_q->nco_rx, 1e-3f*dphi_prime);
+    }
+    // set internal phase state
+    _q->phi_prime = p_phase[0];
 }
 
 void wlanframesync_decode_signal(wlanframesync _q)
