@@ -90,6 +90,7 @@ struct wlanframesync_s {
     unsigned int nsym;              // number of OFDM symbols in the DATA field
     unsigned int ndata;             // number of bits in the DATA field
     unsigned int npad;              // number of pad bits
+    unsigned int bytes_per_symbol;  // number of encoded data bytes per OFDM symbol
 
     // data arrays
     unsigned char   signal_int[6];  // interleaved message (SIGNAL field)
@@ -742,13 +743,12 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
     assert(n==48);
 
     // pack modem symbols
-    unsigned int bytes_per_symbol = _q->enc_msg_len / _q->nsym;
-    //printf("  %3u = %3u * %3u\n", _q->enc_msg_len, _q->nsym, bytes_per_symbol);
+    //printf("  %3u = %3u * %3u\n", _q->enc_msg_len, _q->nsym, _q->bytes_per_symbol);
     unsigned int num_written;
     liquid_repack_bytes(_q->modem_syms, _q->nbpsc, 48,
-                        &_q->msg_enc[_q->num_symbols * bytes_per_symbol], 8, bytes_per_symbol,
+                        &_q->msg_enc[_q->num_symbols * _q->bytes_per_symbol], 8, _q->bytes_per_symbol,
                         &num_written);
-    assert(num_written == bytes_per_symbol);
+    assert(num_written == _q->bytes_per_symbol);
 
     // increment number of received symbols
     _q->num_symbols++;
@@ -1120,6 +1120,9 @@ void wlanframesync_decode_signal(wlanframesync _q)
 
     // compute encoded message length (number of data bytes)
     _q->enc_msg_len = (_q->dec_msg_len * _q->ncbps) / _q->ndbps;
+
+    // compute number of encoded data bytes per OFDM symbol
+    _q->bytes_per_symbol = _q->enc_msg_len / _q->nsym;
 
     // validate encoded message length
     //assert(_q->enc_msg_len == wlan_packet_compute_enc_msg_len(_q->rate, _q->length));
