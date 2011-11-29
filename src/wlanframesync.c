@@ -98,6 +98,7 @@ struct wlanframesync_s {
     unsigned char * msg_enc;        // encoded message (DATA field)
     unsigned char * msg_dec;        // decoded message (DATA field)
     unsigned char   modem_syms[48]; // modem symbols
+    int signal_valid;               // SIGNAL field decoded properly?
     
     // counters/states
     enum {
@@ -678,7 +679,12 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     // decode SIGNAL field
     wlanframesync_decode_signal(_q);
 
-    // TODO : validate proper decoding
+    // validate proper decoding
+    if (!_q->signal_valid) {
+        // reset synchronizer and return
+        wlanframesync_reset(_q);
+        return;
+    }
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
@@ -1076,10 +1082,16 @@ void wlanframesync_decode_signal(wlanframesync _q)
 
     // unpack
     unsigned int R; // 'reserved' bit
-    wlan_signal_unpack(_q->signal_dec,
-                       &_q->rate,
-                       &R,
-                       &_q->length);
+    _q->signal_valid = wlan_signal_unpack(_q->signal_dec,
+                                          &_q->rate,
+                                          &R,
+                                          &_q->length);
+
+    // check validity
+    if (!_q->signal_valid) {
+        printf("SIGNAL field not valid\n");
+        return;
+    }
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
