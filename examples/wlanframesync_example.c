@@ -164,13 +164,8 @@ static int callback(unsigned char *        _payload,
 {
     printf("**** callback invoked\n");
 
-    unsigned char * msg_org = (unsigned char*)_userdata;
-    unsigned int i;
-    for (i=0; i<_rxvector.LENGTH; i++)
-        printf("  %3u : %.2x %.2x %s\n", i, _payload[i], msg_org[i], _payload[i] == msg_org[i] ? "" : "*");
-    
     // count errors
-    unsigned int num_bit_errors = count_bit_errors_array(_payload, msg_org, _rxvector.LENGTH);
+    unsigned int num_bit_errors = count_bit_errors_array(_payload, annexg_G1, _rxvector.LENGTH);
     printf("bit errors : %4u / %4u\n", num_bit_errors, 8*_rxvector.LENGTH);
 
     return 0;
