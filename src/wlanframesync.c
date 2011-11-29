@@ -221,6 +221,9 @@ void wlanframesync_reset(wlanframesync _q)
     // clear buffer
     windowcf_clear(_q->input_buffer);
 
+    // reset NCO object
+    nco_crcf_reset(_q->nco_rx);
+
     // reset timers/state
     _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
     _q->timer = 0;
