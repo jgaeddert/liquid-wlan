@@ -100,11 +100,14 @@ void wlan_signal_pack(unsigned int    _rate,
 //  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
 //  _R          :   reserved bit
 //  _length     :   length of payload (1-4095)
-void wlan_signal_unpack(unsigned char * _signal,
-                      unsigned int    * _rate,
-                      unsigned int    * _R,
-                      unsigned int    * _length)
+int wlan_signal_unpack(unsigned char * _signal,
+                       unsigned int    * _rate,
+                       unsigned int    * _R,
+                       unsigned int    * _length)
 {
+    // valid signal
+    int signal_valid = 1;
+
     // compute parity (last byte masked with 6 'tail' bits)
     unsigned int parity = ( liquid_count_ones(_signal[0]) +
                             liquid_count_ones(_signal[1]) +
@@ -114,7 +117,7 @@ void wlan_signal_unpack(unsigned char * _signal,
     unsigned int parity_check = _signal[2] & 0x40 ? 1 : 0;
     if (parity != parity_check) {
         fprintf(stderr,"warning: wlan_signal_unpack(), parity mismatch!\n");
-        // TODO : return flag
+        signal_valid = 0;
     }
 
     // strip data rate field
@@ -133,7 +136,7 @@ void wlan_signal_unpack(unsigned char * _signal,
     default:
         fprintf(stderr,"warning: wlan_signal_unpack(), invalid rate\n");
         *_rate = WLANFRAME_RATE_6;
-        // TODO : return flag
+        signal_valid = 0;
     }
 
     // unpack 'reserved' bit
@@ -157,6 +160,8 @@ void wlan_signal_unpack(unsigned char * _signal,
     length |= (_signal[2] & 0x80) ? 0x800 : 0;
 
     *_length = length;
+    
+    return signal_valid;
 }
 
 // encode SIGNAL field using half-rate convolutional code
