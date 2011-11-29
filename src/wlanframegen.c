@@ -176,6 +176,10 @@ void wlanframegen_print(wlanframegen _q)
     if (_q->frame_assembled) {
         printf("    rate        :   %3u Mbits/s\n", wlanframe_ratetab[_q->rate].rate);
         printf("    payload     :   %3u bytes\n", _q->length);
+        printf("    ndbps       :   %3u (data bits per OFDM symbol)\n", _q->ndbps);
+        printf("    ncbps       :   %3u (coded bits per OFDM symbol)\n", _q->ncbps);
+        printf("    nbpsc       :   %3u (bits per subcarrier, mod. depth)\n", _q->nbpsc);
+        printf("    nsym        :   %3u (number of OFDM symbols)\n", _q->nsym);
         printf("    signal dec  :   [%.2x %.2x %.2x]\n",
                 _q->signal_dec[0],
                 _q->signal_dec[1],
