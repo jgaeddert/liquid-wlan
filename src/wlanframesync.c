@@ -1219,21 +1219,20 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"xlabel('real');\n");
     fprintf(fid,"ylabel('imag');\n");
 
-
     // write gain arrays
     fprintf(fid,"\n\n");
-    fprintf(fid,"G0a    = zeros(1,64);\n");
-    fprintf(fid,"G0b    = zeros(1,64);\n");
-    fprintf(fid,"G1a    = zeros(1,64);\n");
-    fprintf(fid,"G1b    = zeros(1,64);\n");
-    fprintf(fid,"G      = zeros(1,64);\n");
+    fprintf(fid,"G0a = zeros(1,64);\n");
+    fprintf(fid,"G0b = zeros(1,64);\n");
+    fprintf(fid,"G1a = zeros(1,64);\n");
+    fprintf(fid,"G1b = zeros(1,64);\n");
+    fprintf(fid,"G   = zeros(1,64);\n");
     for (i=0; i<64; i++) {
         unsigned int k = (i + 32) % 64;
-        fprintf(fid,"G0a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0a[i]),   cimagf(_q->G0a[i]));
-        fprintf(fid,"G0b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0b[i]),   cimagf(_q->G0b[i]));
-        fprintf(fid,"G1a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1a[i]),   cimagf(_q->G1a[i]));
-        fprintf(fid,"G1b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]),   cimagf(_q->G1b[i]));
-        fprintf(fid,"G(%3u)      = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),     cimagf(_q->G[i]));
+        fprintf(fid,"G0a(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0a[i]), cimagf(_q->G0a[i]));
+        fprintf(fid,"G0b(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0b[i]), cimagf(_q->G0b[i]));
+        fprintf(fid,"G1a(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1a[i]), cimagf(_q->G1a[i]));
+        fprintf(fid,"G1b(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]), cimagf(_q->G1b[i]));
+        fprintf(fid,"G(%3u)   = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),   cimagf(_q->G[i]));
     }
     fprintf(fid,"%% apply timing offset (backoff) phase shift\n");
     fprintf(fid,"f = -32:31;\n");
@@ -1251,17 +1250,6 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"subplot(2,1,2);\n");
     fprintf(fid,"  plot(f,arg(G1a),'x', f,arg(G1b),'x', f,arg(G),'-k','LineWidth',2);\n");
     fprintf(fid,"  ylabel('G (phase)');\n");
-    
-    // write buffer
-    fprintf(fid,"\n\n");
-    fprintf(fid,"X      = zeros(1,64);\n");
-    for (i=0; i<64; i++)
-        fprintf(fid,"X(%3u)    = %12.8f + j*%12.8f;\n", i+1, crealf(_q->X[i]), cimagf(_q->X[i]));
-    fprintf(fid,"figure;\n");
-    fprintf(fid,"plot(X,'x');\n");
-    fprintf(fid,"axis([-1 1 -1 1]*1.5);\n");
-    fprintf(fid,"axis square;\n");
-    fprintf(fid,"grid on;\n");
 #else
     fprintf(fid,"disp('no debugging info available');\n");
 #endif
