@@ -241,6 +241,13 @@ void wlanframegen_assemble(wlanframegen           _q,
         exit(1);
     }
 
+#if 0
+    if (_txvector.DATARATE == WLANFRAME_RATE_9) {
+        fprintf(stderr,"error: wlanframegen_assemble(), the rate 9 M bits/s is currently unsupported\n");
+        exit(1);
+    }
+#endif
+
     // set internal properties
     _q->rate   = _txvector.DATARATE;
     _q->length = _txvector.LENGTH;
