@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "liquid-wlan.internal.h"
 
@@ -100,11 +101,14 @@ void wlan_signal_pack(unsigned int    _rate,
 //  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
 //  _R          :   reserved bit
 //  _length     :   length of payload (1-4095)
-void wlan_signal_unpack(unsigned char * _signal,
-                      unsigned int    * _rate,
-                      unsigned int    * _R,
-                      unsigned int    * _length)
+int wlan_signal_unpack(unsigned char * _signal,
+                       unsigned int    * _rate,
+                       unsigned int    * _R,
+                       unsigned int    * _length)
 {
+    // valid signal
+    int signal_valid = 1;
+
     // compute parity (last byte masked with 6 'tail' bits)
     unsigned int parity = ( liquid_count_ones(_signal[0]) +
                             liquid_count_ones(_signal[1]) +
@@ -114,7 +118,7 @@ void wlan_signal_unpack(unsigned char * _signal,
     unsigned int parity_check = _signal[2] & 0x40 ? 1 : 0;
     if (parity != parity_check) {
         fprintf(stderr,"warning: wlan_signal_unpack(), parity mismatch!\n");
-        // TODO : return flag
+        signal_valid = 0;
     }
 
     // strip data rate field
@@ -133,7 +137,7 @@ void wlan_signal_unpack(unsigned char * _signal,
     default:
         fprintf(stderr,"warning: wlan_signal_unpack(), invalid rate\n");
         *_rate = WLANFRAME_RATE_6;
-        // TODO : return flag
+        signal_valid = 0;
     }
 
     // unpack 'reserved' bit
@@ -157,6 +161,8 @@ void wlan_signal_unpack(unsigned char * _signal,
     length |= (_signal[2] & 0x80) ? 0x800 : 0;
 
     *_length = length;
+    
+    return signal_valid;
 }
 
 // encode SIGNAL field using half-rate convolutional code
@@ -210,32 +216,42 @@ void wlan_fec_signal_encode(unsigned char * _msg_dec,
 void wlan_fec_signal_decode(unsigned char * _msg_enc,
                             unsigned char * _msg_dec)
 {
+    // temporary buffer to hold decoded message (chainback writes outside
+    // bounds of 3-element array...)
+    unsigned char signal_dec[6];
+    memset(signal_dec, 0x00, 6*sizeof(unsigned char));
+
 #if 0
     unsigned int i;
 
     // unpack encoded bits
     unsigned char bits_enc[48];
     for (i=0; i<6; i++) {
-        bits_enc[8*i+0] = (_msg_enc[i] >> 7) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+1] = (_msg_enc[i] >> 6) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+2] = (_msg_enc[i] >> 5) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+3] = (_msg_enc[i] >> 4) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+4] = (_msg_enc[i] >> 3) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+5] = (_msg_enc[i] >> 2) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+6] = (_msg_enc[i] >> 1) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
-        bits_enc[8*i+7] = (_msg_enc[i]     ) & 0x01 ? LIQUID_802_11_SOFTBIT_1 : LIQUID_802_11_SOFTBIT_0;
+        bits_enc[8*i+0] = (_msg_enc[i] >> 7) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+1] = (_msg_enc[i] >> 6) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+2] = (_msg_enc[i] >> 5) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+3] = (_msg_enc[i] >> 4) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+4] = (_msg_enc[i] >> 3) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+5] = (_msg_enc[i] >> 2) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+6] = (_msg_enc[i] >> 1) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
+        bits_enc[8*i+7] = (_msg_enc[i]     ) & 0x01 ? LIQUID_WLAN_SOFTBIT_1 : LIQUID_WLAN_SOFTBIT_0;
     }
     
     // run decoder
     void * vp = create_viterbi27(48);
     init_viterbi27(vp,0);
     update_viterbi27_blk(vp,bits_enc,48);
-    chainback_viterbi27(vp, _msg_dec, 48, 0);
+    chainback_viterbi27(vp, signal_dec, 48, 0);
     delete_viterbi27(vp);
 #else
     // decode using generic decoding method (half-rate encoder)
-    wlan_fec_decode(LIQUID_WLAN_FEC_R1_2, 3, _msg_enc, _msg_dec);
+    wlan_fec_decode(LIQUID_WLAN_FEC_R1_2, 3, _msg_enc, signal_dec);
 #endif
+
+    // copy result to output
+    _msg_dec[0] = signal_dec[0];
+    _msg_dec[1] = signal_dec[1];
+    _msg_dec[2] = signal_dec[2];
 }
 
 #if 0

@@ -90,6 +90,7 @@ struct wlanframesync_s {
     unsigned int nsym;              // number of OFDM symbols in the DATA field
     unsigned int ndata;             // number of bits in the DATA field
     unsigned int npad;              // number of pad bits
+    unsigned int bytes_per_symbol;  // number of encoded data bytes per OFDM symbol
 
     // data arrays
     unsigned char   signal_int[6];  // interleaved message (SIGNAL field)
@@ -98,6 +99,7 @@ struct wlanframesync_s {
     unsigned char * msg_enc;        // encoded message (DATA field)
     unsigned char * msg_dec;        // decoded message (DATA field)
     unsigned char   modem_syms[48]; // modem symbols
+    int signal_valid;               // SIGNAL field decoded properly?
     
     // counters/states
     enum {
@@ -110,11 +112,13 @@ struct wlanframesync_s {
         WLANFRAMESYNC_STATE_RXDATA,     // receive DATA field
     } state;
     signed int timer;                   // sample timer
+    unsigned int num_symbols;           // number of received OFDM data symbols
 
 #if DEBUG_WLANFRAMESYNC
     agc_crcf agc_rx;        // automatic gain control (rssi)
     windowcf debug_x;
     windowf  debug_rssi;
+    windowcf debug_framesyms;
 #endif
 };
 
@@ -168,6 +172,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 
     q->debug_x =        windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
     q->debug_rssi =     windowf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
+    q->debug_framesyms =windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
 #endif
 
     // return object
@@ -184,6 +189,7 @@ void wlanframesync_destroy(wlanframesync _q)
 
     windowcf_destroy(_q->debug_x);
     windowf_destroy(_q->debug_rssi);
+    windowcf_destroy(_q->debug_framesyms);
 #endif
 
     // free transform object
@@ -216,9 +222,13 @@ void wlanframesync_reset(wlanframesync _q)
     // clear buffer
     windowcf_clear(_q->input_buffer);
 
+    // reset NCO object
+    nco_crcf_reset(_q->nco_rx);
+
     // reset timers/state
     _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
     _q->timer = 0;
+    _q->num_symbols = 0;    // number of received OFDM data symbols
 }
 
 // execute framing synchronizer on input buffer
@@ -509,7 +519,9 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     if (s_hat_abs        > WLANFRAMESYNC_S1A_ABS_THRESH &&
         fabsf(s_hat_arg) < WLANFRAMESYNC_S1A_ARG_THRESH)
     {
+#if DEBUG_WLANFRAMESYNC_PRINT
         printf("    acquisition S1[a]\n");
+#endif
         
         // set state
         _q->state = WLANFRAMESYNC_STATE_RXLONG1;
@@ -673,14 +685,99 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     // decode SIGNAL field
     wlanframesync_decode_signal(_q);
 
-    // TODO : validate proper decoding
+    // validate proper decoding
+    if (!_q->signal_valid) {
+        // reset synchronizer and return
+        wlanframesync_reset(_q);
+        return;
+    }
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
 }
 
+// receive data symbols
 void wlanframesync_execute_rxdata(wlanframesync _q)
 {
+    _q->timer++;
+    if (_q->timer < 80)
+        return;
+
+    //printf("    receiving symbol %u...\n", _q->num_symbols);
+
+    // reset timer
+    _q->timer = 0;
+
+    // run fft
+    float complex * rc;
+    windowcf_read(_q->input_buffer, &rc);
+    memmove(_q->x, &rc[16-2], 64*sizeof(float complex));
+
+    // compute fft, storing result into _q->X
+    FFT_EXECUTE(_q->fft);
+  
+    // recover symbol, correcting for gain, pilot phase, etc.
+    wlanframesync_rxsymbol(_q);
+   
+    // demodulate and pack
+    unsigned int i;
+    unsigned int n=0;
+    unsigned int sym;
+    for (i=0; i<64; i++) {
+        unsigned int k = (i + 32) % 64;
+
+        if ( k==0 || (k > 26 && k < 38) ) {
+            // NULL subcarrier
+        } else if (k==43 || k==57 || k==7 || k==21) {
+            // PILOT subcarrier
+        } else {
+            // DATA subcarrier
+            assert(n<48);
+            modem_demodulate(_q->demod, _q->X[k], &sym);
+            _q->modem_syms[n] = sym;
+            n++;
+#if DEBUG_WLANFRAMESYNC
+            windowcf_push(_q->debug_framesyms, _q->X[k]);
+#endif
+
+        }
+    }
+    assert(n==48);
+
+    // pack modem symbols
+    //printf("  %3u = %3u * %3u\n", _q->enc_msg_len, _q->nsym, _q->bytes_per_symbol);
+    unsigned int num_written;
+    liquid_repack_bytes(_q->modem_syms, _q->nbpsc, 48,
+                        &_q->msg_enc[_q->num_symbols * _q->bytes_per_symbol], 8, _q->bytes_per_symbol,
+                        &num_written);
+    assert(num_written == _q->bytes_per_symbol);
+
+    // increment number of received symbols
+    _q->num_symbols++;
+
+    // check number of symbols
+    if (_q->num_symbols == _q->nsym) {
+        printf("    FRAME RECEVIED!\n");
+
+        // decode message
+        wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
+
+        // assemble RX vector
+        struct wlan_rxvector_s rxvector;
+        rxvector.LENGTH     = _q->length;
+        rxvector.RSSI       = 200 + (unsigned int) (10*log10f(_q->g0));
+        rxvector.DATARATE   = _q->rate;
+        rxvector.SERVICE    = 0;
+
+        // invoke callback
+        if (_q->callback != NULL) {
+            //int retval = 
+            _q->callback(_q->msg_dec, rxvector, _q->userdata);
+        }
+
+        // reset and return
+        wlanframesync_reset(_q);
+    }
 }
 
 // estimate short sequence gain
@@ -949,24 +1046,23 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     // update pilot phase
     unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
 
-    y_phase[0] = pilot_phase ? -cargf(_q->X[43]) :  cargf(_q->X[43]);
-    y_phase[1] = pilot_phase ? -cargf(_q->X[57]) :  cargf(_q->X[57]);
-    y_phase[2] = pilot_phase ? -cargf(_q->X[ 7]) :  cargf(_q->X[ 7]);
-    y_phase[3] = pilot_phase ? -cargf(_q->X[21]) :  cargf(_q->X[21]);
+    y_phase[0] = pilot_phase ? cargf(-_q->X[43]) : cargf( _q->X[43]);
+    y_phase[1] = pilot_phase ? cargf(-_q->X[57]) : cargf( _q->X[57]);
+    y_phase[2] = pilot_phase ? cargf(-_q->X[ 7]) : cargf( _q->X[ 7]);
+    y_phase[3] = pilot_phase ? cargf( _q->X[21]) : cargf(-_q->X[21]);
 
     // unwrap phase
-    if ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
-    if ( (y_phase[1]-y_phase[0]) < -M_PI_2 ) y_phase[1] += M_PI;
+    if ( (y_phase[1]-y_phase[0]) >  M_PI ) y_phase[1] -= 2*M_PI;
+    if ( (y_phase[1]-y_phase[0]) < -M_PI ) y_phase[1] += 2*M_PI;
 
-    if ( (y_phase[2]-y_phase[1]) >  M_PI_2 ) y_phase[2] -= M_PI;
-    if ( (y_phase[2]-y_phase[1]) < -M_PI_2 ) y_phase[2] += M_PI;
+    if ( (y_phase[2]-y_phase[1]) >  M_PI ) y_phase[2] -= 2*M_PI;
+    if ( (y_phase[2]-y_phase[1]) < -M_PI ) y_phase[2] += 2*M_PI;
 
-    if ( (y_phase[3]-y_phase[2]) >  M_PI_2 ) y_phase[3] -= M_PI;
-    if ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
+    if ( (y_phase[3]-y_phase[2]) >  M_PI ) y_phase[3] -= 2*M_PI;
+    if ( (y_phase[3]-y_phase[2]) < -M_PI ) y_phase[3] += 2*M_PI;
 
 #if 0
-    for (i=0; i<4; i++)
-        printf("    x(%2u) = %12.8f; y(%2u) = %12.8f;\n", i+1, x_phase[i], i+1, y_phase[i]);
+    printf("    x = [-21 -7 7 21]; y = [%6.3f %6.3f %6.3f %6.3f];\n", y_phase[0], y_phase[1], y_phase[2], y_phase[3]);
 #endif
 
     // fit phase to 1st-order polynomial (2 coefficients)
@@ -991,10 +1087,16 @@ void wlanframesync_decode_signal(wlanframesync _q)
 
     // unpack
     unsigned int R; // 'reserved' bit
-    wlan_signal_unpack(_q->signal_dec,
-                       &_q->rate,
-                       &R,
-                       &_q->length);
+    _q->signal_valid = wlan_signal_unpack(_q->signal_dec,
+                                          &_q->rate,
+                                          &R,
+                                          &_q->length);
+
+    // check validity
+    if (!_q->signal_valid) {
+        printf("SIGNAL field not valid\n");
+        return;
+    }
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
@@ -1015,14 +1117,25 @@ void wlanframesync_decode_signal(wlanframesync _q)
     // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
     _q->dec_msg_len = _q->ndata / 8;
 
+    // re-allocate buffer for decoded message
+    _q->msg_dec = (unsigned char*) realloc(_q->msg_dec, _q->dec_msg_len*sizeof(unsigned char));
+
     // compute encoded message length (number of data bytes)
     _q->enc_msg_len = (_q->dec_msg_len * _q->ncbps) / _q->ndbps;
+
+    // compute number of encoded data bytes per OFDM symbol
+    _q->bytes_per_symbol = _q->enc_msg_len / _q->nsym;
 
     // validate encoded message length
     //assert(_q->enc_msg_len == wlan_packet_compute_enc_msg_len(_q->rate, _q->length));
 
     // re-allocate buffer for encoded message
     _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
+
+    // re-create modem object
+    _q->demod = modem_recreate(_q->demod,
+                               wlanframe_ratetab[_q->rate].mod_scheme,
+                               wlanframe_ratetab[_q->rate].nbpsc);
 
 #if DEBUG_WLANFRAMESYNC_PRINT
     // print properties
@@ -1084,6 +1197,20 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"figure;\n");
     fprintf(fid,"plot(agc_rssi)\n");
     fprintf(fid,"ylabel('RSSI [dB]');\n");
+    
+    // write frame symbols
+    fprintf(fid,"framesyms = zeros(1,n);\n");
+    windowcf_read(_q->debug_framesyms, &rc);
+    for (i=0; i<DEBUG_WLANFRAMESYNC_BUFFER_LEN; i++)
+        fprintf(fid,"framesyms(%4u) = %12.4e + j*%12.4e;\n", i+1, crealf(rc[i]), cimagf(rc[i]));
+    fprintf(fid,"figure;\n");
+    fprintf(fid,"plot(real(framesyms),imag(framesyms),'x','MarkerSize',2);\n");
+    fprintf(fid,"axis([-1 1 -1 1]*1.5);\n");
+    fprintf(fid,"axis square;\n");
+    fprintf(fid,"grid on;\n");
+    fprintf(fid,"xlabel('real');\n");
+    fprintf(fid,"ylabel('imag');\n");
+
 
     // write gain arrays
     fprintf(fid,"\n\n");

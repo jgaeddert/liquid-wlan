@@ -97,10 +97,10 @@ void wlan_signal_pack(unsigned int    _rate,
 //  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
 //  _R          :   reserved bit
 //  _length     :   length of payload (1-4095)
-void wlan_signal_unpack(unsigned char * _signal,
-                      unsigned int    * _rate,
-                      unsigned int    * _R,
-                      unsigned int    * _length);
+int wlan_signal_unpack(unsigned char * _signal,
+                       unsigned int    * _rate,
+                       unsigned int    * _R,
+                       unsigned int    * _length);
 
 
 // 
