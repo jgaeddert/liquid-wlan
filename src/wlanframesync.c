@@ -1050,14 +1050,14 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     y_phase[3] = pilot_phase ? cargf( _q->X[21]) : cargf(-_q->X[21]);
 
     // unwrap phase
-    while ( (y_phase[1]-y_phase[0]) >  M_PI_2 ) y_phase[1] -= M_PI;
-    while ( (y_phase[1]-y_phase[0]) < -M_PI_2 ) y_phase[1] += M_PI;
+    if ( (y_phase[1]-y_phase[0]) >  M_PI ) y_phase[1] -= 2*M_PI;
+    if ( (y_phase[1]-y_phase[0]) < -M_PI ) y_phase[1] += 2*M_PI;
 
-    while ( (y_phase[2]-y_phase[1]) >  M_PI_2 ) y_phase[2] -= M_PI;
-    while ( (y_phase[2]-y_phase[1]) < -M_PI_2 ) y_phase[2] += M_PI;
+    if ( (y_phase[2]-y_phase[1]) >  M_PI ) y_phase[2] -= 2*M_PI;
+    if ( (y_phase[2]-y_phase[1]) < -M_PI ) y_phase[2] += 2*M_PI;
 
-    while ( (y_phase[3]-y_phase[2]) >  M_PI_2 ) y_phase[3] -= M_PI;
-    while ( (y_phase[3]-y_phase[2]) < -M_PI_2 ) y_phase[3] += M_PI;
+    if ( (y_phase[3]-y_phase[2]) >  M_PI ) y_phase[3] -= 2*M_PI;
+    if ( (y_phase[3]-y_phase[2]) < -M_PI ) y_phase[3] += 2*M_PI;
 
 #if 0
     printf("    x = [-21 -7 7 21]; y = [%6.3f %6.3f %6.3f %6.3f];\n", y_phase[0], y_phase[1], y_phase[2], y_phase[3]);
