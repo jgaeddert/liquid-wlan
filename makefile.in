@@ -87,6 +87,8 @@ objects :=							\
 	src/wlanframegen.o					\
 	src/wlanframesync.o					\
 	src/utility.o						\
+	src/libfec/viterbi27.o					\
+	src/libfec/viterbi27_port.o				\
 
 # NOTE: for some reason this file causes linking errors ('corrupt archive')
 # src/libliquid_wlan.o
