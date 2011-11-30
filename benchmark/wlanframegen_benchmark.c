@@ -34,33 +34,59 @@ double calculate_execution_time(struct rusage _start, struct rusage _finish)
 }
 
 // Helper function to keep code base small
-void wlanframesync_benchmark(struct rusage *     _start,
-                             struct rusage *     _finish,
-                             unsigned long int * _num_iterations,
-                             unsigned int        _rate)
+void wlanframegen_benchmark(struct rusage *     _start,
+                            struct rusage *     _finish,
+                            unsigned long int * _num_iterations,
+                            unsigned int        _rate)
 {
-    // create buffer (full of noise)
-    unsigned int n = 800;
-    float complex buffer[n];
-
     unsigned long int i;
-    for (i=0; i<n; i++) {
-        buffer[i] = 0.001f*( randnf() + _Complex_I*randnf() )*M_SQRT1_2;
-    }
+    unsigned int dec_msg_len = 100;
 
-    // create frame synchronizer
-    wlanframesync fs = wlanframesync_create(NULL, NULL);
+    // options
+    struct wlan_txvector_s txvector;
+    txvector.LENGTH      = dec_msg_len;
+    txvector.DATARATE    = _rate;
+    txvector.SERVICE     = 0;
+    txvector.TXPWR_LEVEL = 0;
+    
+    // create sample buffer
+    float complex buffer[80];
+   
+    // initialize
+    unsigned char msg_org[dec_msg_len];
+    for (i=0; i<dec_msg_len; i++)
+        msg_org[i] = rand() & 0xff;
+
+    // create frame generator
+    wlanframegen fg = wlanframegen_create();
+
+    // sample counter
+    unsigned long int n = 0;
 
     // start trials
     getrusage(RUSAGE_SELF, _start);
+
     for (i=0; i<(*_num_iterations); i++) {
-        wlanframesync_execute(fs, buffer, n);
+        // assemble frame
+        wlanframegen_assemble(fg, msg_org, txvector);
+
+        // generate frame
+        int last_frame = 0;
+        while (!last_frame) {
+            // write symbol to buffer
+            last_frame = wlanframegen_writesymbol(fg, buffer);
+
+            // increase sample counter
+            n += 80;
+        }
     }
     getrusage(RUSAGE_SELF, _finish);
-    *_num_iterations *= n;
 
-    // destroy frame sync
-    wlanframesync_destroy(fs);
+    // set number of iterations to number of samples generated
+    *_num_iterations = n;
+
+    // destroy frame generator
+    wlanframegen_destroy(fg);
 }
 
 int main() {
@@ -69,13 +95,13 @@ int main() {
     unsigned int rate = WLANFRAME_RATE_6;
 
     // run benchmark(s)
-    wlanframesync_benchmark(&start, &finish, &n, rate);
+    wlanframegen_benchmark(&start, &finish, &n, rate);
 
     // compute execution time
     float extime = calculate_execution_time(start, finish);
 
     // print results
-    printf("%-24s : time : %8.5f s, iterations : %8lu (%10.4e samples/s)\n", "wlanframesync", extime, n, (float)n/extime);
+    printf("%-24s : time : %8.5f s, iterations : %8lu (%10.4e samples/s)\n", "wlanframegen", extime, n, (float)n/extime);
     
     return 0;
 }

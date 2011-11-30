@@ -239,6 +239,7 @@ clean-check:
 ##
 
 benchmark_programs :=						\
+	benchmark/wlanframegen_benchmark			\
 	benchmark/wlanframesync_benchmark			\
 
 benchmark_objects	= $(patsubst %,%.o,$(benchmark_programs))
