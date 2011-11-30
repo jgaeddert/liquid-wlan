@@ -222,6 +222,20 @@ void wlanframegen_reset(wlanframegen _q)
     unsigned int i;
     for (i=0; i<_q->rampup_len; i++)
         _q->postfix[i] = 0.0f;
+
+    // force NULL subcarriers to zero
+    _q->X[ 0] = 0.0f;
+    _q->X[27] = 0.0f;
+    _q->X[28] = 0.0f;
+    _q->X[29] = 0.0f;
+    _q->X[30] = 0.0f;
+    _q->X[31] = 0.0f;
+    _q->X[32] = 0.0f;
+    _q->X[33] = 0.0f;
+    _q->X[34] = 0.0f;
+    _q->X[35] = 0.0f;
+    _q->X[36] = 0.0f;
+    _q->X[37] = 0.0f;
 }
 
 // assemble frame (see Table 76)
@@ -431,20 +445,7 @@ void wlanframegen_compute_symbol(wlanframegen _q)
     _q->X[ 7] = pilot_phase ? -1.0f :  1.0f;
     _q->X[21] = pilot_phase ?  1.0f : -1.0f;
 
-    // force NULL subcarriers to zero
-    // TODO : move this into reset() method and never re-compute it
-    _q->X[ 0] = 0.0f;
-    _q->X[27] = 0.0f;
-    _q->X[28] = 0.0f;
-    _q->X[29] = 0.0f;
-    _q->X[30] = 0.0f;
-    _q->X[31] = 0.0f;
-    _q->X[32] = 0.0f;
-    _q->X[33] = 0.0f;
-    _q->X[34] = 0.0f;
-    _q->X[35] = 0.0f;
-    _q->X[36] = 0.0f;
-    _q->X[37] = 0.0f;
+    // NOTE : NULL subcarriers have been set to zero in reset() method
 
     // run inverse transform
     FFT_EXECUTE(_q->ifft);
