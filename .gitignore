@@ -24,6 +24,7 @@ makefile
 
 # ignore binaries
 autotest/*_autotest
+benchmark/*_benchmark
 examples/*_example
 sandbox/*_test
 
