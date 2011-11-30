@@ -23,6 +23,7 @@
 #include <math.h>
 #include <complex.h>
 #include <sys/resource.h>
+#include <liquid/liquid.h>
 #include "liquid-wlan.h"
 
 double calculate_execution_time(struct rusage _start, struct rusage _finish)
