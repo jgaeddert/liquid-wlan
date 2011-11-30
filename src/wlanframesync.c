@@ -576,7 +576,9 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     if (s_hat_abs        > WLANFRAMESYNC_S1B_ABS_THRESH &&
         fabsf(s_hat_arg) < WLANFRAMESYNC_S1B_ARG_THRESH)
     {
+#if DEBUG_WLANFRAMESYNC_PRINT
         printf("    acquisition S1[b]\n");
+#endif
         
         // refine CFO estimate with G1a, G1b and adjust NCO appropriately
         float nu_hat = wlanframesync_estimate_cfo_S1(_q->G1a, _q->G1b);
@@ -757,8 +759,6 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
 
     // check number of symbols
     if (_q->num_symbols == _q->nsym) {
-        printf("    FRAME RECEVIED!\n");
-
         // decode message
         wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
 
