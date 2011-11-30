@@ -317,44 +317,26 @@ int wlanframegen_writesymbol(wlanframegen    _q,
     //
     switch (_q->state) {
     case WLANFRAMEGEN_STATE_S0A:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating first short sequence\n");
-#endif
         wlanframegen_writesymbol_S0a(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_S0B;
         return 0;
     case WLANFRAMEGEN_STATE_S0B:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating second short sequence\n");
-#endif
         wlanframegen_writesymbol_S0b(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_S1A;
         return 0;
     case WLANFRAMEGEN_STATE_S1A:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating first long sequence\n");
-#endif
         wlanframegen_writesymbol_S1a(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_S1B;
         return 0;
     case WLANFRAMEGEN_STATE_S1B:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating second long sequence\n");
-#endif
         wlanframegen_writesymbol_S1b(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_SIGNAL;
         return 0;
     case WLANFRAMEGEN_STATE_SIGNAL:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating SIGNAL symbol\n");
-#endif
         wlanframegen_writesymbol_signal(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_DATA;
         return 0;
     case WLANFRAMEGEN_STATE_DATA:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating data symbol [%3u]\n", _q->data_symbol_counter);
-#endif
         wlanframegen_writesymbol_data(_q, _buffer);
         _q->data_symbol_counter++;
 
@@ -362,9 +344,6 @@ int wlanframegen_writesymbol(wlanframegen    _q,
             _q->state = WLANFRAMEGEN_STATE_NULL;
         return 0;
     case WLANFRAMEGEN_STATE_NULL:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating null symbol\n");
-#endif
         wlanframegen_writesymbol_null(_q, _buffer);
         return 1;
     default:
@@ -373,42 +352,7 @@ int wlanframegen_writesymbol(wlanframegen    _q,
         exit(1);
     }
 
-#if 0
-    // move frequency data to internal buffer
-    unsigned int i;
-    unsigned int k;
-    int sctype;
-    for (i=0; i<_q->M; i++) {
-        // start at mid-point (effective fftshift)
-        k = (i + _q->M/2) % _q->M;
-
-        sctype = _q->p[k];
-        if (sctype==WLANFRAME_SCTYPE_NULL) {
-            // disabled subcarrier
-            _q->X[k] = 0.0f;
-        } else if (sctype==WLANFRAME_SCTYPE_PILOT) {
-            // pilot subcarrier
-            _q->X[k] = (msequence_advance(_q->ms_pilot) ? 1.0f : -1.0f) * _q->g_data;
-        } else {
-            // data subcarrier
-            _q->X[k] = _x[k] * _q->g_data;
-        }
-
-        //printf("X[%3u] = %12.8f + j*%12.8f;\n",i+1,crealf(_q->X[i]),cimagf(_q->X[i]));
-    }
-
-    // execute transform
-    FFT_EXECUTE(_q->ifft);
-
-    // copy result to output
-    memmove( _y, &_q->x[_q->M - _q->cp_len], (_q->cp_len)*sizeof(float complex));
-    memmove(&_y[_q->cp_len], _q->x, (_q->M)*sizeof(float complex));
-#endif
-
     // reset and return
-#if DEBUG_WLANFRAMEGEN
-    printf("wlanframegen_writesymbol(), resetting frame generator\n");
-#endif
     wlanframegen_reset(_q);
     return 1;
 }
