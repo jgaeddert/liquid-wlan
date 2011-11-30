@@ -37,7 +37,8 @@
 #include <time.h>
 
 #include <liquid/liquid.h>
-#include <fec.h>
+
+#include "liquid-wlan.internal.h"
 
 #define SOFTBIT_1   (255)
 #define SOFTBIT_0   (0)

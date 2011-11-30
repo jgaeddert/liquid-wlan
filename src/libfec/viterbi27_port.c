@@ -29,8 +29,9 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <limits.h>
-#include "fec.h"
 
+// include header with forward declarations
+#include "liquid-wlan.internal.h"
 
 typedef union { unsigned int w[64]; } metric_t;
 typedef union { unsigned long w[2];} decision_t;

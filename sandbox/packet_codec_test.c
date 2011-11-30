@@ -33,7 +33,6 @@
 #include <time.h>
 
 #include <liquid/liquid.h>
-#include <fec.h>
 
 #include "liquid-wlan.internal.h"
 
