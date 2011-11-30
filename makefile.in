@@ -238,6 +238,28 @@ clean-check:
 ## TARGET : bench     - build and run all benchmarks
 ##
 
+benchmark_programs :=						\
+	benchmark/wlanframegen_benchmark			\
+	benchmark/wlanframesync_benchmark			\
+
+benchmark_objects	= $(patsubst %,%.o,$(benchmark_programs))
+
+BENCHMARK_LDFLAGS = $(LDFLAGS)
+
+# NOTE: linked libraries must come _after_ the target program
+$(benchmark_objects): %.o : %.c $(benchmark_data_src)
+
+$(benchmark_programs): % : %.o libliquid-wlan.a
+
+# main target; run all programs
+bench : $(benchmark_programs)
+	$(patsubst %, ./% &&, $(benchmark_programs)) echo "\n====================\n   benchmark done\n====================\n"
+
+# clean benchmark
+clean-bench:
+	$(RM) benchmark/*.o
+	$(RM) $(benchmark_programs)
+
 
 ## 
 ## TARGET : examples  - build all examples binaries
