@@ -102,7 +102,7 @@ void wlan_packet_encode(unsigned int    _rate,
     unsigned int length = _length;                          // original data length (bytes)
     unsigned int ndbps  = wlanframe_ratetab[_rate].ndbps;   // number of data bits per OFDM symbol
     unsigned int ncbps  = wlanframe_ratetab[_rate].ncbps;   // number of coded bits per OFDM symbol
-    unsigned int nbpsc  = wlanframe_ratetab[_rate].nbpsc;   // number of bits per subcarrier (modulation depth)
+//  unsigned int nbpsc  = wlanframe_ratetab[_rate].nbpsc;   // number of bits per subcarrier (modulation depth)
     unsigned int seed   = _seed;                            // 0x5d; // data scrambler seed
 
     // forward error-correction scheme
@@ -259,7 +259,7 @@ void wlan_packet_decode(unsigned int    _rate,
     unsigned int length = _length;                          // original data length (bytes)
     unsigned int ndbps  = wlanframe_ratetab[_rate].ndbps;   // number of data bits per OFDM symbol
     unsigned int ncbps  = wlanframe_ratetab[_rate].ncbps;   // number of coded bits per OFDM symbol
-    unsigned int nbpsc  = wlanframe_ratetab[_rate].nbpsc;   // number of bits per subcarrier (modulation depth)
+//  unsigned int nbpsc  = wlanframe_ratetab[_rate].nbpsc;   // number of bits per subcarrier (modulation depth)
     unsigned int seed   = _seed;                            // 0x5d; // data scrambler seed
 
     // forward error-correction scheme
