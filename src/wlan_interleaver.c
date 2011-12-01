@@ -28,6 +28,18 @@
 
 #include "liquid-wlan.internal.h"
 
+// indexable table of above structured auto-generated tables
+struct wlan_interleaver_tab_s * wlan_intlv_gentab[8] = {
+    wlan_intlv_R6,
+    wlan_intlv_R9,
+    wlan_intlv_R12,
+    wlan_intlv_R18,
+    wlan_intlv_R24,
+    wlan_intlv_R36,
+    wlan_intlv_R48,
+    wlan_intlv_R54};
+
+
 // intereleave one OFDM symbol
 //  _ncbps      :   number of coded bits per OFDM symbol
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)

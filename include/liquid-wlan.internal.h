@@ -191,6 +191,10 @@ void wlan_data_unscramble(unsigned char * _msg_enc,
                           unsigned int _n,
                           unsigned int _seed);
 
+//
+// interleaver
+//
+
 // structured interleaver element
 struct wlan_interleaver_tab_s {
     unsigned char p0;       // input (de-interleaved) byte index
@@ -198,6 +202,19 @@ struct wlan_interleaver_tab_s {
     unsigned char mask0;    // input (de-interleaved) bit mask
     unsigned char mask1;    // output (interleaved) bit mask
 };
+
+// external auto-generated structured interleaver tables (see liquid-wlan/src/gentab)
+extern struct wlan_interleaver_tab_s wlan_intlv_R6[48];
+extern struct wlan_interleaver_tab_s wlan_intlv_R9[48];
+extern struct wlan_interleaver_tab_s wlan_intlv_R12[96];
+extern struct wlan_interleaver_tab_s wlan_intlv_R18[96];
+extern struct wlan_interleaver_tab_s wlan_intlv_R24[192];
+extern struct wlan_interleaver_tab_s wlan_intlv_R36[192];
+extern struct wlan_interleaver_tab_s wlan_intlv_R48[288];
+extern struct wlan_interleaver_tab_s wlan_intlv_R54[288];
+
+// indexable table of above structured auto-generated tables
+extern struct wlan_interleaver_tab_s * wlan_intlv_gentab[8];
 
 // intereleave one OFDM symbol
 //  _ncbps      :   number of coded bits per OFDM symbol
