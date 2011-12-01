@@ -226,18 +226,6 @@ void wlan_interleaver_encode_symbol(unsigned int _ncbps,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
 
-// intereleave message
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
-//  _n          :   input messge length (bytes)
-//  _msg_dec    :   decoded message (de-iterleaved)
-//  _msg_enc    :   encoded message (interleaved)
-void wlan_interleaver_encode(unsigned int _ncbps,
-                             unsigned int _nbpsc,
-                             unsigned int _n,
-                             unsigned char * _msg_dec,
-                             unsigned char * _msg_enc);
-
 // de-intereleave one OFDM symbol
 //  _ncbps      :   number of coded bits per OFDM symbol
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)
@@ -248,17 +236,6 @@ void wlan_interleaver_decode_symbol(unsigned int _ncbps,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
 
-// de-intereleave message
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
-//  _n          :   input messge length (bytes)
-//  _msg_enc    :   encoded message (interleaved)
-//  _msg_dec    :   decoded message (de-iterleaved)
-void wlan_interleaver_decode(unsigned int _ncbps,
-                             unsigned int _nbpsc,
-                             unsigned int _n,
-                             unsigned char * _msg_enc,
-                             unsigned char * _msg_dec);
 
 //
 // high-level packet encoder/decoder
