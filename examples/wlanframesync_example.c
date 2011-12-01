@@ -57,12 +57,13 @@ int main(int argc, char*argv[])
     srand(time(NULL));
     
     // data options
-    unsigned char * msg_org = annexg_G1;
     struct wlan_txvector_s txvector;
     txvector.LENGTH      = 100;
     txvector.DATARATE    = WLANFRAME_RATE_36;
     txvector.SERVICE     = 0;
     txvector.TXPWR_LEVEL = 0;
+    //unsigned char * msg_org = annexg_G1;
+    unsigned char msg_org[txvector.LENGTH];
     
     // channel options
     float noise_floor = -120.0f;        // noise floor [dB]
@@ -98,6 +99,10 @@ int main(int argc, char*argv[])
     }
     
     unsigned int i;
+
+    // initialize original data message
+    for (i=0; i<txvector.LENGTH; i++)
+        msg_org[i] = rand() & 0xff;
 
     float nstd  = powf(10.0f, noise_floor/20.0f);
     float gamma = powf(10.0f, (SNRdB + noise_floor)/20.0f);
@@ -180,8 +185,11 @@ static int callback(unsigned char *        _payload,
 {
     printf("**** callback invoked\n");
 
+    // type cast 'userdata' as original data vector
+    unsigned char * msg_org = (unsigned char*) _userdata;
+
     // count errors
-    unsigned int num_bit_errors = count_bit_errors_array(_payload, annexg_G1, _rxvector.LENGTH);
+    unsigned int num_bit_errors = count_bit_errors_array(_payload, msg_org, _rxvector.LENGTH);
     printf("bit errors : %4u / %4u\n", num_bit_errors, 8*_rxvector.LENGTH);
 
     return 0;
