@@ -90,14 +90,6 @@ void wlan_packet_encode(unsigned int    _rate,
         exit(1);
     }
 
-#if 0
-    // options/parameters
-    unsigned int length = 100;  // original data length (bytes)
-    unsigned int ndbps  = 144;  // number of data bits per OFDM symbol
-    unsigned int ncbps  = 192;  // number of coded bits per OFDM symbol
-    unsigned int nbpsc  =   4;  // number of bits per subcarrier (modulation depth)
-    unsigned int seed   = 0x5d; // data scrambler seed
-#else
     // strip parameters
     unsigned int length = _length;                          // original data length (bytes)
     unsigned int ndbps  = wlanframe_ratetab[_rate].ndbps;   // number of data bits per OFDM symbol
@@ -107,32 +99,6 @@ void wlan_packet_encode(unsigned int    _rate,
 
     // forward error-correction scheme
     unsigned int fec_scheme = wlanframe_ratetab[_rate].fec_scheme;
-#endif
-
-#if 0
-    // original data message (Table G.1)
-    unsigned char msg_data[100] = {
-        0x04, 0x02, 0x00, 0x2e, 0x00, 
-        0x60, 0x08, 0xcd, 0x37, 0xa6, 
-        0x00, 0x20, 0xd6, 0x01, 0x3c, 
-        0xf1, 0x00, 0x60, 0x08, 0xad, 
-        0x3b, 0xaf, 0x00, 0x00, 0x4a, 
-        0x6f, 0x79, 0x2c, 0x20, 0x62, 
-        0x72, 0x69, 0x67, 0x68, 0x74, 
-        0x20, 0x73, 0x70, 0x61, 0x72, 
-        0x6b, 0x20, 0x6f, 0x66, 0x20, 
-        0x64, 0x69, 0x76, 0x69, 0x6e, 
-        0x69, 0x74, 0x79, 0x2c, 0x0a, 
-        0x44, 0x61, 0x75, 0x67, 0x68, 
-        0x74, 0x65, 0x72, 0x20, 0x6f, 
-        0x66, 0x20, 0x45, 0x6c, 0x79, 
-        0x73, 0x69, 0x75, 0x6d, 0x2c, 
-        0x0a, 0x46, 0x69, 0x72, 0x65, 
-        0x2d, 0x69, 0x6e, 0x73, 0x69, 
-        0x72, 0x65, 0x64, 0x20, 0x77, 
-        0x65, 0x20, 0x74, 0x72, 0x65, 
-        0x61, 0xda, 0x57, 0x99, 0xed};
-#endif
 
     // compute number of OFDM symbols
     div_t d = div(16 + 8*length + 6, ndbps);
@@ -247,14 +213,6 @@ void wlan_packet_decode(unsigned int    _rate,
         exit(1);
     }
 
-#if 0
-    // options/parameters
-    unsigned int length = 100;  // original data length (bytes)
-    unsigned int ndbps  = 144;  // number of data bits per OFDM symbol
-    unsigned int ncbps  = 192;  // number of coded bits per OFDM symbol
-    unsigned int nbpsc  =   4;  // number of bits per subcarrier (modulation depth)
-    unsigned int seed   = 0x5d; // data scrambler seed
-#else
     // strip parameters
     unsigned int length = _length;                          // original data length (bytes)
     unsigned int ndbps  = wlanframe_ratetab[_rate].ndbps;   // number of data bits per OFDM symbol
@@ -264,7 +222,6 @@ void wlan_packet_decode(unsigned int    _rate,
 
     // forward error-correction scheme
     unsigned int fec_scheme = wlanframe_ratetab[_rate].fec_scheme;
-#endif
 
     // compute number of OFDM symbols
     div_t d = div(16 + 8*length + 6, ndbps);
