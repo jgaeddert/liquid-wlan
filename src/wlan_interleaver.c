@@ -86,10 +86,9 @@ void wlan_interleaver_decode_symbol(unsigned int    _rate,
     // retrieve structured interleaver table
     struct wlan_interleaver_tab_s * intlv = wlan_intlv_gentab[_rate];
 
-    // run de-interleaver
-    // TODO : fix for de-interleaver (run in reverse)
+    // run de-interleaver (run interleaver in reverse)
     unsigned int i;
     for (i=0; i<ncbps; i++)
-        _msg_dec[ intlv[i].p1 ] |= (_msg_enc[ intlv[i].p0 ] & intlv[i].mask0 ) ? intlv[i].mask1 : 0;
+        _msg_dec[ intlv[i].p0 ] |= (_msg_enc[ intlv[i].p1 ] & intlv[i].mask1 ) ? intlv[i].mask0 : 0;
 }
 
