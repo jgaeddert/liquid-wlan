@@ -217,9 +217,9 @@ void wlan_packet_encode(unsigned int    _rate,
     // 
     // interleave symbols
     //
-    
+   
     for (i=0; i<nsym; i++)
-        wlan_interleaver_encode_symbol(ncbps, nbpsc, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
+        wlan_interleaver_encode_symbol(_rate, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
 
 #if DEBUG_PACKET_CODEC
     // print interleaved message
@@ -307,7 +307,7 @@ void wlan_packet_decode(unsigned int    _rate,
     //
 
     for (i=0; i<nsym; i++)
-        wlan_interleaver_decode_symbol(ncbps, nbpsc, &_msg_enc[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
+        wlan_interleaver_decode_symbol(_rate, &_msg_enc[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
 
 #if DEBUG_PACKET_CODEC
     // print de-interleaved message

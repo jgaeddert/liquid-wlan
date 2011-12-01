@@ -1095,7 +1095,7 @@ void wlanframesync_rxsymbol(wlanframesync _q)
 void wlanframesync_decode_signal(wlanframesync _q)
 {
     // de-interleave
-    wlan_interleaver_decode_symbol(48, 1, _q->signal_int, _q->signal_enc);
+    wlan_interleaver_decode_symbol(WLANFRAME_RATE_6, _q->signal_int, _q->signal_enc);
 
     // decode
     wlan_fec_signal_decode(_q->signal_enc, _q->signal_dec);

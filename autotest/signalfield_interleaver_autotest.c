@@ -48,6 +48,7 @@ int main(int argc, char*argv[])
     // options...
     unsigned int ncbps = 48;    // number of coded bits per OFDM symbol
     unsigned int nbpsc = 1;     // number of bits per subcarrier (modulation depth)
+    unsigned int rate = WLANFRAME_RATE_6;
     
     unsigned int i;
 
@@ -55,7 +56,7 @@ int main(int argc, char*argv[])
     // interleave message
     //
     unsigned char msg_enc[6];
-    wlan_interleaver_encode_symbol(ncbps, nbpsc, msg_org, msg_enc);
+    wlan_interleaver_encode_symbol(rate, msg_org, msg_enc);
     
     // print results
     printf("interleaved:\n");
@@ -72,7 +73,7 @@ int main(int argc, char*argv[])
     // de-interleave message
     //
     unsigned char msg_dec[6];
-    wlan_interleaver_decode_symbol(ncbps, nbpsc, msg_enc, msg_dec);
+    wlan_interleaver_decode_symbol(rate, msg_enc, msg_dec);
     
     // print results
     printf("de-interleaved:\n");

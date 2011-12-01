@@ -217,22 +217,18 @@ extern struct wlan_interleaver_tab_s wlan_intlv_R54[288];
 extern struct wlan_interleaver_tab_s * wlan_intlv_gentab[8];
 
 // intereleave one OFDM symbol
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
+//  _rate       :   primitive rate
 //  _msg_dec    :   decoded message (de-iterleaved)
 //  _msg_enc    :   encoded message (interleaved)
-void wlan_interleaver_encode_symbol(unsigned int _ncbps,
-                                    unsigned int _nbpsc,
+void wlan_interleaver_encode_symbol(unsigned int    _rate,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
 
 // de-intereleave one OFDM symbol
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
+//  _rate       :   primitive rate
 //  _msg_enc    :   encoded message (interleaved)
 //  _msg_dec    :   decoded message (de-iterleaved)
-void wlan_interleaver_decode_symbol(unsigned int _ncbps,
-                                    unsigned int _nbpsc,
+void wlan_interleaver_decode_symbol(unsigned int    _rate,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
 

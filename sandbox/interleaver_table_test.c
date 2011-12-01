@@ -37,6 +37,7 @@
 #include "annex-g-data/G18.c"
 #include "annex-g-data/G21.c"
 
+#if 0
 // structured interleaver element
 struct wlan_interleaver_tab_s {
     unsigned char p0;       // input (de-interleaved) byte index
@@ -44,6 +45,7 @@ struct wlan_interleaver_tab_s {
     unsigned char mask0;    // input (de-interleaved) bit mask
     unsigned char mask1;    // output (interleaved) bit mask
 };
+#endif
 
 
 // generate interleaving table

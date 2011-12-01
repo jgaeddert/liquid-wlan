@@ -281,7 +281,7 @@ void wlanframegen_assemble(wlanframegen           _q,
     wlan_fec_signal_encode(_q->signal_dec, _q->signal_enc);
 
     // interleave SIGNAL field
-    wlan_interleaver_encode_symbol(48, 1, _q->signal_enc, _q->signal_int);
+    wlan_interleaver_encode_symbol(WLANFRAME_RATE_6, _q->signal_enc, _q->signal_int);
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
