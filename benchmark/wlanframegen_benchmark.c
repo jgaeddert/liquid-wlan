@@ -90,7 +90,7 @@ void wlanframegen_benchmark(struct rusage *     _start,
 }
 
 int main() {
-    unsigned long int n = 10000;
+    unsigned long int n = 40000;
     struct rusage start, finish;
     unsigned int rate = WLANFRAME_RATE_6;
 
