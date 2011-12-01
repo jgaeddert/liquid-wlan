@@ -35,10 +35,19 @@
 //#include <liquid/liquid.h>
 
 #include "liquid-wlan.internal.h"
+    
+struct wlan_interleaver_tab_s {
+    unsigned char p0;   // input byte index
+    unsigned char p1;   // output byte index
+    unsigned char mask; // mask
+    unsigned char bit;  // output bit flag
+};
+
 
 // generate interleaving table
 //  _rate       :   primitive rate
-void wlan_interleaver_gentab(unsigned int _rate);
+void wlan_interleaver_gentab(unsigned int _rate,
+                             struct wlan_interleaver_tab_s * _intlv);
 
 int main(int argc, char*argv[])
 {
@@ -49,9 +58,32 @@ int main(int argc, char*argv[])
 #else
     unsigned int rate = WLANFRAME_RATE_6;   // primitive rate
 #endif
+    
+    // 
+    unsigned int ncbps  = wlanframe_ratetab[rate].ncbps;   // number of coded bits per OFDM symbol
+    unsigned int nbpsc  = wlanframe_ratetab[rate].nbpsc;   // number of bits per subcarrier (modulation depth)
+    struct wlan_interleaver_tab_s intlv[ncbps];
 
     // generate table
-    wlan_interleaver_gentab(rate);
+    wlan_interleaver_gentab(rate, intlv);
+
+    // print table
+    unsigned int i;
+    for (i=0; i<ncbps; i++) {
+        printf("  %3u > %3u [mask = 0x%.2x, bit = 0x%.2x]\n",
+                intlv[i].p0,
+                intlv[i].p1,
+                intlv[i].mask,
+                intlv[i].bit);
+    }
+
+#if 0
+
+    memset(msg_enc, 0x00, (ncbps/8)*sizeof(unsigned char));
+    for (i=0; i<ncbps; i++) {
+        msg_enc[ intlv[i].p0 ] |= (msg_dec[ intlv[i].p1 ] & intlv[i].mask ) ? intlv[i].bit : 0;
+    }
+#endif
 
     printf("done.\n");
     return 0;
@@ -59,7 +91,8 @@ int main(int argc, char*argv[])
 
 // generate interleaving table
 //  _rate       :   primitive rate
-void wlan_interleaver_gentab(unsigned int _rate)
+void wlan_interleaver_gentab(unsigned int _rate,
+                             struct wlan_interleaver_tab_s * _intlv)
 {
     // validate input
     if (_rate > WLANFRAME_RATE_54) {
@@ -128,6 +161,17 @@ void wlan_interleaver_gentab(unsigned int _rate)
         printf("%3u > %3u\n", i, j);
         
         msg_p1[i] = j;
+    }
+
+    // fill table
+    for (i=0; i<ncbps; i++) {
+        // TODO : check these values
+        _intlv[i].p0 = i/8;
+        _intlv[i].p1 = msg_p0[ msg_p1[i] ] / 8;
+
+        // TODO : use valid mask/bit values
+        _intlv[i].mask = 0x01;
+        _intlv[i].bit  = 0x01;
     }
 }
 
