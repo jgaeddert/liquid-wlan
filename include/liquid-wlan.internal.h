@@ -191,6 +191,14 @@ void wlan_data_unscramble(unsigned char * _msg_enc,
                           unsigned int _n,
                           unsigned int _seed);
 
+// structured interleaver element
+struct wlan_interleaver_tab_s {
+    unsigned char p0;       // input (de-interleaved) byte index
+    unsigned char p1;       // output (interleaved) byte index
+    unsigned char mask0;    // input (de-interleaved) bit mask
+    unsigned char mask1;    // output (interleaved) bit mask
+};
+
 // intereleave one OFDM symbol
 //  _ncbps      :   number of coded bits per OFDM symbol
 //  _nbpsc      :   number of bits per subcarrier (modulation depth)

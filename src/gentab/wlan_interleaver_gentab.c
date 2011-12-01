@@ -109,8 +109,10 @@ int main(int argc, char*argv[])
     // print table
     printf("// auto-generated file (do not edit)\n");
     printf("\n");
+    printf("#include \"liquid-wlan.internal.h\"\n");
+    printf("\n");
     printf("// structured interleaver table for rate %u M bits/s\n", rate);
-    printf("struct interleaver_gentab_s wlan_intlv_R%u[%u] = {\n", rate, ncbps);
+    printf("struct wlan_interleaver_tab_s wlan_intlv_R%u[%u] = {\n", rate, ncbps);
     for (i=0; i<ncbps; i++) {
         printf("    {%3u, %3u, 0x%.2x, 0x%.2x},\n",
             intlv[i].p0,

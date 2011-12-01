@@ -87,13 +87,32 @@ objects :=							\
 	src/wlanframegen.o					\
 	src/wlanframesync.o					\
 	src/utility.o						\
+	src/gentab/wlan_intlv_R6.o				\
+	src/gentab/wlan_intlv_R9.o				\
+	src/gentab/wlan_intlv_R12.o				\
+	src/gentab/wlan_intlv_R18.o				\
+	src/gentab/wlan_intlv_R24.o				\
+	src/gentab/wlan_intlv_R36.o				\
+	src/gentab/wlan_intlv_R48.o				\
+	src/gentab/wlan_intlv_R54.o				\
 
 # NOTE: for some reason this file causes linking errors ('corrupt archive')
 # src/libliquid_wlan.o
 
+# structured interleaver auto-generated tables
+src/gentab/wlan_interleaver_gentab : % : %.c
+
+src/gentab/wlan_intlv_R6.c  : src/gentab/wlan_interleaver_gentab ; ./$< -r 6  > $@
+src/gentab/wlan_intlv_R9.c  : src/gentab/wlan_interleaver_gentab ; ./$< -r 9  > $@
+src/gentab/wlan_intlv_R12.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 12 > $@
+src/gentab/wlan_intlv_R18.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 18 > $@
+src/gentab/wlan_intlv_R24.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 24 > $@
+src/gentab/wlan_intlv_R36.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 36 > $@
+src/gentab/wlan_intlv_R48.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 48 > $@
+src/gentab/wlan_intlv_R54.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 54 > $@
+
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
-
 
 ##
 ## TARGET : all       - build shared library (default)
@@ -323,6 +342,8 @@ clean-sandbox:
 
 clean: clean-check clean-examples clean-sandbox
 	$(RM) $(objects)
+	$(RM) src/gentab/wlan_interleaver_gentab
+	$(RM) src/gentab/wlan_intlv_R*.c
 	$(RM) libliquid-wlan.a
 	$(RM) $(SHARED_LIB)
 
