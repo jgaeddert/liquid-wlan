@@ -90,7 +90,7 @@ int main(int argc, char*argv[])
 
         // run interleaver
         for (i=0; i<ncbps; i++) {
-            msg_enc[ intlv[i].p0 ] |= (msg_org[ intlv[i].p1 ] & intlv[i].mask ) ? intlv[i].bit : 0;
+            msg_enc[ intlv[i].p1 ] |= (msg_org[ intlv[i].p0 ] & intlv[i].mask ) ? intlv[i].bit : 0;
         }
 
         // print results
@@ -179,15 +179,20 @@ void wlan_interleaver_gentab(unsigned int _rate,
         msg_p1[i] = j;
     }
 
-    // fill table
-    for (i=0; i<ncbps; i++) {
-        // TODO : check these values
-        _intlv[i].p0 = i/8;
-        _intlv[i].p1 = msg_p0[ msg_p1[i] ] / 8;
+    // fill table: k > i > j
+    for (k=0; k<ncbps; k++) {
 
-        // TODO : use valid mask/bit values
-        _intlv[i].mask = 0x01;
-        _intlv[i].bit  = 0x01;
+        i = (ncbps/16)*(k % 16) + (k/16);
+        j = s*(i/s) + (i + ncbps - ((16*i)/ncbps) ) % s;
+        
+        d0 = div(k, 8);
+        d1 = div(j, 8);
+
+        _intlv[k].p0 = d0.quot;
+        _intlv[k].p1 = d1.quot;
+
+        _intlv[k].mask = 1 << (8-d0.rem-1);
+        _intlv[k].bit  = 1 << (8-d1.rem-1);
     }
 }
 
