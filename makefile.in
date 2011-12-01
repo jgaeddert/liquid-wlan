@@ -95,6 +95,8 @@ objects :=							\
 	src/gentab/wlan_intlv_R36.o				\
 	src/gentab/wlan_intlv_R48.o				\
 	src/gentab/wlan_intlv_R54.o				\
+	src/libfec/viterbi27.o					\
+	src/libfec/viterbi27_port.o				\
 
 # NOTE: for some reason this file causes linking errors ('corrupt archive')
 # src/libliquid_wlan.o

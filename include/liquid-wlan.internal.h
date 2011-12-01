@@ -25,9 +25,19 @@
 
 #include <complex.h>
 #include <liquid/liquid.h>
-#include <fec.h>
 
 #include "liquid-wlan.h"
+
+//
+// utility
+//
+
+// reverse byte table
+extern const unsigned char liquid_wlan_reverse_byte[256];
+
+// number of ones in a byte modulo 2
+extern const unsigned char liquid_wlan_parity[256];
+
 
 // Use fftw library if installed, otherwise use liquid-dsp (less
 // efficient) fft library.
@@ -110,6 +120,39 @@ int wlan_signal_unpack(unsigned char * _signal,
 #define LIQUID_WLAN_SOFTBIT_1       (255)
 #define LIQUID_WLAN_SOFTBIT_ERASURE (127)
 #define LIQUID_WLAN_SOFTBIT_0       (0)
+
+/* r=1/2 k=7 convolutional encoder polynomials
+ * The NASA-DSN convention is to use V27POLYA inverted, then V27POLYB
+ * The CCSDS/NASA-GSFC convention is to use V27POLYB, then V27POLYA inverted
+ */
+#define	V27POLYA	0x6d
+#define	V27POLYB	0x4f
+
+// generic interface
+void *create_viterbi27(int len);
+void set_viterbi27_polynomial(int polys[2]);
+int init_viterbi27(void *vp,int starting_state);
+int update_viterbi27_blk(void *vp,unsigned char sym[],int npairs);
+int chainback_viterbi27(void *vp, unsigned char *data,unsigned int nbits,unsigned int endstate);
+void delete_viterbi27(void *vp);
+
+// portable C interface
+void *create_viterbi27_port(int len);
+void set_viterbi27_polynomial_port(int polys[2]);
+int init_viterbi27_port(void *p,int starting_state);
+int chainback_viterbi27_port(void *p,unsigned char *data,unsigned int nbits,unsigned int endstate);
+void delete_viterbi27_port(void *p);
+int update_viterbi27_blk_port(void *p,unsigned char *syms,int nbits);
+
+static inline int parity(int x){
+  /* Fold down to one byte */
+  x ^= (x >> 16);
+  x ^= (x >> 8);
+  //return parityb(x);
+  return liquid_wlan_parity[x];
+}
+
+
 
 // wlan convolutional encoder/decoder properties
 struct wlanconv_s {
@@ -355,14 +398,6 @@ void wlanframesync_rxsymbol(wlanframesync _q);
 
 // decode SIGNAL field
 void wlanframesync_decode_signal(wlanframesync _q);
-
-//
-// utility
-//
-
-// reverse byte table
-extern const unsigned char liquid_wlan_reverse_byte[256];
-
 
 #endif // __LIQUID_WLAN_INTERNAL_H__
 
