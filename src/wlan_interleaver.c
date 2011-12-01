@@ -60,6 +60,9 @@ void wlan_interleaver_encode_symbol(unsigned int    _rate,
     // retrieve structured interleaver table
     struct wlan_interleaver_tab_s * intlv = wlan_intlv_gentab[_rate];
 
+    // clear output array
+    memset(_msg_enc, 0x00, (ncbps/8)*sizeof(unsigned char));
+
     // run interleaver
     unsigned int i;
     for (i=0; i<ncbps; i++)
@@ -85,6 +88,9 @@ void wlan_interleaver_decode_symbol(unsigned int    _rate,
 
     // retrieve structured interleaver table
     struct wlan_interleaver_tab_s * intlv = wlan_intlv_gentab[_rate];
+
+    // clear output array
+    memset(_msg_dec, 0x00, (ncbps/8)*sizeof(unsigned char));
 
     // run de-interleaver (run interleaver in reverse)
     unsigned int i;
