@@ -37,11 +37,12 @@
 #include "annex-g-data/G18.c"
 #include "annex-g-data/G21.c"
 
+// structured interleaver element
 struct wlan_interleaver_tab_s {
-    unsigned char p0;   // input byte index
-    unsigned char p1;   // output byte index
-    unsigned char mask; // mask
-    unsigned char bit;  // output bit flag
+    unsigned char p0;       // input (de-interleaved) byte index
+    unsigned char p1;       // output (interleaved) byte index
+    unsigned char mask0;    // input (de-interleaved) bit mask
+    unsigned char mask1;    // output (interleaved) bit mask
 };
 
 
@@ -55,9 +56,10 @@ int main(int argc, char*argv[])
     // option(s)
     unsigned int rate = WLANFRAME_RATE_36;   // primitive rate
     
-    // 
-    unsigned int ncbps  = wlanframe_ratetab[rate].ncbps;   // number of coded bits per OFDM symbol
-    unsigned int nbpsc  = wlanframe_ratetab[rate].nbpsc;   // number of bits per subcarrier (modulation depth)
+    // number of coded bits per OFDM symbol
+    unsigned int ncbps  = wlanframe_ratetab[rate].ncbps;
+
+    // create structured interleaver table
     struct wlan_interleaver_tab_s intlv[ncbps];
 
     // generate table
@@ -66,12 +68,12 @@ int main(int argc, char*argv[])
     // print table
     unsigned int i;
     for (i=0; i<ncbps; i++) {
-        printf("  %3u : %3u > %3u [mask = 0x%.2x, bit = 0x%.2x]\n",
+        printf("  %3u : %3u > %3u [mask0 = 0x%.2x, mask1 = 0x%.2x]\n",
                 i,
                 intlv[i].p0,
                 intlv[i].p1,
-                intlv[i].mask,
-                intlv[i].bit);
+                intlv[i].mask0,
+                intlv[i].mask1);
     }
 
     // run interleaving test (only if rate is 36)
@@ -90,7 +92,7 @@ int main(int argc, char*argv[])
 
         // run interleaver
         for (i=0; i<ncbps; i++) {
-            msg_enc[ intlv[i].p1 ] |= (msg_org[ intlv[i].p0 ] & intlv[i].mask ) ? intlv[i].bit : 0;
+            msg_enc[ intlv[i].p1 ] |= (msg_org[ intlv[i].p0 ] & intlv[i].mask0 ) ? intlv[i].mask1 : 0;
         }
 
         // print results
@@ -117,7 +119,6 @@ void wlan_interleaver_gentab(unsigned int _rate,
     }
     
     // strip parameters
-    //unsigned int ndbps  = wlanframe_ratetab[_rate].ndbps;   // number of data bits per OFDM symbol
     unsigned int ncbps  = wlanframe_ratetab[_rate].ncbps;   // number of coded bits per OFDM symbol
     unsigned int nbpsc  = wlanframe_ratetab[_rate].nbpsc;   // number of bits per subcarrier (modulation depth)
 
@@ -127,57 +128,8 @@ void wlan_interleaver_gentab(unsigned int _rate,
 
     unsigned int s = (nbpsc / 2) < 1 ? 1 : nbpsc/2; // max( nbpsc/2, 1 )
 
-#if 0
-    // internal array
-    unsigned char msg_p0[ncbps/8]; // first permutation
-#endif
-
-    // clear arrays
-    //memset(msg_p0,   0x00, (ncbps/8)*sizeof(unsigned char));
-    //memset(_msg_enc, 0x00, (ncbps/8)*sizeof(unsigned char));
-
-    unsigned int msg_p0[ncbps]; // first permutation
-    unsigned int msg_p1[ncbps]; // second permutation
-
     div_t d0;
     div_t d1;
-    unsigned char bit;
-    
-    // outer permutation
-    for (k=0; k<ncbps; k++) {
-        i = (ncbps/16)*(k % 16) + (k/16);
-
-        d0 = div(k, 8);
-        d1 = div(i, 8);
-
-#if 0
-        bit = (_msg_dec[d0.quot] >> (8-d0.rem-1)) & 0x01;
-        msg_p0[d1.quot] |= bit << (8-d1.rem-1);
-#endif
-        
-        printf("%3u > %3u\n", k, i);
-
-        msg_p0[k] = i;
-    }
-
-    printf("-------\n");
-
-    // inner permutation
-    for (i=0; i<ncbps; i++) {
-        j = s*(i/s) + (i + ncbps - ((16*i)/ncbps) ) % s;
-
-        d0 = div(i, 8);
-        d1 = div(j, 8);
-
-#if 0
-        bit = (msg_p0[d0.quot] >> (8-d0.rem-1)) & 0x01;
-        _msg_enc[d1.quot] |= bit << (8-d1.rem-1);
-#endif
-        
-        printf("%3u > %3u\n", i, j);
-        
-        msg_p1[i] = j;
-    }
 
     // fill table: k > i > j
     for (k=0; k<ncbps; k++) {
@@ -191,8 +143,8 @@ void wlan_interleaver_gentab(unsigned int _rate,
         _intlv[k].p0 = d0.quot;
         _intlv[k].p1 = d1.quot;
 
-        _intlv[k].mask = 1 << (8-d0.rem-1);
-        _intlv[k].bit  = 1 << (8-d1.rem-1);
+        _intlv[k].mask0 = 1 << (8-d0.rem-1);
+        _intlv[k].mask1 = 1 << (8-d1.rem-1);
     }
 }
 
