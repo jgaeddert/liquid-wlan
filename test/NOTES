@@ -4,6 +4,11 @@ Notes on WLAN 802.11a/g implementation
   * modem: BPSK seems backwards, map: {0,1} > {1,0}
   * modem: QPSK also backwards, map: {0,1,2,3} > {3,1,2,0}
   * pilot sequence: same as data scrambler: m-sequence: m=7, g=0x91, a=0x7f (n=127)
+  * from initial benchmarking and profiling trials, it appears that the 
+    majority of processing lies in the interleaver with integer 
+    division. Since there are only eight symbol intereleaving 
+    possibilities (one for each rate), we can probably store them in 
+    some sort of structured look-up table.
 
 To do:
   * fix bug with generating/synchronizing frames with rate 9 Mbits/s 
