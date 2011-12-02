@@ -299,6 +299,24 @@ void wlan_packet_decode(unsigned int    _rate,
                         unsigned char * _msg_dec);
 
 // 
+// modem (modulation/demodulation)
+//
+
+extern const float complex wlan_modem_qam16[16];
+extern const float complex wlan_modem_qam64[64];
+
+float complex wlan_modulate_bpsk(unsigned int _sym);
+float complex wlan_modulate_qpsk(unsigned int _sym);
+float complex wlan_modulate_qam16(unsigned int _sym);
+float complex wlan_modulate_qam64(unsigned int _sym);
+
+unsigned char wlan_demodulate_bpsk(float complex _sample);
+unsigned char wlan_demodulate_qpsk(float complex _sample);
+unsigned char wlan_demodulate_qam16(float complex _sample);
+unsigned char wlan_demodulate_qam64(float complex _sample);
+
+
+// 
 // 802.11a/g framing
 //
 
