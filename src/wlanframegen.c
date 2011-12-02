@@ -48,8 +48,8 @@ struct wlanframegen_s {
     // pilot sequence generator
     msequence ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
     
-    // DATA field modulator
-    modem mod;
+    // DATA field modulation scheme
+    unsigned int mod_scheme;
 
     // window transition
     unsigned int rampup_len;        // number of samples in overlapping symbols
@@ -102,7 +102,7 @@ wlanframegen wlanframegen_create()
     q->ms_pilot = msequence_create(7, 0x91, 0x7f);
 
     // DATA field (payload) modulator
-    q->mod = modem_create(LIQUID_MODEM_BPSK, 1);
+    q->mod_scheme = WLAN_MODEM_BPSK;
 
     // create transition window/buffer
     // NOTE : ramp length must be less than cyclic prefix length (default: 1)
@@ -155,9 +155,6 @@ void wlanframegen_destroy(wlanframegen _q)
     
     // destroy pilot sequence generator
     msequence_destroy(_q->ms_pilot);
-
-    // destroy modulator
-    modem_destroy(_q->mod);
 
     // free transition window ramp array and postfix buffer
     free(_q->rampup);
@@ -268,10 +265,7 @@ void wlanframegen_assemble(wlanframegen           _q,
     _q->seed   = 0x5d;  //(_txvector.SERVICE >> 9) & 0x7f;
     // TODO : strip off TXPWR_LEVEL
 
-    // re-create modem object
-    _q->mod = modem_recreate(_q->mod,
-                             wlanframe_ratetab[_q->rate].mod_scheme,
-                             wlanframe_ratetab[_q->rate].nbpsc);
+    _q->mod_scheme = wlanframe_ratetab[_q->rate].mod_scheme;
 
     // pack SIGNAL field
     unsigned int R = 0; // 'reserved' bit
@@ -613,7 +607,7 @@ void wlanframegen_writesymbol_data(wlanframegen _q,
         } else {
             // DATA subcarrier
             assert(n<48);
-            modem_modulate(_q->mod, _q->modem_syms[n], &_q->X[k]);
+            _q->X[k] = wlan_modulate(_q->mod_scheme, _q->modem_syms[n]);
             n++;
         }
     }

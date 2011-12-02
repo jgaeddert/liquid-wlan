@@ -68,7 +68,7 @@ struct wlanframesync_s {
     // synchronizer objects
     nco_crcf nco_rx;        // numerically-controlled oscillator
     msequence ms_pilot;     // pilot sequence generator
-    modem demod;            // DATA field demodulator
+    unsigned int mod_scheme;// DATA field (de)modulation scheme
     float phi_prime;        // stored pilot phase
 
     // gain arrays
@@ -147,7 +147,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // synchronizer objects
     q->nco_rx = nco_crcf_create(LIQUID_VCO);
     q->ms_pilot = msequence_create(7, 0x91, 0x7f);
-    q->demod = modem_create(LIQUID_MODEM_BPSK, 1);
+    q->mod_scheme = WLAN_MODEM_BPSK;
 
     // set initial properties
     q->rate   = WLANFRAME_RATE_6;
@@ -202,7 +202,6 @@ void wlanframesync_destroy(wlanframesync _q)
     // destroy synchronizer objects
     nco_crcf_destroy(_q->nco_rx);       // numerically-controlled oscillator
     msequence_destroy(_q->ms_pilot);    // pilot sequence generator
-    modem_destroy(_q->demod);           // DATA field (payload) demodulator
 
     // free memory for encoded message
     free(_q->msg_enc);
@@ -737,7 +736,7 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
         } else {
             // DATA subcarrier
             assert(n<48);
-            modem_demodulate(_q->demod, _q->X[k], &sym);
+            sym = wlan_demodulate(_q->mod_scheme, _q->X[k]);
             _q->modem_syms[n] = sym;
             n++;
 #if DEBUG_WLANFRAMESYNC
@@ -1156,9 +1155,7 @@ void wlanframesync_decode_signal(wlanframesync _q)
     _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
 
     // re-create modem object
-    _q->demod = modem_recreate(_q->demod,
-                               wlanframe_ratetab[_q->rate].mod_scheme,
-                               wlanframe_ratetab[_q->rate].nbpsc);
+    _q->mod_scheme = wlanframe_ratetab[_q->rate].mod_scheme;
 
 #if DEBUG_WLANFRAMESYNC_PRINT
     // print properties
