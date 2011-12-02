@@ -234,49 +234,47 @@ void wlan_data_unscramble(unsigned char * _msg_enc,
                           unsigned int _n,
                           unsigned int _seed);
 
+//
+// interleaver
+//
+
+// structured interleaver element
+struct wlan_interleaver_tab_s {
+    unsigned char p0;       // input (de-interleaved) byte index
+    unsigned char p1;       // output (interleaved) byte index
+    unsigned char mask0;    // input (de-interleaved) bit mask
+    unsigned char mask1;    // output (interleaved) bit mask
+};
+
+// external auto-generated structured interleaver tables (see liquid-wlan/src/gentab)
+extern struct wlan_interleaver_tab_s wlan_intlv_R6[48];
+extern struct wlan_interleaver_tab_s wlan_intlv_R9[48];
+extern struct wlan_interleaver_tab_s wlan_intlv_R12[96];
+extern struct wlan_interleaver_tab_s wlan_intlv_R18[96];
+extern struct wlan_interleaver_tab_s wlan_intlv_R24[192];
+extern struct wlan_interleaver_tab_s wlan_intlv_R36[192];
+extern struct wlan_interleaver_tab_s wlan_intlv_R48[288];
+extern struct wlan_interleaver_tab_s wlan_intlv_R54[288];
+
+// indexable table of above structured auto-generated tables
+extern struct wlan_interleaver_tab_s * wlan_intlv_gentab[8];
+
 // intereleave one OFDM symbol
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
+//  _rate       :   primitive rate
 //  _msg_dec    :   decoded message (de-iterleaved)
 //  _msg_enc    :   encoded message (interleaved)
-void wlan_interleaver_encode_symbol(unsigned int _ncbps,
-                                    unsigned int _nbpsc,
+void wlan_interleaver_encode_symbol(unsigned int    _rate,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
-
-// intereleave message
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
-//  _n          :   input messge length (bytes)
-//  _msg_dec    :   decoded message (de-iterleaved)
-//  _msg_enc    :   encoded message (interleaved)
-void wlan_interleaver_encode(unsigned int _ncbps,
-                             unsigned int _nbpsc,
-                             unsigned int _n,
-                             unsigned char * _msg_dec,
-                             unsigned char * _msg_enc);
 
 // de-intereleave one OFDM symbol
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
+//  _rate       :   primitive rate
 //  _msg_enc    :   encoded message (interleaved)
 //  _msg_dec    :   decoded message (de-iterleaved)
-void wlan_interleaver_decode_symbol(unsigned int _ncbps,
-                                    unsigned int _nbpsc,
+void wlan_interleaver_decode_symbol(unsigned int    _rate,
                                     unsigned char * _msg_dec,
                                     unsigned char * _msg_enc);
 
-// de-intereleave message
-//  _ncbps      :   number of coded bits per OFDM symbol
-//  _nbpsc      :   number of bits per subcarrier (modulation depth)
-//  _n          :   input messge length (bytes)
-//  _msg_enc    :   encoded message (interleaved)
-//  _msg_dec    :   decoded message (de-iterleaved)
-void wlan_interleaver_decode(unsigned int _ncbps,
-                             unsigned int _nbpsc,
-                             unsigned int _n,
-                             unsigned char * _msg_enc,
-                             unsigned char * _msg_dec);
 
 //
 // high-level packet encoder/decoder
@@ -299,6 +297,35 @@ void wlan_packet_decode(unsigned int    _rate,
                         unsigned int    _length,
                         unsigned char * _msg_enc,
                         unsigned char * _msg_dec);
+
+// 
+// modem (modulation/demodulation)
+//
+
+#define WLAN_MODEM_BPSK     (0)
+#define WLAN_MODEM_QPSK     (1)
+#define WLAN_MODEM_QAM16    (2)
+#define WLAN_MODEM_QAM64    (3)
+
+extern const float complex wlan_modem_qam16[16];
+extern const float complex wlan_modem_qam64[64];
+
+float complex wlan_modulate(unsigned int  _scheme,
+                            unsigned char _sym);
+
+float complex wlan_modulate_bpsk(unsigned char _sym);
+float complex wlan_modulate_qpsk(unsigned char _sym);
+float complex wlan_modulate_qam16(unsigned char _sym);
+float complex wlan_modulate_qam64(unsigned char _sym);
+
+unsigned char wlan_demodulate(unsigned int  _scheme,
+                              float complex _sample);
+
+unsigned char wlan_demodulate_bpsk(float complex _sample);
+unsigned char wlan_demodulate_qpsk(float complex _sample);
+unsigned char wlan_demodulate_qam16(float complex _sample);
+unsigned char wlan_demodulate_qam64(float complex _sample);
+
 
 // 
 // 802.11a/g framing

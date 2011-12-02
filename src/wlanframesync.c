@@ -30,8 +30,8 @@
 
 #include "liquid-wlan.internal.h"
 
-#define DEBUG_WLANFRAMESYNC             1
-#define DEBUG_WLANFRAMESYNC_PRINT       1
+#define DEBUG_WLANFRAMESYNC             0
+#define DEBUG_WLANFRAMESYNC_PRINT       0
 #define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
 
@@ -68,7 +68,8 @@ struct wlanframesync_s {
     // synchronizer objects
     nco_crcf nco_rx;        // numerically-controlled oscillator
     msequence ms_pilot;     // pilot sequence generator
-    modem demod;            // DATA field demodulator
+    unsigned int mod_scheme;// DATA field (de)modulation scheme
+    float phi_prime;        // stored pilot phase
 
     // gain arrays
     float g0;                       // nominal gain
@@ -146,7 +147,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // synchronizer objects
     q->nco_rx = nco_crcf_create(LIQUID_VCO);
     q->ms_pilot = msequence_create(7, 0x91, 0x7f);
-    q->demod = modem_create(LIQUID_MODEM_BPSK, 1);
+    q->mod_scheme = WLAN_MODEM_BPSK;
 
     // set initial properties
     q->rate   = WLANFRAME_RATE_6;
@@ -201,7 +202,6 @@ void wlanframesync_destroy(wlanframesync _q)
     // destroy synchronizer objects
     nco_crcf_destroy(_q->nco_rx);       // numerically-controlled oscillator
     msequence_destroy(_q->ms_pilot);    // pilot sequence generator
-    modem_destroy(_q->demod);           // DATA field (payload) demodulator
 
     // free memory for encoded message
     free(_q->msg_enc);
@@ -229,6 +229,7 @@ void wlanframesync_reset(wlanframesync _q)
     _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
     _q->timer = 0;
     _q->num_symbols = 0;    // number of received OFDM data symbols
+    _q->phi_prime = 0.0f;   // reset phase offset estimate
 }
 
 // execute framing synchronizer on input buffer
@@ -576,7 +577,9 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     if (s_hat_abs        > WLANFRAMESYNC_S1B_ABS_THRESH &&
         fabsf(s_hat_arg) < WLANFRAMESYNC_S1B_ARG_THRESH)
     {
+#if DEBUG_WLANFRAMESYNC_PRINT
         printf("    acquisition S1[b]\n");
+#endif
         
         // refine CFO estimate with G1a, G1b and adjust NCO appropriately
         float nu_hat = wlanframesync_estimate_cfo_S1(_q->G1a, _q->G1b);
@@ -733,7 +736,7 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
         } else {
             // DATA subcarrier
             assert(n<48);
-            modem_demodulate(_q->demod, _q->X[k], &sym);
+            sym = wlan_demodulate(_q->mod_scheme, _q->X[k]);
             _q->modem_syms[n] = sym;
             n++;
 #if DEBUG_WLANFRAMESYNC
@@ -757,8 +760,6 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
 
     // check number of symbols
     if (_q->num_symbols == _q->nsym) {
-        printf("    FRAME RECEVIED!\n");
-
         // decode message
         wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
 
@@ -1075,12 +1076,25 @@ void wlanframesync_rxsymbol(wlanframesync _q)
         float theta = polyf_val(p_phase, 2, fx);
         _q->X[i] *= cexpf(-_Complex_I*theta);
     }
+
+    // adjust NCO frequency based on differential phase
+    if (_q->num_symbols > 0) {
+        // compute phase error (unwrapped)
+        float dphi_prime = p_phase[0] - _q->phi_prime;
+        if (dphi_prime >  M_PI) dphi_prime -= M_2_PI;
+        if (dphi_prime < -M_PI) dphi_prime += M_2_PI;
+
+        // adjust NCO proportionally to phase error
+        nco_crcf_adjust_frequency(_q->nco_rx, 1e-3f*dphi_prime);
+    }
+    // set internal phase state
+    _q->phi_prime = p_phase[0];
 }
 
 void wlanframesync_decode_signal(wlanframesync _q)
 {
     // de-interleave
-    wlan_interleaver_decode_symbol(48, 1, _q->signal_int, _q->signal_enc);
+    wlan_interleaver_decode_symbol(WLANFRAME_RATE_6, _q->signal_int, _q->signal_enc);
 
     // decode
     wlan_fec_signal_decode(_q->signal_enc, _q->signal_dec);
@@ -1097,6 +1111,14 @@ void wlanframesync_decode_signal(wlanframesync _q)
         printf("SIGNAL field not valid\n");
         return;
     }
+
+#if 0
+    if (_q->rate == WLANFRAME_RATE_9) {
+        fprintf(stderr,"warning: wlanframesync_decode_signal(), the rate 9 M bits/s is currently unsupported\n");
+        _q->signal_valid = 0;
+        return;
+    }
+#endif
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
@@ -1133,9 +1155,7 @@ void wlanframesync_decode_signal(wlanframesync _q)
     _q->msg_enc = (unsigned char*) realloc(_q->msg_enc, _q->enc_msg_len*sizeof(unsigned char));
 
     // re-create modem object
-    _q->demod = modem_recreate(_q->demod,
-                               wlanframe_ratetab[_q->rate].mod_scheme,
-                               wlanframe_ratetab[_q->rate].nbpsc);
+    _q->mod_scheme = wlanframe_ratetab[_q->rate].mod_scheme;
 
 #if DEBUG_WLANFRAMESYNC_PRINT
     // print properties
@@ -1211,21 +1231,20 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"xlabel('real');\n");
     fprintf(fid,"ylabel('imag');\n");
 
-
     // write gain arrays
     fprintf(fid,"\n\n");
-    fprintf(fid,"G0a    = zeros(1,64);\n");
-    fprintf(fid,"G0b    = zeros(1,64);\n");
-    fprintf(fid,"G1a    = zeros(1,64);\n");
-    fprintf(fid,"G1b    = zeros(1,64);\n");
-    fprintf(fid,"G      = zeros(1,64);\n");
+    fprintf(fid,"G0a = zeros(1,64);\n");
+    fprintf(fid,"G0b = zeros(1,64);\n");
+    fprintf(fid,"G1a = zeros(1,64);\n");
+    fprintf(fid,"G1b = zeros(1,64);\n");
+    fprintf(fid,"G   = zeros(1,64);\n");
     for (i=0; i<64; i++) {
         unsigned int k = (i + 32) % 64;
-        fprintf(fid,"G0a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0a[i]),   cimagf(_q->G0a[i]));
-        fprintf(fid,"G0b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0b[i]),   cimagf(_q->G0b[i]));
-        fprintf(fid,"G1a(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1a[i]),   cimagf(_q->G1a[i]));
-        fprintf(fid,"G1b(%3u)    = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]),   cimagf(_q->G1b[i]));
-        fprintf(fid,"G(%3u)      = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),     cimagf(_q->G[i]));
+        fprintf(fid,"G0a(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0a[i]), cimagf(_q->G0a[i]));
+        fprintf(fid,"G0b(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G0b[i]), cimagf(_q->G0b[i]));
+        fprintf(fid,"G1a(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1a[i]), cimagf(_q->G1a[i]));
+        fprintf(fid,"G1b(%3u) = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G1b[i]), cimagf(_q->G1b[i]));
+        fprintf(fid,"G(%3u)   = %12.8f + j*%12.8f;\n", k+1, crealf(_q->G[i]),   cimagf(_q->G[i]));
     }
     fprintf(fid,"%% apply timing offset (backoff) phase shift\n");
     fprintf(fid,"f = -32:31;\n");
@@ -1243,17 +1262,6 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"subplot(2,1,2);\n");
     fprintf(fid,"  plot(f,arg(G1a),'x', f,arg(G1b),'x', f,arg(G),'-k','LineWidth',2);\n");
     fprintf(fid,"  ylabel('G (phase)');\n");
-    
-    // write buffer
-    fprintf(fid,"\n\n");
-    fprintf(fid,"X      = zeros(1,64);\n");
-    for (i=0; i<64; i++)
-        fprintf(fid,"X(%3u)    = %12.8f + j*%12.8f;\n", i+1, crealf(_q->X[i]), cimagf(_q->X[i]));
-    fprintf(fid,"figure;\n");
-    fprintf(fid,"plot(X,'x');\n");
-    fprintf(fid,"axis([-1 1 -1 1]*1.5);\n");
-    fprintf(fid,"axis square;\n");
-    fprintf(fid,"grid on;\n");
 #else
     fprintf(fid,"disp('no debugging info available');\n");
 #endif

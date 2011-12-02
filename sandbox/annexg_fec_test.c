@@ -210,7 +210,7 @@ int main(int argc, char*argv[])
     //
     
     for (i=0; i<nsym; i++)
-        wlan_interleaver_encode_symbol(ncbps, nbpsc, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
+        wlan_interleaver_encode_symbol(WLANFRAME_RATE_36, &msg_enc[(i*ncbps)/8], &msg_int[(i*ncbps)/8]);
 
     // print interleaved message
     printf("interleaved data (verify with Table G.21):\n");
@@ -228,7 +228,7 @@ int main(int argc, char*argv[])
     //
 
     for (i=0; i<nsym; i++)
-        wlan_interleaver_decode_symbol(ncbps, nbpsc, &msg_rec[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
+        wlan_interleaver_decode_symbol(WLANFRAME_RATE_36, &msg_rec[(i*ncbps)/8], &msg_deint[(i*ncbps)/8]);
 
     // print de-interleaved message
     printf("de-interleaved data (verify with Table G.18):\n");

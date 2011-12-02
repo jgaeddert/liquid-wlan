@@ -26,14 +26,14 @@
 
 const struct wlanframe_param_s wlanframe_ratetab[8] = {
     // rate [MBits/s] modulation scheme  fec scheme            nbpsc ncbps ndbps
-    {   6,            LIQUID_MODEM_BPSK, LIQUID_WLAN_FEC_R1_2, 1,     48,   24},
-    {   9,            LIQUID_MODEM_BPSK, LIQUID_WLAN_FEC_R3_4, 1,     48,   36},
-    {  12,            LIQUID_MODEM_QPSK, LIQUID_WLAN_FEC_R1_2, 2,     96,   48},
-    {  18,            LIQUID_MODEM_QPSK, LIQUID_WLAN_FEC_R3_4, 2,     96,   72},
-    {  24,            LIQUID_MODEM_QAM,  LIQUID_WLAN_FEC_R1_2, 4,    192,   96},
-    {  36,            LIQUID_MODEM_QAM,  LIQUID_WLAN_FEC_R3_4, 4,    192,  144},
-    {  48,            LIQUID_MODEM_QAM,  LIQUID_WLAN_FEC_R2_3, 6,    288,  192},
-    {  54,            LIQUID_MODEM_QAM,  LIQUID_WLAN_FEC_R3_4, 6,    288,  216}};
+    {   6,            WLAN_MODEM_BPSK,   LIQUID_WLAN_FEC_R1_2, 1,     48,   24},
+    {   9,            WLAN_MODEM_BPSK,   LIQUID_WLAN_FEC_R3_4, 1,     48,   36},
+    {  12,            WLAN_MODEM_QPSK,   LIQUID_WLAN_FEC_R1_2, 2,     96,   48},
+    {  18,            WLAN_MODEM_QPSK,   LIQUID_WLAN_FEC_R3_4, 2,     96,   72},
+    {  24,            WLAN_MODEM_QAM16,  LIQUID_WLAN_FEC_R1_2, 4,    192,   96},
+    {  36,            WLAN_MODEM_QAM16,  LIQUID_WLAN_FEC_R3_4, 4,    192,  144},
+    {  48,            WLAN_MODEM_QAM64,  LIQUID_WLAN_FEC_R2_3, 6,    288,  192},
+    {  54,            WLAN_MODEM_QAM64,  LIQUID_WLAN_FEC_R3_4, 6,    288,  216}};
 
 int wlanframe_getsctype(unsigned int _id)
 {

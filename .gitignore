@@ -22,8 +22,13 @@ config.status
 makefile
 *.m
 
+# ignore auto-generated tables/programs
+src/gentab/wlan_interleaver_gentab
+src/gentab/wlan_intlv_R*.c
+
 # ignore binaries
 autotest/*_autotest
+benchmark/*_benchmark
 examples/*_example
 sandbox/*_test
 

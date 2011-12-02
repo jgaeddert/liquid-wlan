@@ -18,7 +18,7 @@
  * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Table G.8: SIGNAL field bits after encoding
+// Table G.7: Bit assignment for SIGNAL field
 //  0   1   RATE:R1         8   0   -               16  0   LENGTH (MSB)
 //  1   0   RATE:R1         9   0   -               17  0   PARITY
 //  2   1   RATE:R1         10  1   -               18  0   SIGNAL TAIL

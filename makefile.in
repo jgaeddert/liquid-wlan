@@ -81,21 +81,41 @@ objects :=							\
 	src/wlan_interleaver.o					\
 	src/wlan_fec.o						\
 	src/wlan_data_scrambler.o				\
+	src/wlan_modem.o					\
 	src/wlan_packet.o					\
 	src/wlan_signal.o					\
 	src/wlanframe.common.o					\
 	src/wlanframegen.o					\
 	src/wlanframesync.o					\
 	src/utility.o						\
+	src/gentab/wlan_intlv_R6.o				\
+	src/gentab/wlan_intlv_R9.o				\
+	src/gentab/wlan_intlv_R12.o				\
+	src/gentab/wlan_intlv_R18.o				\
+	src/gentab/wlan_intlv_R24.o				\
+	src/gentab/wlan_intlv_R36.o				\
+	src/gentab/wlan_intlv_R48.o				\
+	src/gentab/wlan_intlv_R54.o				\
 	src/libfec/viterbi27.o					\
 	src/libfec/viterbi27_port.o				\
 
 # NOTE: for some reason this file causes linking errors ('corrupt archive')
 # src/libliquid_wlan.o
 
+# structured interleaver auto-generated tables
+src/gentab/wlan_interleaver_gentab : % : %.c
+
+src/gentab/wlan_intlv_R6.c  : src/gentab/wlan_interleaver_gentab ; ./$< -r 6  > $@
+src/gentab/wlan_intlv_R9.c  : src/gentab/wlan_interleaver_gentab ; ./$< -r 9  > $@
+src/gentab/wlan_intlv_R12.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 12 > $@
+src/gentab/wlan_intlv_R18.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 18 > $@
+src/gentab/wlan_intlv_R24.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 24 > $@
+src/gentab/wlan_intlv_R36.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 36 > $@
+src/gentab/wlan_intlv_R48.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 48 > $@
+src/gentab/wlan_intlv_R54.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 54 > $@
+
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
-
 
 ##
 ## TARGET : all       - build shared library (default)
@@ -215,6 +235,8 @@ autotest_programs :=						\
 	autotest/signalfield_encoder_autotest			\
 	autotest/signalfield_interleaver_autotest		\
 	autotest/signalfield_symbolgen_autotest			\
+	autotest/wlanframesync_autotest				\
+	autotest/wlan_modem_autotest				\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
@@ -239,6 +261,28 @@ clean-check:
 ##
 ## TARGET : bench     - build and run all benchmarks
 ##
+
+benchmark_programs :=						\
+	benchmark/wlanframegen_benchmark			\
+	benchmark/wlanframesync_benchmark			\
+
+benchmark_objects	= $(patsubst %,%.o,$(benchmark_programs))
+
+BENCHMARK_LDFLAGS = $(LDFLAGS)
+
+# NOTE: linked libraries must come _after_ the target program
+$(benchmark_objects): %.o : %.c $(benchmark_data_src)
+
+$(benchmark_programs): % : %.o libliquid-wlan.a
+
+# main target; run all programs
+bench : $(benchmark_programs)
+	$(patsubst %, ./% &&, $(benchmark_programs)) echo "\n====================\n   benchmark done\n====================\n"
+
+# clean benchmark
+clean-bench:
+	$(RM) benchmark/*.o
+	$(RM) $(benchmark_programs)
 
 
 ## 
@@ -272,6 +316,7 @@ clean-examples:
 sandbox_programs =						\
 	sandbox/annexg_fec_test					\
 	sandbox/datascrambler_test				\
+	sandbox/interleaver_table_test				\
 	sandbox/interleaver_test				\
 	sandbox/packet_codec_test				\
 	sandbox/signalfield_fec_test				\
@@ -301,6 +346,8 @@ clean-sandbox:
 
 clean: clean-check clean-examples clean-sandbox
 	$(RM) $(objects)
+	$(RM) src/gentab/wlan_interleaver_gentab
+	$(RM) src/gentab/wlan_intlv_R*.c
 	$(RM) libliquid-wlan.a
 	$(RM) $(SHARED_LIB)
 

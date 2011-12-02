@@ -48,8 +48,8 @@ struct wlanframegen_s {
     // pilot sequence generator
     msequence ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
     
-    // DATA field modulator
-    modem mod;
+    // DATA field modulation scheme
+    unsigned int mod_scheme;
 
     // window transition
     unsigned int rampup_len;        // number of samples in overlapping symbols
@@ -102,7 +102,7 @@ wlanframegen wlanframegen_create()
     q->ms_pilot = msequence_create(7, 0x91, 0x7f);
 
     // DATA field (payload) modulator
-    q->mod = modem_create(LIQUID_MODEM_BPSK, 1);
+    q->mod_scheme = WLAN_MODEM_BPSK;
 
     // create transition window/buffer
     // NOTE : ramp length must be less than cyclic prefix length (default: 1)
@@ -155,9 +155,6 @@ void wlanframegen_destroy(wlanframegen _q)
     
     // destroy pilot sequence generator
     msequence_destroy(_q->ms_pilot);
-
-    // destroy modulator
-    modem_destroy(_q->mod);
 
     // free transition window ramp array and postfix buffer
     free(_q->rampup);
@@ -222,6 +219,20 @@ void wlanframegen_reset(wlanframegen _q)
     unsigned int i;
     for (i=0; i<_q->rampup_len; i++)
         _q->postfix[i] = 0.0f;
+
+    // force NULL subcarriers to zero
+    _q->X[ 0] = 0.0f;
+    _q->X[27] = 0.0f;
+    _q->X[28] = 0.0f;
+    _q->X[29] = 0.0f;
+    _q->X[30] = 0.0f;
+    _q->X[31] = 0.0f;
+    _q->X[32] = 0.0f;
+    _q->X[33] = 0.0f;
+    _q->X[34] = 0.0f;
+    _q->X[35] = 0.0f;
+    _q->X[36] = 0.0f;
+    _q->X[37] = 0.0f;
 }
 
 // assemble frame (see Table 76)
@@ -241,16 +252,20 @@ void wlanframegen_assemble(wlanframegen           _q,
         exit(1);
     }
 
+#if 0
+    if (_txvector.DATARATE == WLANFRAME_RATE_9) {
+        fprintf(stderr,"error: wlanframegen_assemble(), the rate 9 M bits/s is currently unsupported\n");
+        exit(1);
+    }
+#endif
+
     // set internal properties
     _q->rate   = _txvector.DATARATE;
     _q->length = _txvector.LENGTH;
     _q->seed   = 0x5d;  //(_txvector.SERVICE >> 9) & 0x7f;
     // TODO : strip off TXPWR_LEVEL
 
-    // re-create modem object
-    _q->mod = modem_recreate(_q->mod,
-                             wlanframe_ratetab[_q->rate].mod_scheme,
-                             wlanframe_ratetab[_q->rate].nbpsc);
+    _q->mod_scheme = wlanframe_ratetab[_q->rate].mod_scheme;
 
     // pack SIGNAL field
     unsigned int R = 0; // 'reserved' bit
@@ -260,7 +275,7 @@ void wlanframegen_assemble(wlanframegen           _q,
     wlan_fec_signal_encode(_q->signal_dec, _q->signal_enc);
 
     // interleave SIGNAL field
-    wlan_interleaver_encode_symbol(48, 1, _q->signal_enc, _q->signal_int);
+    wlan_interleaver_encode_symbol(WLANFRAME_RATE_6, _q->signal_enc, _q->signal_int);
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol
@@ -317,44 +332,26 @@ int wlanframegen_writesymbol(wlanframegen    _q,
     //
     switch (_q->state) {
     case WLANFRAMEGEN_STATE_S0A:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating first short sequence\n");
-#endif
         wlanframegen_writesymbol_S0a(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_S0B;
         return 0;
     case WLANFRAMEGEN_STATE_S0B:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating second short sequence\n");
-#endif
         wlanframegen_writesymbol_S0b(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_S1A;
         return 0;
     case WLANFRAMEGEN_STATE_S1A:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating first long sequence\n");
-#endif
         wlanframegen_writesymbol_S1a(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_S1B;
         return 0;
     case WLANFRAMEGEN_STATE_S1B:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating second long sequence\n");
-#endif
         wlanframegen_writesymbol_S1b(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_SIGNAL;
         return 0;
     case WLANFRAMEGEN_STATE_SIGNAL:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating SIGNAL symbol\n");
-#endif
         wlanframegen_writesymbol_signal(_q, _buffer);
         _q->state = WLANFRAMEGEN_STATE_DATA;
         return 0;
     case WLANFRAMEGEN_STATE_DATA:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating data symbol [%3u]\n", _q->data_symbol_counter);
-#endif
         wlanframegen_writesymbol_data(_q, _buffer);
         _q->data_symbol_counter++;
 
@@ -362,9 +359,6 @@ int wlanframegen_writesymbol(wlanframegen    _q,
             _q->state = WLANFRAMEGEN_STATE_NULL;
         return 0;
     case WLANFRAMEGEN_STATE_NULL:
-#if DEBUG_WLANFRAMEGEN
-        printf("wlanframegen_writesymbol(), generating null symbol\n");
-#endif
         wlanframegen_writesymbol_null(_q, _buffer);
         return 1;
     default:
@@ -373,42 +367,7 @@ int wlanframegen_writesymbol(wlanframegen    _q,
         exit(1);
     }
 
-#if 0
-    // move frequency data to internal buffer
-    unsigned int i;
-    unsigned int k;
-    int sctype;
-    for (i=0; i<_q->M; i++) {
-        // start at mid-point (effective fftshift)
-        k = (i + _q->M/2) % _q->M;
-
-        sctype = _q->p[k];
-        if (sctype==WLANFRAME_SCTYPE_NULL) {
-            // disabled subcarrier
-            _q->X[k] = 0.0f;
-        } else if (sctype==WLANFRAME_SCTYPE_PILOT) {
-            // pilot subcarrier
-            _q->X[k] = (msequence_advance(_q->ms_pilot) ? 1.0f : -1.0f) * _q->g_data;
-        } else {
-            // data subcarrier
-            _q->X[k] = _x[k] * _q->g_data;
-        }
-
-        //printf("X[%3u] = %12.8f + j*%12.8f;\n",i+1,crealf(_q->X[i]),cimagf(_q->X[i]));
-    }
-
-    // execute transform
-    FFT_EXECUTE(_q->ifft);
-
-    // copy result to output
-    memmove( _y, &_q->x[_q->M - _q->cp_len], (_q->cp_len)*sizeof(float complex));
-    memmove(&_y[_q->cp_len], _q->x, (_q->M)*sizeof(float complex));
-#endif
-
     // reset and return
-#if DEBUG_WLANFRAMEGEN
-    printf("wlanframegen_writesymbol(), resetting frame generator\n");
-#endif
     wlanframegen_reset(_q);
     return 1;
 }
@@ -431,20 +390,7 @@ void wlanframegen_compute_symbol(wlanframegen _q)
     _q->X[ 7] = pilot_phase ? -1.0f :  1.0f;
     _q->X[21] = pilot_phase ?  1.0f : -1.0f;
 
-    // force NULL subcarriers to zero
-    // TODO : move this into reset() method and never re-compute it
-    _q->X[ 0] = 0.0f;
-    _q->X[27] = 0.0f;
-    _q->X[28] = 0.0f;
-    _q->X[29] = 0.0f;
-    _q->X[30] = 0.0f;
-    _q->X[31] = 0.0f;
-    _q->X[32] = 0.0f;
-    _q->X[33] = 0.0f;
-    _q->X[34] = 0.0f;
-    _q->X[35] = 0.0f;
-    _q->X[36] = 0.0f;
-    _q->X[37] = 0.0f;
+    // NOTE : NULL subcarriers have been set to zero in reset() method
 
     // run inverse transform
     FFT_EXECUTE(_q->ifft);
@@ -661,7 +607,7 @@ void wlanframegen_writesymbol_data(wlanframegen _q,
         } else {
             // DATA subcarrier
             assert(n<48);
-            modem_modulate(_q->mod, _q->modem_syms[n], &_q->X[k]);
+            _q->X[k] = wlan_modulate(_q->mod_scheme, _q->modem_syms[n]);
             n++;
         }
     }
