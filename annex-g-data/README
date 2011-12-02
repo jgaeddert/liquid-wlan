@@ -3,3 +3,29 @@
 #
 
 This directory contains test data from IEEE 802.11a specification, Annex G.
+
+    G1  :   Initial 100 octets
+    G2  :   Frequency domain of short sequence
+    G3  :   Time-domain short sequence (one period)
+    G4  :   Time-domain of short sequence (full PLCP sequence)
+    G5  :   Frequency domain of long sequence
+    G6  :   Time-domain long sequence (full PLCP sequence)
+    G7  :   Bit assignment for SIGNAL field
+    G8  :   SIGNAL field bits after encoding
+    G9  :   SIGNAL field bits after encoding/interleaving
+    G10 :
+    G11 :   Frequency domain of SIGNAL field (with pilots)
+    G12 :   Time-dimain representation of SIGNAL field
+    G13 :   first 144 data bits
+    G14 :   last 144 data bits
+    G15 :   
+    G16 :   first 144 data bits, scrambled
+    G17 :   last 144 data bits, scrambled
+    G18 :   coded bits of first DATA symbol
+    G19 :   
+    G20 :   
+    G21 :   interleaved bits of first DATA symbol
+    G22 :   Frequency domain of first DATA symbol
+    G23 :   
+    G24 :   the entire packet
+
