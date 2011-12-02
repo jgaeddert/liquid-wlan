@@ -69,14 +69,74 @@ unsigned char wlan_demodulate_qpsk(float complex _sample)
            ( cimagf(_sample) > 0.0f ? 0x02 : 0 );
 }
 
+// demodulate 16-QAM symbol
+//  2/sqrt(10) ~ 0.632455532033676
 unsigned char wlan_demodulate_qam16(float complex _sample)
 {
-    return 0;
+    unsigned char sym = 0x00;
+
+    // demodulate in-phase component
+    float v = crealf(_sample);
+
+    if (v > 0.0f) { v -= 0.6324555f; sym |= 0x08; }
+    else          { v += 0.6324555f; }
+
+    // 
+    if (v > 0.0f) { sym |= 0x04; }
+    else          { ; }
+
+    // demodulate quadrature component
+    v = cimagf(_sample);
+
+    // 
+    if (v > 0.0f) { v -= 0.6324555f; sym |= 0x02; }
+    else          { v += 0.6324555f; }
+
+    // 
+    if (v > 0.0f) { sym |= 0x01; }
+    else          { ; }
+
+    // return symbol
+    return sym;
 }
 
+// demodulate 16-QAM symbol
+//  4/sqrt(42) ~ 0.617213399848368
+//  2/sqrt(42) ~ 0.308606699924184
 unsigned char wlan_demodulate_qam64(float complex _sample)
 {
-    return 0;
+    unsigned char sym = 0x00;
+
+    // demodulate in-phase component
+    float v = crealf(_sample);
+
+    if (v > 0.0f) { v -= 0.6172134f; sym |= 0x20; }
+    else          { v += 0.6172134f; }
+
+    // 
+    if (v > 0.0f) { v -= 0.3086067f; sym |= 0x10; }
+    else          { v += 0.3086067f; }
+
+    // 
+    if (v > 0.0f) { sym |= 0x08; }
+    else          { ; }
+
+    // demodulate quadrature component
+    v = cimagf(_sample);
+
+    if (v > 0.0f) { v -= 0.6172134f; sym |= 0x04; }
+    else          { v += 0.6172134f; }
+
+    // 
+    if (v > 0.0f) { v -= 0.3086067f; sym |= 0x02; }
+    else          { v += 0.3086067f; }
+
+    // 
+    if (v > 0.0f) { sym |= 0x01; }
+    else          { ; }
+
+    // return symbol
+    return sym;
 }
 
 // 
