@@ -33,6 +33,20 @@
 // modulation
 //
 
+float complex wlan_modulate(unsigned int  _scheme,
+                            unsigned char _sym)
+{
+    switch (_scheme) {
+    case WLAN_MODEM_BPSK:  return wlan_modulate_bpsk(_sym);
+    case WLAN_MODEM_QPSK:  return wlan_modulate_qpsk(_sym);
+    case WLAN_MODEM_QAM16: return wlan_modulate_qam16(_sym);
+    case WLAN_MODEM_QAM64: return wlan_modulate_qam64(_sym);
+    default:
+        fprintf(stderr,"error: wlan_modulate(), invalid scheme\n");
+        exit(1);
+    }
+}
+
 float complex wlan_modulate_bpsk(unsigned char _sym)
 {
     return _sym ? 1.0f : -1.0f;
@@ -57,6 +71,20 @@ float complex wlan_modulate_qam64(unsigned char _sym)
 //
 // demodulation
 //
+
+unsigned char wlan_demodulate(unsigned int  _scheme,
+                              float complex _sample)
+{
+    switch (_scheme) {
+    case WLAN_MODEM_BPSK:  return wlan_demodulate_bpsk(_sample);
+    case WLAN_MODEM_QPSK:  return wlan_demodulate_qpsk(_sample);
+    case WLAN_MODEM_QAM16: return wlan_demodulate_qam16(_sample);
+    case WLAN_MODEM_QAM64: return wlan_demodulate_qam64(_sample);
+    default:
+        fprintf(stderr,"error: wlan_demodulate(), invalid scheme\n");
+        exit(1);
+    }
+}
 
 unsigned char wlan_demodulate_bpsk(float complex _sample)
 {

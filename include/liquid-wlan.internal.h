@@ -302,13 +302,24 @@ void wlan_packet_decode(unsigned int    _rate,
 // modem (modulation/demodulation)
 //
 
+#define WLAN_MODEM_BPSK     (0)
+#define WLAN_MODEM_QPSK     (1)
+#define WLAN_MODEM_QAM16    (2)
+#define WLAN_MODEM_QAM64    (3)
+
 extern const float complex wlan_modem_qam16[16];
 extern const float complex wlan_modem_qam64[64];
+
+float complex wlan_modulate(unsigned int  _scheme,
+                            unsigned char _sym);
 
 float complex wlan_modulate_bpsk(unsigned char _sym);
 float complex wlan_modulate_qpsk(unsigned char _sym);
 float complex wlan_modulate_qam16(unsigned char _sym);
 float complex wlan_modulate_qam64(unsigned char _sym);
+
+unsigned char wlan_demodulate(unsigned int  _scheme,
+                              float complex _sample);
 
 unsigned char wlan_demodulate_bpsk(float complex _sample);
 unsigned char wlan_demodulate_qpsk(float complex _sample);
