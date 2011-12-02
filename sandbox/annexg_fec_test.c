@@ -275,11 +275,11 @@ int main(int argc, char*argv[])
     }
 
     // run Viterbi decoder
-    void * vp = create_viterbi27(num_enc_bits);
-    init_viterbi27(vp,0);
-    update_viterbi27_blk(vp,enc_bits,num_enc_bits);
-    chainback_viterbi27(vp, msg_dec, num_enc_bits, 0);
-    delete_viterbi27(vp);
+    void * vp = wlan_create_viterbi27(num_enc_bits);
+    wlan_init_viterbi27(vp,0);
+    wlan_update_viterbi27_blk(vp,enc_bits,num_enc_bits);
+    wlan_chainback_viterbi27(vp, msg_dec, num_enc_bits, 0);
+    wlan_delete_viterbi27(vp);
 #endif
 
     // print decoded message

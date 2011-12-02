@@ -244,11 +244,11 @@ void wlan_fec_signal_decode(unsigned char * _msg_enc,
     }
     
     // run decoder
-    void * vp = create_viterbi27(48);
-    init_viterbi27(vp,0);
-    update_viterbi27_blk(vp,bits_enc,48);
-    chainback_viterbi27(vp, signal_dec, 48, 0);
-    delete_viterbi27(vp);
+    void * vp = wlan_create_viterbi27(48);
+    wlan_init_viterbi27(vp,0);
+    wlan_update_viterbi27_blk(vp,bits_enc,48);
+    wlan_chainback_viterbi27(vp, signal_dec, 48, 0);
+    wlan_delete_viterbi27(vp);
 #else
     // decode using generic decoding method (half-rate encoder)
     wlan_fec_decode(LIQUID_WLAN_FEC_R1_2, 3, _msg_enc, signal_dec);

@@ -50,7 +50,7 @@ struct v27 {
 };
 
 /* Initialize Viterbi decoder for start of new frame */
-int init_viterbi27_port(void *p,int starting_state){
+int wlan_init_viterbi27_port(void *p,int starting_state){
   struct v27 *vp = p;
   int i;
 
@@ -66,7 +66,7 @@ int init_viterbi27_port(void *p,int starting_state){
   return 0;
 }
 
-void set_viterbi27_polynomial_port(int polys[2]){
+void wlan_set_viterbi27_polynomial_port(int polys[2]){
   int state;
 
   for(state=0;state < 32;state++){
@@ -77,12 +77,12 @@ void set_viterbi27_polynomial_port(int polys[2]){
 }
 
 /* Create a new instance of a Viterbi decoder */
-void *create_viterbi27_port(int len){
+void *wlan_create_viterbi27_port(int len){
   struct v27 *vp;
 
   if(!Init){
     int polys[2] = { V27POLYA, V27POLYB };
-    set_viterbi27_polynomial_port(polys);
+    wlan_set_viterbi27_polynomial_port(polys);
   }
   if((vp = malloc(sizeof(struct v27))) == NULL)
      return NULL;
@@ -90,13 +90,13 @@ void *create_viterbi27_port(int len){
     free(vp);
     return NULL;
   }
-  init_viterbi27_port(vp,0);
+  wlan_init_viterbi27_port(vp,0);
 
   return vp;
 }
 
 /* Viterbi chainback */
-int chainback_viterbi27_port(
+int wlan_chainback_viterbi27_port(
       void *p,
       unsigned char *data, /* Decoded output data */
       unsigned int nbits, /* Number of data bits */
@@ -128,7 +128,7 @@ int chainback_viterbi27_port(
 }
 
 /* Delete instance of a Viterbi decoder */
-void delete_viterbi27_port(void *p){
+void wlan_delete_viterbi27_port(void *p){
   struct v27 *vp = p;
 
   if(vp != NULL){
@@ -157,7 +157,7 @@ unsigned int metric,m0,m1,decision;\
  * Note that nbits is the number of decoded data bits, not the number
  * of symbols!
  */
-int update_viterbi27_blk_port(void *p,unsigned char *syms,int nbits){
+int wlan_update_viterbi27_blk_port(void *p,unsigned char *syms,int nbits){
   struct v27 *vp = p;
   void *tmp;
   decision_t *d;

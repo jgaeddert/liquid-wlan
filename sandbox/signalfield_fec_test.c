@@ -86,7 +86,7 @@ int main(int argc, char*argv[])
     unsigned int n=0;   // output bit counter
     unsigned int sr=0;  // convolutional shift register
     unsigned char byte_in;
-    unsigned char byte_out;
+    unsigned char byte_out = 0x00;
     unsigned char bit;
 
     for (i=0; i<3; i++) {
@@ -142,11 +142,11 @@ int main(int argc, char*argv[])
     }
     
     // run decoder
-    void * vp = create_viterbi27(48);
-    init_viterbi27(vp,0);
-    update_viterbi27_blk(vp,bits_enc,48);
-    chainback_viterbi27(vp, msg_dec, 48, 0);
-    delete_viterbi27(vp);
+    void * vp = wlan_create_viterbi27(48);
+    wlan_init_viterbi27(vp,0);
+    wlan_update_viterbi27_blk(vp,bits_enc,48);
+    wlan_chainback_viterbi27(vp, msg_dec, 48, 0);
+    wlan_delete_viterbi27(vp);
 
     // print decoded message
     printf("decoded message:\n");

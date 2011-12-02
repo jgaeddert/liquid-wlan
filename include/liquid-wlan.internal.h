@@ -129,20 +129,20 @@ int wlan_signal_unpack(unsigned char * _signal,
 #define	V27POLYB	0x4f
 
 // generic interface
-void *create_viterbi27(int len);
-void set_viterbi27_polynomial(int polys[2]);
-int init_viterbi27(void *vp,int starting_state);
-int update_viterbi27_blk(void *vp,unsigned char sym[],int npairs);
-int chainback_viterbi27(void *vp, unsigned char *data,unsigned int nbits,unsigned int endstate);
-void delete_viterbi27(void *vp);
+void * wlan_create_viterbi27(int len);
+void wlan_set_viterbi27_polynomial(int polys[2]);
+int wlan_init_viterbi27(void *vp,int starting_state);
+int wlan_update_viterbi27_blk(void *vp,unsigned char sym[],int npairs);
+int wlan_chainback_viterbi27(void *vp, unsigned char *data,unsigned int nbits,unsigned int endstate);
+void wlan_delete_viterbi27(void *vp);
 
 // portable C interface
-void *create_viterbi27_port(int len);
-void set_viterbi27_polynomial_port(int polys[2]);
-int init_viterbi27_port(void *p,int starting_state);
-int chainback_viterbi27_port(void *p,unsigned char *data,unsigned int nbits,unsigned int endstate);
-void delete_viterbi27_port(void *p);
-int update_viterbi27_blk_port(void *p,unsigned char *syms,int nbits);
+void * wlan_create_viterbi27_port(int len);
+void wlan_set_viterbi27_polynomial_port(int polys[2]);
+int wlan_init_viterbi27_port(void *p,int starting_state);
+int wlan_chainback_viterbi27_port(void *p,unsigned char *data,unsigned int nbits,unsigned int endstate);
+void wlan_delete_viterbi27_port(void *p);
+int wlan_update_viterbi27_blk_port(void *p,unsigned char *syms,int nbits);
 
 static inline int parity(int x){
   /* Fold down to one byte */
