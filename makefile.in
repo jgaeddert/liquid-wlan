@@ -236,6 +236,7 @@ autotest_programs :=						\
 	autotest/signalfield_interleaver_autotest		\
 	autotest/signalfield_symbolgen_autotest			\
 	autotest/wlanframesync_autotest				\
+	autotest/wlan_modem_autotest				\
 
 autotest_objects	= $(patsubst %,%.o,$(autotest_programs))
 
