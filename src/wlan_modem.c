@@ -93,39 +93,43 @@ unsigned char wlan_demodulate_bpsk(float complex _sample)
 
 unsigned char wlan_demodulate_qpsk(float complex _sample)
 {
-    return ( crealf(_sample) > 0.0f ? 0x01 : 0 ) |
-           ( cimagf(_sample) > 0.0f ? 0x02 : 0 );
+    return ( crealf(_sample) > 0.0f ? 0x02 : 0 ) |
+           ( cimagf(_sample) > 0.0f ? 0x01 : 0 );
 }
 
 // demodulate 16-QAM symbol
 //  2/sqrt(10) ~ 0.632455532033676
 unsigned char wlan_demodulate_qam16(float complex _sample)
 {
-    unsigned char sym = 0x00;
-
     // demodulate in-phase component
+    unsigned char sym_i = 0x00;
     float v = crealf(_sample);
 
-    if (v > 0.0f) { v -= 0.6324555f; sym |= 0x08; }
+    if (v > 0.0f) { v -= 0.6324555f; sym_i |= 0x02; }
     else          { v += 0.6324555f; }
 
     // 
-    if (v > 0.0f) { sym |= 0x04; }
+    if (v > 0.0f) { sym_i |= 0x01; }
     else          { ; }
 
     // demodulate quadrature component
+    unsigned char sym_q = 0x00;
     v = cimagf(_sample);
 
     // 
-    if (v > 0.0f) { v -= 0.6324555f; sym |= 0x02; }
+    if (v > 0.0f) { v -= 0.6324555f; sym_q |= 0x02; }
     else          { v += 0.6324555f; }
 
     // 
-    if (v > 0.0f) { sym |= 0x01; }
+    if (v > 0.0f) { sym_q |= 0x01; }
     else          { ; }
 
-    // return symbol
-    return sym;
+    // apply gray decoding to individual I/Q symbols
+    sym_i ^= (sym_i >> 1);
+    sym_q ^= (sym_q >> 1);
+
+    // return composite symbol
+    return (sym_i << 2) | sym_q;
 }
 
 // demodulate 16-QAM symbol
@@ -133,38 +137,42 @@ unsigned char wlan_demodulate_qam16(float complex _sample)
 //  2/sqrt(42) ~ 0.308606699924184
 unsigned char wlan_demodulate_qam64(float complex _sample)
 {
-    unsigned char sym = 0x00;
-
     // demodulate in-phase component
+    unsigned char sym_i = 0x00;
     float v = crealf(_sample);
 
-    if (v > 0.0f) { v -= 0.6172134f; sym |= 0x20; }
+    if (v > 0.0f) { v -= 0.6172134f; sym_i |= 0x04; }
     else          { v += 0.6172134f; }
 
     // 
-    if (v > 0.0f) { v -= 0.3086067f; sym |= 0x10; }
+    if (v > 0.0f) { v -= 0.3086067f; sym_i |= 0x02; }
     else          { v += 0.3086067f; }
 
     // 
-    if (v > 0.0f) { sym |= 0x08; }
+    if (v > 0.0f) { sym_i |= 0x01; }
     else          { ; }
 
     // demodulate quadrature component
+    unsigned char sym_q = 0x00;
     v = cimagf(_sample);
 
-    if (v > 0.0f) { v -= 0.6172134f; sym |= 0x04; }
+    if (v > 0.0f) { v -= 0.6172134f; sym_q |= 0x04; }
     else          { v += 0.6172134f; }
 
     // 
-    if (v > 0.0f) { v -= 0.3086067f; sym |= 0x02; }
+    if (v > 0.0f) { v -= 0.3086067f; sym_q |= 0x02; }
     else          { v += 0.3086067f; }
 
     // 
-    if (v > 0.0f) { sym |= 0x01; }
+    if (v > 0.0f) { sym_q |= 0x01; }
     else          { ; }
+    
+    // apply gray decoding to individual I/Q symbols
+    sym_i ^= (sym_i >> 1);
+    sym_q ^= (sym_q >> 1);
 
-    // return symbol
-    return sym;
+    // return composite symbol
+    return (sym_i << 3) | sym_q;
 }
 
 // 
