@@ -305,10 +305,10 @@ void wlan_packet_decode(unsigned int    _rate,
 extern const float complex wlan_modem_qam16[16];
 extern const float complex wlan_modem_qam64[64];
 
-float complex wlan_modulate_bpsk(unsigned int _sym);
-float complex wlan_modulate_qpsk(unsigned int _sym);
-float complex wlan_modulate_qam16(unsigned int _sym);
-float complex wlan_modulate_qam64(unsigned int _sym);
+float complex wlan_modulate_bpsk(unsigned char _sym);
+float complex wlan_modulate_qpsk(unsigned char _sym);
+float complex wlan_modulate_qam16(unsigned char _sym);
+float complex wlan_modulate_qam64(unsigned char _sym);
 
 unsigned char wlan_demodulate_bpsk(float complex _sample);
 unsigned char wlan_demodulate_qpsk(float complex _sample);

@@ -33,23 +33,23 @@
 // modulation
 //
 
-float complex wlan_modulate_bpsk(unsigned int _sym)
+float complex wlan_modulate_bpsk(unsigned char _sym)
 {
     return _sym ? 1.0f : -1.0f;
 }
 
-float complex wlan_modulate_qpsk(unsigned int _sym)
+float complex wlan_modulate_qpsk(unsigned char _sym)
 {
     return (_sym & 0x02 ? M_SQRT1_2 : -M_SQRT1_2) +
            (_sym & 0x01 ? M_SQRT1_2 : -M_SQRT1_2) * _Complex_I;
 }
 
-float complex wlan_modulate_qam16(unsigned int _sym)
+float complex wlan_modulate_qam16(unsigned char _sym)
 {
     return wlan_modem_qam16[_sym & 0x0f];
 }
 
-float complex wlan_modulate_qam64(unsigned int _sym)
+float complex wlan_modulate_qam64(unsigned char _sym)
 {
     return wlan_modem_qam64[_sym & 0x3f];
 }
