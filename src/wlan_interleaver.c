@@ -63,10 +63,18 @@ void wlan_interleaver_encode_symbol(unsigned int    _rate,
     // clear output array
     memset(_msg_enc, 0x00, (ncbps/8)*sizeof(unsigned char));
 
-    // run interleaver
+    // run interleaver, loop unwrapped
     unsigned int i;
-    for (i=0; i<ncbps; i++)
-        _msg_enc[ intlv[i].p1 ] |= (_msg_dec[ intlv[i].p0 ] & intlv[i].mask0 ) ? intlv[i].mask1 : 0;
+    for (i=0; i<ncbps; i+=8) {
+        _msg_enc[ intlv[i  ].p1 ] |= (_msg_dec[ intlv[i  ].p0 ] & intlv[i  ].mask0 ) ? intlv[i  ].mask1 : 0;
+        _msg_enc[ intlv[i+1].p1 ] |= (_msg_dec[ intlv[i+1].p0 ] & intlv[i+1].mask0 ) ? intlv[i+1].mask1 : 0;
+        _msg_enc[ intlv[i+2].p1 ] |= (_msg_dec[ intlv[i+2].p0 ] & intlv[i+2].mask0 ) ? intlv[i+2].mask1 : 0;
+        _msg_enc[ intlv[i+3].p1 ] |= (_msg_dec[ intlv[i+3].p0 ] & intlv[i+3].mask0 ) ? intlv[i+3].mask1 : 0;
+        _msg_enc[ intlv[i+4].p1 ] |= (_msg_dec[ intlv[i+4].p0 ] & intlv[i+4].mask0 ) ? intlv[i+4].mask1 : 0;
+        _msg_enc[ intlv[i+5].p1 ] |= (_msg_dec[ intlv[i+5].p0 ] & intlv[i+5].mask0 ) ? intlv[i+5].mask1 : 0;
+        _msg_enc[ intlv[i+6].p1 ] |= (_msg_dec[ intlv[i+6].p0 ] & intlv[i+6].mask0 ) ? intlv[i+6].mask1 : 0;
+        _msg_enc[ intlv[i+7].p1 ] |= (_msg_dec[ intlv[i+7].p0 ] & intlv[i+7].mask0 ) ? intlv[i+7].mask1 : 0;
+    }
 }
 
 // de-intereleave one OFDM symbol
@@ -92,9 +100,17 @@ void wlan_interleaver_decode_symbol(unsigned int    _rate,
     // clear output array
     memset(_msg_dec, 0x00, (ncbps/8)*sizeof(unsigned char));
 
-    // run de-interleaver (run interleaver in reverse)
+    // run de-interleaver (run interleaver in reverse), loop unwrapped
     unsigned int i;
-    for (i=0; i<ncbps; i++)
-        _msg_dec[ intlv[i].p0 ] |= (_msg_enc[ intlv[i].p1 ] & intlv[i].mask1 ) ? intlv[i].mask0 : 0;
+    for (i=0; i<ncbps; i+=8) {
+        _msg_dec[ intlv[i  ].p0 ] |= (_msg_enc[ intlv[i  ].p1 ] & intlv[i  ].mask1 ) ? intlv[i  ].mask0 : 0;
+        _msg_dec[ intlv[i+1].p0 ] |= (_msg_enc[ intlv[i+1].p1 ] & intlv[i+1].mask1 ) ? intlv[i+1].mask0 : 0;
+        _msg_dec[ intlv[i+2].p0 ] |= (_msg_enc[ intlv[i+2].p1 ] & intlv[i+2].mask1 ) ? intlv[i+2].mask0 : 0;
+        _msg_dec[ intlv[i+3].p0 ] |= (_msg_enc[ intlv[i+3].p1 ] & intlv[i+3].mask1 ) ? intlv[i+3].mask0 : 0;
+        _msg_dec[ intlv[i+4].p0 ] |= (_msg_enc[ intlv[i+4].p1 ] & intlv[i+4].mask1 ) ? intlv[i+4].mask0 : 0;
+        _msg_dec[ intlv[i+5].p0 ] |= (_msg_enc[ intlv[i+5].p1 ] & intlv[i+5].mask1 ) ? intlv[i+5].mask0 : 0;
+        _msg_dec[ intlv[i+6].p0 ] |= (_msg_enc[ intlv[i+6].p1 ] & intlv[i+6].mask1 ) ? intlv[i+6].mask0 : 0;
+        _msg_dec[ intlv[i+7].p0 ] |= (_msg_enc[ intlv[i+7].p1 ] & intlv[i+7].mask1 ) ? intlv[i+7].mask0 : 0;
+    }
 }
 
