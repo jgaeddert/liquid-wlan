@@ -66,6 +66,8 @@ int main() {
     wlanframesync_runtest(WLANFRAME_RATE_36);
     wlanframesync_runtest(WLANFRAME_RATE_48);
     wlanframesync_runtest(WLANFRAME_RATE_54);
+
+    return 0;
 }
 
 // structure for tracking decoded frames
@@ -100,8 +102,6 @@ int wlanframesync_runtest(unsigned int _rate)
     float gamma = powf(10.0f, (SNRdB + noise_floor)/20.0f);
 #endif
 
-    unsigned int i;
-
     // arrays
     float complex buffer[80];   // data buffer
 
@@ -135,7 +135,6 @@ int wlanframesync_runtest(unsigned int _rate)
 
     // generate/synchronize frame
     int last_frame = 0;
-    unsigned int n=0;
     while (!last_frame) {
         // write symbol
         last_frame = wlanframegen_writesymbol(fg, buffer);
