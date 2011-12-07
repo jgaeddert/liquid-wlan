@@ -247,6 +247,9 @@ $(autotest_objects): %.o : %.c $(autotest_data_src)
 
 $(autotest_programs): % : %.o libliquid-wlan.a
 
+# make check programs
+check-programs : $(autotest_programs)
+
 # main target; run all programs
 check : $(autotest_programs)
 	$(patsubst %, ./% &&, $(autotest_programs)) echo "\n====================\n   autotest pass!\n====================\n"
