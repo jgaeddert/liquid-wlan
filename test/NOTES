@@ -3,6 +3,7 @@ Notes on WLAN 802.11a/g implementation
   * modem: 16-QAM and 64-QAM are compatible with liquid-dsp
   * modem: BPSK seems backwards, map: {0,1} > {1,0}
   * modem: QPSK also backwards, map: {0,1,2,3} > {3,1,2,0}
+  * internal modem methods now handle BPSK/QPSK mapping
   * pilot sequence: same as data scrambler: m-sequence: m=7, g=0x91, a=0x7f (n=127)
   * from initial benchmarking and profiling trials, it appears that the 
     majority of processing lies in the interleaver with integer 
@@ -13,12 +14,11 @@ Notes on WLAN 802.11a/g implementation
 To do:
   * fix bug with generating/synchronizing frames with rate 9 Mbits/s 
     (802.11a specification is vague with regards to frame length).
-  * integrate certain components to within library (modem, fec, etc.)
+  * integrate certain components to within library (fft, etc.)
 
 Wish list:
   * fixed-point implementation (liquid-fpm) for more efficient 
     processing
-  * add benchmarking tool
 
 Troubleshooting/notes on building:
   * when re-archiving, occasionally the following error message arises:

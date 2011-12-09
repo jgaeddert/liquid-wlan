@@ -47,7 +47,7 @@ int main(int argc, char*argv[])
 
     // options...
     unsigned int ncbps = 192;   // number of coded bits per OFDM symbol
-    unsigned int nbpsc = 4;     // number of bits per subcarrier (modulation depth)
+    //unsigned int nbpsc = 4;     // number of bits per subcarrier (modulation depth)
     unsigned int rate = WLANFRAME_RATE_36;
 
     unsigned int n = ncbps / 8;

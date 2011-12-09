@@ -46,8 +46,8 @@ int main(int argc, char*argv[])
     unsigned char * msg_test = annexg_G9;
 
     // options...
-    unsigned int ncbps = 48;    // number of coded bits per OFDM symbol
-    unsigned int nbpsc = 1;     // number of bits per subcarrier (modulation depth)
+    //unsigned int ncbps = 48;    // number of coded bits per OFDM symbol
+    //unsigned int nbpsc = 1;     // number of bits per subcarrier (modulation depth)
     unsigned int rate = WLANFRAME_RATE_6;
     
     unsigned int i;
