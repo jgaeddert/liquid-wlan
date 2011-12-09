@@ -19,7 +19,7 @@
  */
 
 //
-// 802.11a/g interleaver
+// WLAN interleaver
 //
 
 #include <stdio.h>

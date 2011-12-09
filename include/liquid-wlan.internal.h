@@ -328,7 +328,7 @@ unsigned char wlan_demodulate_qam64(float complex _sample);
 
 
 // 
-// 802.11a/g framing
+// wlan framing
 //
 
 // PLCP short sequence
