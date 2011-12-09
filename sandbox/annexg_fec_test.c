@@ -52,7 +52,7 @@ int main(int argc, char*argv[])
     unsigned int length = 100;  // original data length (bytes)
     unsigned int ndbps  = 144;  // number of data bits per OFDM symbol
     unsigned int ncbps  = 192;  // number of coded bits per OFDM symbol
-    unsigned int nbpsc  =   4;  // number of bits per subcarrier (modulation depth)
+    //unsigned int nbpsc  =   4;  // number of bits per subcarrier (modulation depth)
     unsigned int seed   = 0x5d; // data scrambler seed
 
     // original data message (Table G.1)
