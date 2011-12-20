@@ -35,8 +35,6 @@
 
 #include "liquid-wlan.h"
 
-#include "annex-g-data/G1.c"
-
 #define OUTPUT_FILENAME "wlanframesync_example.m"
 
 void usage()
@@ -45,6 +43,7 @@ void usage()
     printf("  h     : print help\n");
     printf("  s     : signal-to-noise ratio [dB], default: 30\n");
     printf("  F     : carrier frequency offset, default: 0.002\n");
+    printf("  n     : number of data bytes\n");
     printf("  r     : rate {6,9,12,18,24,36,48,54} M bits/s\n");
 }
 
@@ -62,8 +61,6 @@ int main(int argc, char*argv[])
     txvector.DATARATE    = WLANFRAME_RATE_36;
     txvector.SERVICE     = 0;
     txvector.TXPWR_LEVEL = 0;
-    //unsigned char * msg_org = annexg_G1;
-    unsigned char msg_org[txvector.LENGTH];
     
     // channel options
     float noise_floor = -120.0f;        // noise floor [dB]
@@ -73,11 +70,12 @@ int main(int argc, char*argv[])
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:F:r:")) != EOF){
+    while((dopt = getopt(argc,argv,"hs:F:n:r:")) != EOF){
         switch (dopt) {
-        case 'h': usage();                      return 0;
-        case 's': SNRdB = atof(optarg);         break;
-        case 'F': dphi = atof(optarg);          break;
+        case 'h': usage();                          return 0;
+        case 's': SNRdB = atof(optarg);             break;
+        case 'F': dphi  = atof(optarg);             break;
+        case 'n': txvector.LENGTH = atoi(optarg);   break;
         case 'r':
             switch ( atoi(optarg) ) {
             case 6:  txvector.DATARATE = WLANFRAME_RATE_6;  break;
@@ -97,10 +95,17 @@ int main(int argc, char*argv[])
             exit(1);
         }
     }
+
+    // validate input
+    if (txvector.LENGTH == 0 || txvector.LENGTH > 4095) {
+        fprintf(stderr,"error: %s, input vector length must be in [0,4095]\n", argv[0]);
+        exit(1);
+    }
     
     unsigned int i;
 
     // initialize original data message
+    unsigned char msg_org[txvector.LENGTH];
     for (i=0; i<txvector.LENGTH; i++)
         msg_org[i] = rand() & 0xff;
 

@@ -109,15 +109,14 @@ int wlan_signal_unpack(unsigned char * _signal,
     // valid signal
     int signal_valid = 1;
 
-    // compute parity (last byte masked with 6 'tail' bits)
-    unsigned int parity = ( liquid_count_ones(_signal[0]) +
-                            liquid_count_ones(_signal[1]) +
-                            liquid_count_ones(_signal[2] & 0x3f) ) % 2;
+    // compute parity (last byte masked with 6 'tail' bits forced to zero)
+    unsigned int parity_check = ( liquid_count_ones(_signal[0]) +
+                                  liquid_count_ones(_signal[1]) +
+                                  liquid_count_ones(_signal[2] & 0xc0) ) % 2;
 
-    // strip parity bit
-    unsigned int parity_check = _signal[2] & 0x40 ? 1 : 0;
-    if (parity != parity_check) {
-        fprintf(stderr,"warning: wlan_signal_unpack(), parity mismatch!\n");
+    // test parity
+    if (parity_check != 0) {
+        fprintf(stderr,"warning: wlan_signal_unpack(), parity check failed!\n");
         signal_valid = 0;
     }
 
