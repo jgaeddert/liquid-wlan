@@ -103,7 +103,7 @@ struct wlan_rxvector_s {
 };
 
 // 
-// 802.11a/g frame generator
+// wlan frame generator
 //
 
 // forward declaration of WLAN frame generator
@@ -137,7 +137,7 @@ int wlanframegen_writesymbol(wlanframegen           _q,
 
 
 // 
-// 802.11a/g frame synchronizer
+// wlan frame synchronizer
 //
 
 // forward declaration of WLAN framing synchronizer

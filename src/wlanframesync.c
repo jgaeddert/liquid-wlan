@@ -230,6 +230,9 @@ void wlanframesync_reset(wlanframesync _q)
     _q->timer = 0;
     _q->num_symbols = 0;    // number of received OFDM data symbols
     _q->phi_prime = 0.0f;   // reset phase offset estimate
+
+    // reset pilot sequence generator
+    msequence_reset(_q->ms_pilot);
 }
 
 // execute framing synchronizer on input buffer
