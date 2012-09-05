@@ -115,12 +115,14 @@ struct wlanframesync_s {
     signed int timer;                   // sample timer
     unsigned int num_symbols;           // number of received OFDM data symbols
 
+#if DEBUG_WLANFRAMESYNC
     // debugging structures
     int debug_enabled;
     agc_crcf agc_rx;        // automatic gain control (rssi)
     windowcf debug_x;
     windowf  debug_rssi;
     windowcf debug_framesyms;
+#endif
 };
 
 // create WLAN framing synchronizer object
@@ -165,12 +167,14 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     // reset object
     wlanframesync_reset(q);
     
+#if DEBUG_WLANFRAMESYNC
     // debugging structures
     q->debug_enabled   = 0;
     q->agc_rx          = NULL;
     q->debug_x         = NULL;
     q->debug_rssi      = NULL;
     q->debug_framesyms = NULL;
+#endif
 
     // return object
     return q;
@@ -179,11 +183,13 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 // destroy WLAN framing synchronizer object
 void wlanframesync_destroy(wlanframesync _q)
 {
+#if DEBUG_WLANFRAMESYNC
     // free debugging objects if necessary
     if (_q->agc_rx          != NULL) agc_crcf_destroy(_q->agc_rx);
     if (_q->debug_x         != NULL) windowcf_destroy(_q->debug_x);
     if (_q->debug_rssi      != NULL) windowf_destroy(_q->debug_rssi);
     if (_q->debug_framesyms != NULL) windowcf_destroy(_q->debug_framesyms);
+#endif
 
     // free transform object
     windowcf_destroy(_q->input_buffer);
@@ -1184,7 +1190,7 @@ void wlanframesync_decode_signal(wlanframesync _q)
 void wlanframesync_debug_enable(wlanframesync _q)
 {
     // create debugging objects if necessary
-
+#if DEBUG_WLANFRAMESYNC
     // agc, rssi
     if (_q->agc_rx == NULL)
         _q->agc_rx = agc_crcf_create();
@@ -1201,16 +1207,24 @@ void wlanframesync_debug_enable(wlanframesync _q)
         _q->debug_framesyms = windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
 
     _q->debug_enabled = 1;
+#else
+    fprintf(stderr,"wlanframesync_debug_enable(): compile-time debugging disabled\n");
+#endif
 }
 
 void wlanframesync_debug_disable(wlanframesync _q)
 {
+#if DEBUG_WLANFRAMESYNC
     _q->debug_enabled = 0;
+#else
+    fprintf(stderr,"wlanframesync_debug_disable(): compile-time debugging disabled\n");
+#endif
 }
 
 void wlanframesync_debug_print(wlanframesync _q,
                                const char * _filename)
 {
+#if DEBUG_WLANFRAMESYNC
     if (_q->agc_rx          == NULL ||
         _q->debug_x         == NULL ||
         _q->debug_rssi      == NULL ||
@@ -1300,6 +1314,9 @@ void wlanframesync_debug_print(wlanframesync _q,
 
     fclose(fid);
     printf("wlanframesync/debug: results written to '%s'\n", _filename);
+#else
+    fprintf(stderr,"wlanframesync_debug_print(): compile-time debugging disabled\n");
+#endif
 }
 
 
