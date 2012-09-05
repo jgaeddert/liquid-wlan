@@ -35,8 +35,6 @@
 #define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
 
-#define WLANFRAMESYNC_ENABLE_SQUELCH    0
-
 // Thresholds for detecting short sequences
 #define WLANFRAMESYNC_S0A_ABS_THRESH    (0.4f)
 //#define WLANFRAMESYNC_S0B_ABS_THRESH    (0.5f)
