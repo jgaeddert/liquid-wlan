@@ -181,6 +181,8 @@ float wlanframesync_get_cfo(wlanframesync _q);  // carrier offset estimate
 // 
 // internal/debugging methods
 //
+void wlanframesync_debug_enable(wlanframesync _q);
+void wlanframesync_debug_disable(wlanframesync _q);
 void wlanframesync_debug_print(wlanframesync _q, const char * _filename);
 
 

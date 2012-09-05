@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
+ * Copyright (c) 2011, 2012 Joseph Gaeddert
+ * Copyright (c) 2011, 2012 Virginia Polytechnic Institute & State University
  *
  * This file is part of liquid.
  *
@@ -30,7 +30,7 @@
 
 #include "liquid-wlan.internal.h"
 
-#define DEBUG_WLANFRAMESYNC             0
+#define DEBUG_WLANFRAMESYNC             1
 #define DEBUG_WLANFRAMESYNC_PRINT       0
 #define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
@@ -115,12 +115,12 @@ struct wlanframesync_s {
     signed int timer;                   // sample timer
     unsigned int num_symbols;           // number of received OFDM data symbols
 
-#if DEBUG_WLANFRAMESYNC
+    // debugging structures
+    int debug_enabled;
     agc_crcf agc_rx;        // automatic gain control (rssi)
     windowcf debug_x;
     windowf  debug_rssi;
     windowcf debug_framesyms;
-#endif
 };
 
 // create WLAN framing synchronizer object
@@ -164,17 +164,13 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 
     // reset object
     wlanframesync_reset(q);
-
-#if DEBUG_WLANFRAMESYNC
-    // agc, rssi
-    q->agc_rx = agc_crcf_create();
-    agc_crcf_set_bandwidth(q->agc_rx,  1e-2f);
-    agc_crcf_set_gain_limits(q->agc_rx, 1.0f, 1e7f);
-
-    q->debug_x =        windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
-    q->debug_rssi =     windowf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
-    q->debug_framesyms =windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
-#endif
+    
+    // debugging structures
+    q->debug_enabled   = 0;
+    q->agc_rx          = NULL;
+    q->debug_x         = NULL;
+    q->debug_rssi      = NULL;
+    q->debug_framesyms = NULL;
 
     // return object
     return q;
@@ -183,15 +179,11 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 // destroy WLAN framing synchronizer object
 void wlanframesync_destroy(wlanframesync _q)
 {
-#if DEBUG_WLANFRAMESYNC
-    wlanframesync_debug_print(_q, DEBUG_WLANFRAMESYNC_FILENAME);
-
-    agc_crcf_destroy(_q->agc_rx);
-
-    windowcf_destroy(_q->debug_x);
-    windowf_destroy(_q->debug_rssi);
-    windowcf_destroy(_q->debug_framesyms);
-#endif
+    // free debugging objects if necessary
+    if (_q->agc_rx          != NULL) agc_crcf_destroy(_q->agc_rx);
+    if (_q->debug_x         != NULL) windowcf_destroy(_q->debug_x);
+    if (_q->debug_rssi      != NULL) windowf_destroy(_q->debug_rssi);
+    if (_q->debug_framesyms != NULL) windowcf_destroy(_q->debug_framesyms);
 
     // free transform object
     windowcf_destroy(_q->input_buffer);
@@ -259,12 +251,14 @@ void wlanframesync_execute(wlanframesync          _q,
         windowcf_push(_q->input_buffer,x);
 
 #if DEBUG_WLANFRAMESYNC
-        // apply agc (estimate initial signal gain)
-        float complex y;
-        agc_crcf_execute(_q->agc_rx, x, &y);
+        if (_q->debug_enabled) {
+            // apply agc (estimate initial signal gain)
+            float complex y;
+            agc_crcf_execute(_q->agc_rx, x, &y);
 
-        windowcf_push(_q->debug_x, x);
-        windowf_push(_q->debug_rssi, agc_crcf_get_rssi(_q->agc_rx));
+            windowcf_push(_q->debug_x, x);
+            windowf_push(_q->debug_rssi, agc_crcf_get_rssi(_q->agc_rx));
+        }
 #endif
 
         switch (_q->state) {
@@ -743,7 +737,9 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
             _q->modem_syms[n] = sym;
             n++;
 #if DEBUG_WLANFRAMESYNC
-            windowcf_push(_q->debug_framesyms, _q->X[k]);
+            // TODO : move this outside loop
+            if (_q->debug_enabled)
+                windowcf_push(_q->debug_framesyms, _q->X[k]);
 #endif
 
         }
@@ -1185,16 +1181,52 @@ void wlanframesync_decode_signal(wlanframesync _q)
 #endif
 }
 
+void wlanframesync_debug_enable(wlanframesync _q)
+{
+    // create debugging objects if necessary
+
+    // agc, rssi
+    if (_q->agc_rx == NULL)
+        _q->agc_rx = agc_crcf_create();
+    agc_crcf_set_bandwidth(_q->agc_rx,  1e-2f);
+    agc_crcf_set_gain_limits(_q->agc_rx, 1.0f, 1e7f);
+
+    if (_q->debug_x == NULL)
+        _q->debug_x = windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
+
+    if (_q->debug_rssi == NULL)
+        _q->debug_rssi = windowf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
+
+    if (_q->debug_framesyms == NULL)
+        _q->debug_framesyms = windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
+
+    _q->debug_enabled = 1;
+}
+
+void wlanframesync_debug_disable(wlanframesync _q)
+{
+    _q->debug_enabled = 0;
+}
+
 void wlanframesync_debug_print(wlanframesync _q,
                                const char * _filename)
 {
+    if (_q->agc_rx          == NULL ||
+        _q->debug_x         == NULL ||
+        _q->debug_rssi      == NULL ||
+        _q->debug_framesyms == NULL)
+    {
+        fprintf(stderr,"error: wlanframe_debug_print(), debugging objects don't exist; enable debugging first\n");
+        return;
+    }
+
     FILE * fid = fopen(_filename,"w");
     if (!fid) {
         fprintf(stderr,"error: wlanframe_debug_print(), could not open '%s' for writing\n", _filename);
         return;
     }
     fprintf(fid,"%% %s : auto-generated file\n", _filename);
-#if DEBUG_WLANFRAMESYNC
+
     fprintf(fid,"close all;\n");
     fprintf(fid,"clear all;\n");
     fprintf(fid,"n = %u;\n", DEBUG_WLANFRAMESYNC_BUFFER_LEN);
@@ -1265,9 +1297,6 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"subplot(2,1,2);\n");
     fprintf(fid,"  plot(f,arg(G1a),'x', f,arg(G1b),'x', f,arg(G),'-k','LineWidth',2);\n");
     fprintf(fid,"  ylabel('G (phase)');\n");
-#else
-    fprintf(fid,"disp('no debugging info available');\n");
-#endif
 
     fclose(fid);
     printf("wlanframesync/debug: results written to '%s'\n", _filename);

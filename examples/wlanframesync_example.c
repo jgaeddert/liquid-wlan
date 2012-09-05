@@ -41,6 +41,7 @@ void usage()
 {
     printf("Usage: wlanframesync_example [OPTION]\n");
     printf("  h     : print help\n");
+    printf("  d     : enable debugging\n");
     printf("  s     : signal-to-noise ratio [dB], default: 30\n");
     printf("  F     : carrier frequency offset, default: 0.002\n");
     printf("  n     : number of data bytes\n");
@@ -61,6 +62,9 @@ int main(int argc, char*argv[])
     txvector.DATARATE    = WLANFRAME_RATE_36;
     txvector.SERVICE     = 0;
     txvector.TXPWR_LEVEL = 0;
+
+    // debug options
+    int debug_enabled = 0;
     
     // channel options
     float noise_floor = -120.0f;        // noise floor [dB]
@@ -70,9 +74,10 @@ int main(int argc, char*argv[])
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:F:n:r:")) != EOF){
+    while((dopt = getopt(argc,argv,"hds:F:n:r:")) != EOF){
         switch (dopt) {
         case 'h': usage();                          return 0;
+        case 'd': debug_enabled = 1;                break;
         case 's': SNRdB = atof(optarg);             break;
         case 'F': dphi  = atof(optarg);             break;
         case 'n': txvector.LENGTH = atoi(optarg);   break;
@@ -120,6 +125,8 @@ int main(int argc, char*argv[])
 
     // create frame synchronizer
     wlanframesync fs = wlanframesync_create(callback, (void*)msg_org);
+    if (debug_enabled)
+        wlanframesync_debug_enable(fs);
     //wlanframesync_print(fs);
 
     // assemble frame and print
@@ -175,6 +182,10 @@ int main(int argc, char*argv[])
 
     fclose(fid);
     printf("results written to '%s'\n", OUTPUT_FILENAME);
+
+    // write debug output if enabled
+    if (debug_enabled)
+        wlanframesync_debug_print(fs, "wlanframesync_debug.m");
 
     // destroy objects
     wlanframegen_destroy(fg);
