@@ -219,7 +219,7 @@ void wlan_fec_decode(unsigned int    _fec_scheme,
     // run Viterbi decoder
     void * vp = wlan_create_viterbi27(num_enc_bits);
     wlan_init_viterbi27(vp,0);
-    wlan_update_viterbi27_blk(vp, enc_bits, num_enc_bits);
+    wlan_update_viterbi27_blk(vp, enc_bits, 8*_dec_msg_len);
     wlan_chainback_viterbi27(vp, _msg_dec, num_enc_bits, 0);
     wlan_delete_viterbi27(vp);
 }
