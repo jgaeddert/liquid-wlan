@@ -252,10 +252,10 @@ void wlanframegen_assemble(wlanframegen           _q,
         exit(1);
     }
 
-#if 0
+#if 1
     if (_txvector.DATARATE == WLANFRAME_RATE_9) {
         fprintf(stderr,"error: wlanframegen_assemble(), the rate 9 M bits/s is currently unsupported\n");
-        exit(1);
+        return;
     }
 #endif
 
@@ -282,7 +282,8 @@ void wlanframegen_assemble(wlanframegen           _q,
     _q->ncbps  = wlanframe_ratetab[_q->rate].ncbps; // number of coded bits per OFDM symbol
     _q->nbpsc  = wlanframe_ratetab[_q->rate].nbpsc; // number of bits per subcarrier (modulation depth)
 
-    // compute number of OFDM symbols
+    // compute number of OFDM symbols:
+    // prepend the 16 SERVICE bits and append the 6 tail bits
     div_t d = div(16 + 8*_q->length + 6, _q->ndbps);
     _q->nsym = d.quot + (d.rem == 0 ? 0 : 1);
 
@@ -294,7 +295,7 @@ void wlanframegen_assemble(wlanframegen           _q,
 
     // compute decoded message length (number of data bytes)
     // NOTE : because ndbps is _always_ divisible by 8, so must ndata be
-    // NOT TRUE: for rate 36, ndbps is 36 which is NOT divisible by 8!
+    // NOT TRUE: for rate 9, ndbps is 36 which is NOT divisible by 8!
     _q->dec_msg_len = _q->ndata / 8;
 
     // compute encoded message length (number of data bytes)
