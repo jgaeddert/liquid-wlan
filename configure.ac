@@ -25,6 +25,9 @@
 AC_INIT([liquid-wlan],[0.0.0],[liquid@vt.edu])
 AC_CONFIG_SRCDIR([src/libliquid_wlan.c])
 
+# permit auxiliary scripts directory (e.g. config.sub, config.guess, install-sh)
+AC_CONFIG_AUX_DIR(scripts/)
+
 # Specify 'C' language
 AC_LANG(C)
 
