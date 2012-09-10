@@ -37,4 +37,5 @@ octave-core
 *.tar
 *.gz
 .DS_Store
+README.html
 
