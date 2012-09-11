@@ -753,9 +753,9 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
     // pack modem symbols
     //printf("  %3u = %3u * %3u\n", _q->enc_msg_len, _q->nsym, _q->bytes_per_symbol);
     unsigned int num_written;
-    liquid_repack_bytes(_q->modem_syms, _q->nbpsc, 48,
-                        &_q->msg_enc[_q->num_symbols * _q->bytes_per_symbol], 8, _q->bytes_per_symbol,
-                        &num_written);
+    liquid_wlan_repack_bytes(_q->modem_syms, _q->nbpsc, 48,
+                             &_q->msg_enc[_q->num_symbols * _q->bytes_per_symbol], 8, _q->bytes_per_symbol,
+                             &num_written);
     assert(num_written == _q->bytes_per_symbol);
 
     // increment number of received symbols

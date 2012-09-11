@@ -38,6 +38,21 @@ extern const unsigned char liquid_wlan_reverse_byte[256];
 // number of ones in a byte modulo 2
 extern const unsigned char liquid_wlan_parity[256];
 
+// repack bytes with arbitrary symbol sizes
+//  _sym_in             :   input symbols array [size: _sym_in_len x 1]
+//  _sym_in_bps         :   number of bits per input symbol
+//  _sym_in_len         :   number of input symbols
+//  _sym_out            :   output symbols array
+//  _sym_out_bps        :   number of bits per output symbol
+//  _sym_out_len        :   number of bytes allocated to output symbols array
+//  _num_written        :   number of output symbols actually written
+void liquid_wlan_repack_bytes(unsigned char * _sym_in,
+                              unsigned int    _sym_in_bps,
+                              unsigned int    _sym_in_len,
+                              unsigned char * _sym_out,
+                              unsigned int    _sym_out_bps,
+                              unsigned int    _sym_out_len,
+                              unsigned int *  _num_written);
 
 // Use fftw library if installed, otherwise use liquid-dsp (less
 // efficient) fft library.

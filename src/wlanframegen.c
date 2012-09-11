@@ -589,9 +589,9 @@ void wlanframegen_writesymbol_data(wlanframegen _q,
     // unpack modem symbols
     //printf("  %3u = %3u * %3u\n", _q->enc_msg_len, _q->nsym, _q->bytes_per_symbol);
     unsigned int num_written;
-    liquid_repack_bytes(&_q->msg_enc[_q->data_symbol_counter * _q->bytes_per_symbol], 8, _q->bytes_per_symbol,
-                        _q->modem_syms, _q->nbpsc, 48,
-                        &num_written);
+    liquid_wlan_repack_bytes(&_q->msg_enc[_q->data_symbol_counter * _q->bytes_per_symbol], 8, _q->bytes_per_symbol,
+                             _q->modem_syms, _q->nbpsc, 48,
+                             &num_written);
     assert(num_written == 48);
 
     // modulate symbols onto subcarriers

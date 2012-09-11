@@ -18,6 +18,11 @@
  * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "liquid-wlan.internal.h"
+
 // reverse byte table
 unsigned const char liquid_wlan_reverse_byte[256] = {
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
@@ -71,4 +76,83 @@ unsigned const char liquid_wlan_parity[256] = {
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
     0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
+
+// repack bytes with arbitrary symbol sizes
+//  _sym_in             :   input symbols array [size: _sym_in_len x 1]
+//  _sym_in_bps         :   number of bits per input symbol
+//  _sym_in_len         :   number of input symbols
+//  _sym_out            :   output symbols array
+//  _sym_out_bps        :   number of bits per output symbol
+//  _sym_out_len        :   number of bytes allocated to output symbols array
+//  _num_written        :   number of output symbols actually written
+void liquid_wlan_repack_bytes(unsigned char * _sym_in,
+                              unsigned int    _sym_in_bps,
+                              unsigned int    _sym_in_len,
+                              unsigned char * _sym_out,
+                              unsigned int    _sym_out_bps,
+                              unsigned int    _sym_out_len,
+                              unsigned int *  _num_written)
+{
+    // compute number of output symbols and determine if output array
+    // is sufficiently sized
+    div_t d = div(_sym_in_len*_sym_in_bps,_sym_out_bps);
+    unsigned int req__sym_out_len = d.quot;
+    req__sym_out_len += ( d.rem > 0 ) ? 1 : 0;
+    if ( _sym_out_len < req__sym_out_len ) {
+        fprintf(stderr,"error: liquid_wlan_repack_bytes(), output too short\n");
+        fprintf(stderr,"  %u %u-bit symbols cannot be packed into %u %u-bit elements\n",
+                _sym_in_len, _sym_in_bps,
+                _sym_out_len, _sym_out_bps);
+        exit(-1);
+    }
+    
+    unsigned int i;
+    unsigned char s_in = 0;     // input symbol
+    unsigned char s_out = 0;    // output symbol
+
+    // there is probably a more efficient way to do this, but...
+    unsigned int total_bits = _sym_in_len*_sym_in_bps;
+    unsigned int i_in = 0;  // input index counter
+    unsigned int i_out = 0; // output index counter
+    unsigned int k=0;       // input symbol enable
+    unsigned int n=0;       // output symbol enable
+    unsigned int v;         // bit mask
+
+    for (i=0; i<total_bits; i++) {
+        // shift output symbol by one bit
+        s_out <<= 1;
+
+        // pop input if necessary
+        if ( k == 0 ) {
+            //printf("\n\n_sym_in[%d] = %d", i_in, _sym_in[i_in]);
+            s_in = _sym_in[i_in++];
+        }
+
+        // compute shift amount and append input bit at index
+        // to output symbol
+        v = _sym_in_bps - k - 1;
+        s_out |= (s_in >> v) & 0x01;
+        //printf("\n    b = %d, v = %d, s_in = %d, sym_out = %d", (sym_in >> v) & 0x01, v, s_in, sym_out );
+
+        // push output if available    
+        if ( n == _sym_out_bps-1 ) {
+            //printf("\n  _sym_out[%d] = %d", i_out, sym_out);
+            _sym_out[i_out++] = s_out;
+            s_out = 0;
+        }
+
+        // update input/output symbol pop/push flags
+        k = (k+1) % _sym_in_bps;
+        n = (n+1) % _sym_out_bps;
+    }
+
+    // if uneven, push zeros into remaining output symbol
+    if (i_out != req__sym_out_len) {
+        for (i=n; i<_sym_out_bps; i++)
+            s_out <<= 1;
+        _sym_out[i_out++] = s_out;
+    }
+    
+    *_num_written = i_out;
+}
 
