@@ -77,6 +77,19 @@ unsigned const char liquid_wlan_parity[256] = {
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
     0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
 
+// count the binary dot-product between two integers
+unsigned int liquid_wlan_bdotprod(unsigned int _x,
+                                  unsigned int _y)
+{
+    unsigned int t = _x & _y;
+    unsigned int c = liquid_wlan_parity[ (t>>24) & 0xff ] +
+                     liquid_wlan_parity[ (t>>16) & 0xff ] +
+                     liquid_wlan_parity[ (t>> 8) & 0xff ] +
+                     liquid_wlan_parity[ (t    ) & 0xff ];
+    return c & 1;
+}
+
+
 // repack bytes with arbitrary symbol sizes
 //  _sym_in             :   input symbols array [size: _sym_in_len x 1]
 //  _sym_in_bps         :   number of bits per input symbol

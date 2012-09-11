@@ -43,20 +43,20 @@ void wlan_data_scramble(unsigned char * _msg_dec,
     unsigned int a = _seed; // initial state
 
     // create
-    msequence ms = msequence_create(m, g, a);
+    wlan_lfsr ms = wlan_lfsr_create(m, g, a);
 
     unsigned int i;
     unsigned char mask;
     for (i=0; i<_n; i++) {
         // generate byte mask (shift 8 bits)
-        mask = msequence_generate_symbol(ms, 8);
+        mask = wlan_lfsr_generate_symbol(ms, 8);
 
         // apply mask
         _msg_enc[i] = _msg_dec[i] ^ mask;
     }
 
-    // destroy msequence object
-    msequence_destroy(ms);
+    // destroy wlan_lfsr object
+    wlan_lfsr_destroy(ms);
 }
 
 // unscramble data

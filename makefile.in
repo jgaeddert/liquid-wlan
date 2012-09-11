@@ -78,9 +78,10 @@ all:
 # Information about targets for each module is collected
 # in these variables
 objects :=							\
-	src/wlan_interleaver.o					\
-	src/wlan_fec.o						\
 	src/wlan_data_scrambler.o				\
+	src/wlan_fec.o						\
+	src/wlan_interleaver.o					\
+	src/wlan_lfsr.o						\
 	src/wlan_modem.o					\
 	src/wlan_packet.o					\
 	src/wlan_signal.o					\

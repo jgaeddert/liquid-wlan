@@ -51,11 +51,11 @@ int main(int argc, char*argv[])
     unsigned int a = 0x7f;  // initial state: .111 1111
 
     // create
-    msequence ms = msequence_create(m, g, a);
+    wlan_lfsr ms = wlan_lfsr_create(m, g, a);
 
     unsigned int i;
     for (i=0; i<127; i++) {
-        unsigned int bit = msequence_advance(ms);
+        unsigned int bit = wlan_lfsr_advance(ms);
         printf("%1u", bit);
 
         if ( ((i+1)%8) == 0 )
@@ -63,7 +63,7 @@ int main(int argc, char*argv[])
     }
     printf("\n");
 
-    msequence_destroy(ms);
+    wlan_lfsr_destroy(ms);
 
 
     printf("done.\n");

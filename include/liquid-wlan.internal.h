@@ -38,6 +38,10 @@ extern const unsigned char liquid_wlan_reverse_byte[256];
 // number of ones in a byte modulo 2
 extern const unsigned char liquid_wlan_parity[256];
 
+// count the binary dot-product between two integers
+unsigned int liquid_wlan_bdotprod(unsigned int _x,
+                                  unsigned int _y);
+
 // repack bytes with arbitrary symbol sizes
 //  _sym_in             :   input symbols array [size: _sym_in_len x 1]
 //  _sym_in_bps         :   number of bits per input symbol
@@ -127,6 +131,48 @@ int wlan_signal_unpack(unsigned char * _signal,
                        unsigned int    * _R,
                        unsigned int    * _length);
 
+//
+// linear feedback shift register
+//
+
+// wlan linear feedback shift register properties
+// (same as msequence in liquid-dsp)
+struct wlan_lfsr_s {
+    unsigned int m;     // length generator polynomial, shift register
+    unsigned int g;     // generator polynomial
+    unsigned int a;     // initial shift register state, default: 1
+
+    unsigned int n;     // length of sequence, n = (2^m)-1
+    unsigned int v;     // shift register
+    unsigned int b;     // return bit
+};
+
+typedef struct wlan_lfsr_s * wlan_lfsr;
+
+// create a maximal-length sequence (m-sequence) object with
+// an internal shift register length of _m bits.
+//  _m      :   generator polynomial length, sequence length is (2^m)-1
+//  _g      :   generator polynomial, starting with most-significant bit
+//  _a      :   initial shift register state, default: 000...001
+wlan_lfsr wlan_lfsr_create(unsigned int _m,
+                           unsigned int _g,
+                           unsigned int _a);
+
+// destroy an wlan_lfsr object, freeing all internal memory
+void wlan_lfsr_destroy(wlan_lfsr _m);
+
+// advance wlan_lfsr on shift register, returning output bit
+unsigned int wlan_lfsr_advance(wlan_lfsr _ms);
+
+// generate pseudo-random symbol from shift register by
+// advancing _bps bits and returning compacted symbol
+//  _ms     :   m-sequence object
+//  _bps    :   bits per symbol of output
+unsigned int wlan_lfsr_generate_symbol(wlan_lfsr _ms,
+                                       unsigned int _bps);
+
+// reset wlan_lfsr shift register to original state, typically '1'
+void wlan_lfsr_reset(wlan_lfsr _ms);
 
 // 
 // encoding/decoding

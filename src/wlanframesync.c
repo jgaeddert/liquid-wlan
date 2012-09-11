@@ -65,7 +65,7 @@ struct wlanframesync_s {
 
     // synchronizer objects
     nco_crcf nco_rx;        // numerically-controlled oscillator
-    msequence ms_pilot;     // pilot sequence generator
+    wlan_lfsr ms_pilot;     // pilot sequence generator
     unsigned int mod_scheme;// DATA field (de)modulation scheme
     float phi_prime;        // stored pilot phase
 
@@ -146,7 +146,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 
     // synchronizer objects
     q->nco_rx = nco_crcf_create(LIQUID_VCO);
-    q->ms_pilot = msequence_create(7, 0x91, 0x7f);
+    q->ms_pilot = wlan_lfsr_create(7, 0x91, 0x7f);
     q->mod_scheme = WLAN_MODEM_BPSK;
 
     // set initial properties
@@ -197,7 +197,7 @@ void wlanframesync_destroy(wlanframesync _q)
     
     // destroy synchronizer objects
     nco_crcf_destroy(_q->nco_rx);       // numerically-controlled oscillator
-    msequence_destroy(_q->ms_pilot);    // pilot sequence generator
+    wlan_lfsr_destroy(_q->ms_pilot);    // pilot sequence generator
 
     // free memory for encoded message
     free(_q->msg_enc);
@@ -228,7 +228,7 @@ void wlanframesync_reset(wlanframesync _q)
     _q->phi_prime = 0.0f;   // reset phase offset estimate
 
     // reset pilot sequence generator
-    msequence_reset(_q->ms_pilot);
+    wlan_lfsr_reset(_q->ms_pilot);
 }
 
 // execute framing synchronizer on input buffer
@@ -1048,7 +1048,7 @@ void wlanframesync_rxsymbol(wlanframesync _q)
     float p_phase[2];
 
     // update pilot phase
-    unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
+    unsigned int pilot_phase = wlan_lfsr_advance(_q->ms_pilot);
 
     y_phase[0] = pilot_phase ? cargf(-_q->X[43]) : cargf( _q->X[43]);
     y_phase[1] = pilot_phase ? cargf(-_q->X[57]) : cargf( _q->X[57]);

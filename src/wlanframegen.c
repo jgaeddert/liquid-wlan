@@ -46,7 +46,7 @@ struct wlanframegen_s {
     float complex * x;      // time-domain buffer
 
     // pilot sequence generator
-    msequence ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
+    wlan_lfsr ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
     
     // DATA field modulation scheme
     unsigned int mod_scheme;
@@ -99,7 +99,7 @@ wlanframegen wlanframegen_create()
     q->ifft = FFT_CREATE_PLAN(64, q->X, q->x, FFT_DIR_BACKWARD, FFT_METHOD);
 
     // create pilot sequence generator
-    q->ms_pilot = msequence_create(7, 0x91, 0x7f);
+    q->ms_pilot = wlan_lfsr_create(7, 0x91, 0x7f);
 
     // DATA field (payload) modulator
     q->mod_scheme = WLAN_MODEM_BPSK;
@@ -154,7 +154,7 @@ void wlanframegen_destroy(wlanframegen _q)
     FFT_DESTROY_PLAN(_q->ifft);
     
     // destroy pilot sequence generator
-    msequence_destroy(_q->ms_pilot);
+    wlan_lfsr_destroy(_q->ms_pilot);
 
     // free transition window ramp array and postfix buffer
     free(_q->rampup);
@@ -213,7 +213,7 @@ void wlanframegen_reset(wlanframegen _q)
     _q->data_symbol_counter = 0;
 
     // reset pilot sequence generator
-    msequence_reset(_q->ms_pilot);
+    wlan_lfsr_reset(_q->ms_pilot);
 
     // clear internal postfix buffer
     unsigned int i;
@@ -383,7 +383,7 @@ int wlanframegen_writesymbol(wlanframegen    _q,
 void wlanframegen_compute_symbol(wlanframegen _q)
 {
     // update pilot phase
-    unsigned int pilot_phase = msequence_advance(_q->ms_pilot);
+    unsigned int pilot_phase = wlan_lfsr_advance(_q->ms_pilot);
 
     // set pilots
     _q->X[43] = pilot_phase ? -1.0f :  1.0f;
