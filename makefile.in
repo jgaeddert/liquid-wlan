@@ -247,6 +247,7 @@ AUTOTEST_LDFLAGS = $(LDFLAGS)
 $(autotest_objects): %.o : %.c $(autotest_data_src)
 
 $(autotest_programs): % : %.o libliquid-wlan.a
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # make check programs
 check-programs : $(autotest_programs)
@@ -278,6 +279,7 @@ BENCHMARK_LDFLAGS = $(LDFLAGS)
 $(benchmark_objects): %.o : %.c $(benchmark_data_src)
 
 $(benchmark_programs): % : %.o libliquid-wlan.a
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # main target; run all programs
 bench : $(benchmark_programs)
@@ -306,6 +308,7 @@ EXAMPLES_LDFLAGS = $(LDFLAGS)
 $(example_objects): %.o : %.c
 
 $(example_programs): % : %.o libliquid-wlan.a
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # clean examples
 clean-examples:
