@@ -132,7 +132,7 @@ int main(int argc, char*argv[])
     }
 
     // compute inverse transform
-    fft_run(64, X, x, FFT_REVERSE, 0);
+    fft_run(64, X, x, LIQUID_FFT_BACKWARD, 0);
 
     // add cyclic prefix and apply window
 #if 1
