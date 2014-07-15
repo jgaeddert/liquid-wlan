@@ -26,7 +26,7 @@ You may _optionally_ have FFTW installed
 
 Clone the entire Git [repository](http://github.com/jgaeddert/liquid-wlan)
         
-    $ git clone git://github.com/jgaeddert/liquid-dsp.git
+    $ git clone git://github.com/jgaeddert/liquid-wlan.git
 
 ### Installation ###
 
