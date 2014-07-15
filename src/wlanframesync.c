@@ -30,7 +30,7 @@
 
 #include "liquid-wlan.internal.h"
 
-#define DEBUG_WLANFRAMESYNC             1
+#define DEBUG_WLANFRAMESYNC             0
 #define DEBUG_WLANFRAMESYNC_PRINT       0
 #define DEBUG_WLANFRAMESYNC_FILENAME    "wlanframesync_internal_debug.m"
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
