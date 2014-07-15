@@ -20,7 +20,7 @@ building liquid-wlan:
 
 You may _optionally_ have FFTW installed
 
-  * [fftw3](www.fftw.org/)
+  * [fftw3](http://www.fftw.org/)
 
 ### Getting the source code ###
 
