@@ -14,9 +14,13 @@ Installation and Dependencies
 The following libraries must be installed on your machine before
 building liquid-wlan:
 
-  * liquid-dsp (http://github.com/jgaeddert/liquid-dsp) revision 231a3088d3
-  * fftw3      (www.fftw.org/)
-  * libc/libm  (standard C and math libraries)
+  * [liquid-dsp](http://github.com/jgaeddert/liquid-dsp), `231a3088d3`
+    revision or later
+  * `libc/libm` (standard C and math libraries)
+
+You may _optionally_ have FFTW installed
+
+  * [fftw3](www.fftw.org/)
 
 ### Getting the source code ###
 
@@ -29,7 +33,7 @@ Clone the entire Git [repository](http://github.com/jgaeddert/liquid-wlan)
 Once you have obtained a copy of the source code, you can now build the
 WLAN library:
 
-    $ ./reconf
+    $ ./bootstrap.sh
     $ ./configure
     $ make
     $ sudo make install
