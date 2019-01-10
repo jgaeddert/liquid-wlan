@@ -216,7 +216,7 @@ void wlanframesync_print(wlanframesync _q)
 void wlanframesync_reset(wlanframesync _q)
 {
     // clear buffer
-    windowcf_clear(_q->input_buffer);
+    windowcf_reset(_q->input_buffer);
 
     // reset NCO object
     nco_crcf_reset(_q->nco_rx);
