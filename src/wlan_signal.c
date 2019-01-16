@@ -28,6 +28,8 @@
 
 #include "liquid-wlan.internal.h"
 
+#define WLAN_SIGNAL_DEBUG 0
+
 // signal field rate encoding table (see Table 80)
 //    WLANFRAME_RATE_6  = 13 : 1101
 //    WLANFRAME_RATE_9  = 15 : 1111
@@ -101,7 +103,7 @@ void wlan_signal_pack(unsigned int    _rate,
 //  _rate       :   data rate field (e.g. WLANFRAME_RATE_6)
 //  _R          :   reserved bit
 //  _length     :   length of payload (1-4095)
-int wlan_signal_unpack(unsigned char * _signal,
+int wlan_signal_unpack(unsigned char   * _signal,
                        unsigned int    * _rate,
                        unsigned int    * _R,
                        unsigned int    * _length)
@@ -116,8 +118,12 @@ int wlan_signal_unpack(unsigned char * _signal,
 
     // test parity
     if (parity_check != 0) {
-        fprintf(stderr,"warning: wlan_signal_unpack(), parity check failed!\n");
+#if WLAN_SIGNAL_DEBUG
+        fprintf(stderr,"%s:%u, warning: wlan_signal_unpack(), parity check failed!\n",
+                __FILE__, __LINE__);
+#endif
         signal_valid = 0;
+        return 0;
     }
 
     // strip data rate field
@@ -134,9 +140,13 @@ int wlan_signal_unpack(unsigned char * _signal,
     case  1: *_rate = WLANFRAME_RATE_48; break;
     case  3: *_rate = WLANFRAME_RATE_54; break;
     default:
-        fprintf(stderr,"warning: wlan_signal_unpack(), invalid rate\n");
+#if WLAN_SIGNAL_DEBUG
+        fprintf(stderr,"%s:%u, warning: wlan_signal_unpack(), invalid rate\n",
+                __FILE__, __LINE__);
+#endif
         *_rate = WLANFRAME_RATE_6;
         signal_valid = 0;
+        return 0;
     }
 
     // unpack 'reserved' bit
@@ -161,7 +171,10 @@ int wlan_signal_unpack(unsigned char * _signal,
 
     // test length
     if (length == 0 || length > 4095) {
-        fprintf(stderr,"warning: wlan_signal_unpack(), invalid length!\n");
+#if WLAN_SIGNAL_DEBUG
+        fprintf(stderr,"%s:%u, warning: wlan_signal_unpack(), invalid length!\n",
+                __FILE__, __LINE__);
+#endif
         signal_valid = 0;
     }
 

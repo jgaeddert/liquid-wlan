@@ -1110,18 +1110,16 @@ void wlanframesync_decode_signal(wlanframesync _q)
                                           &_q->length);
 
     // check validity
-    if (!_q->signal_valid) {
-        printf("SIGNAL field not valid\n");
+    if (!_q->signal_valid)
         return;
-    }
 
-#if 0
     if (_q->rate == WLANFRAME_RATE_9) {
+#if 0
         fprintf(stderr,"warning: wlanframesync_decode_signal(), the rate 9 M bits/s is currently unsupported\n");
+#endif
         _q->signal_valid = 0;
         return;
     }
-#endif
 
     // compute frame parameters
     _q->ndbps  = wlanframe_ratetab[_q->rate].ndbps; // number of data bits per OFDM symbol

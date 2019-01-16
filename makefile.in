@@ -298,6 +298,7 @@ clean-bench:
 example_programs :=						\
 	examples/wlanframegen_example				\
 	examples/wlanframesync_example				\
+	examples/wlanframesync_performance_example		\
 
 example_objects	= $(patsubst %,%.o,$(example_programs))
 examples: $(example_programs)
