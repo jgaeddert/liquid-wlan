@@ -48,7 +48,8 @@ void usage()
     printf("  r     : rate {6,9,12,18,24,36,48,54} M bits/s\n");
 }
 
-static int callback(unsigned char *        _payload,
+static int callback(int                    _header_valid,
+                    unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata);
 
@@ -195,11 +196,15 @@ int main(int argc, char*argv[])
     return 0;
 }
 
-static int callback(unsigned char *        _payload,
+static int callback(int                    _header_valid,
+                    unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata)
 {
-    printf("**** callback invoked\n");
+    printf("**** callback invoked (header: %s)\n", _header_valid ? "valid" : "INVALID");
+
+    if (!_header_valid)
+        return 1;
 
     // type cast 'userdata' as original data vector
     unsigned char * msg_org = (unsigned char*) _userdata;

@@ -48,7 +48,8 @@ int frame_detected;
 int header_decoded;
 int payload_decoded;
 
-static int callback(unsigned char *        _payload,
+static int callback(int                    _header_valid,
+                    unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata);
 
@@ -123,13 +124,14 @@ int main(int argc, char*argv[])
     return 0;
 }
 
-static int callback(unsigned char *        _payload,
+static int callback(int                    _header_valid,
+                    unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata)
 {
     frame_detected  = 1;
-    header_decoded  = 1;
-    payload_decoded = 1;
+    header_decoded  = _header_valid;
+    payload_decoded = 1; // TODO: check this
     return 0;
 }
 

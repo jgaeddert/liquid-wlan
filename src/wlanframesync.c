@@ -691,6 +691,18 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
 
     // validate proper decoding
     if (!_q->signal_valid) {
+        // invoke callback
+        if (_q->callback != NULL) {
+            // assemble RX vector
+            struct wlan_rxvector_s rxvector;
+            rxvector.LENGTH     = 0;
+            rxvector.RSSI       = 200 + (unsigned int) (10*log10f(_q->g0));
+            rxvector.DATARATE   = WLANFRAME_RATE_INVALID;
+            rxvector.SERVICE    = 0;
+            //int retval =
+            _q->callback(0, NULL, rxvector, _q->userdata);
+        }
+
         // reset synchronizer and return
         wlanframesync_reset(_q);
         return;
@@ -775,8 +787,8 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
 
         // invoke callback
         if (_q->callback != NULL) {
-            //int retval = 
-            _q->callback(_q->msg_dec, rxvector, _q->userdata);
+            //int retval =
+            _q->callback(1, _q->msg_dec, rxvector, _q->userdata);
         }
 
         // reset and return

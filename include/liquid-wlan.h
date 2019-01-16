@@ -37,8 +37,8 @@
  * LIQUID_WLAN_VERSION = "X.Y.Z"
  * LIQUID_WLAN_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
  */
-#define LIQUID_WLAN_VERSION          "0.0.1"
-#define LIQUID_WLAN_VERSION_NUMBER   1
+#define LIQUID_WLAN_VERSION          "0.1.0"
+#define LIQUID_WLAN_VERSION_NUMBER   1000
 
 /*
  * Run-time library version numbers
@@ -85,6 +85,7 @@ LIQUID_WLAN_DEFINE_COMPLEX(float,  liquid_float_complex);
 #define WLANFRAME_RATE_36       (5) // 16-QAM, r3/4, 1011
 #define WLANFRAME_RATE_48       (6) // 64-QAM, r2/3, 0001
 #define WLANFRAME_RATE_54       (7) // 64-QAM, r3/4, 0011
+#define WLANFRAME_RATE_INVALID (15) // invalid rate
 
 // TXVECTOR parameters structure
 struct wlan_txvector_s {
@@ -144,10 +145,12 @@ int wlanframegen_writesymbol(wlanframegen           _q,
 typedef struct wlanframesync_s * wlanframesync;
 
 // callback function
-//  _payload    :   received payload
-//  _rxvector   :   received vector (see Table 77)
-//  _userdata   :   user-defined data object
-typedef int (*wlanframesync_callback)(unsigned char *        _payload,
+//  _header_valid   : flag indicating if header is valid
+//  _payload        : received payload (NULL if header isn't valid)
+//  _rxvector       : received vector (see Table 77)
+//  _userdata       : user-defined data object
+typedef int (*wlanframesync_callback)(int                    _header_valid,
+                                      unsigned char *        _payload,
                                       struct wlan_rxvector_s _rxvector,
                                       void *                 _userdata);
 

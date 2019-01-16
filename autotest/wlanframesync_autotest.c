@@ -52,7 +52,8 @@ void usage()
 int wlanframesync_runtest(unsigned int _rate);
 
 // callback function
-static int callback(unsigned char *        _payload,
+static int callback(int                    _header_valid,
+                    unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata);
 
@@ -171,13 +172,20 @@ int wlanframesync_runtest(unsigned int _rate)
     return 0;
 }
 
-static int callback(unsigned char *        _payload,
+static int callback(int                    _header_valid,
+                    unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
                     void *                 _userdata)
 {
     printf("**** callback invoked\n");
 
     struct wlanframesync_autotest_s * testdata = (struct wlanframesync_autotest_s*) _userdata;
+
+    if (!_header_valid) {
+        fprintf(stderr,"wlanframesync_autotest: header invalid!\n");
+        testdata->valid = 0;
+        return 0;
+    }
 
     // count errors
     unsigned int num_bit_errors = count_bit_errors_array(_payload, testdata->msg_org, _rxvector.LENGTH);

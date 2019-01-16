@@ -22,7 +22,7 @@
 # Process with autoconf to generate configure script
 #
 
-AC_INIT([liquid-wlan],[0.0.0],[liquid@vt.edu])
+AC_INIT([liquid-wlan],[0.1.0],[liquid@vt.edu])
 AC_CONFIG_SRCDIR([src/libliquid_wlan.c])
 
 # permit auxiliary scripts directory (e.g. config.sub, config.guess, install-sh)
