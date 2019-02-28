@@ -182,7 +182,7 @@ void wlanframegen_print(wlanframegen _q)
         printf("    npad        :   %3u (number of pad bits)\n", _q->npad);
         printf("    dec msg len :   %3u (bytes in decoded message)\n", _q->dec_msg_len);
         printf("    enc msg len :   %3u (bytes in encoded message)\n", _q->enc_msg_len);
-        printf("    bytes/sym   :   %3u (number of encoded data bytes per OFDM symbols)\n", _q->bytes_per_symbol);
+        printf("    bytes/sym   :   %3u (number of encoded data bytes per OFDM symbol)\n", _q->bytes_per_symbol);
         printf("    signal dec  :   [%.2x %.2x %.2x]\n",
                 _q->signal_dec[0],
                 _q->signal_dec[1],
