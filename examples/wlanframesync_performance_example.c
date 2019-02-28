@@ -41,20 +41,33 @@ void usage()
     printf(" -d <step>  : SNR step size (dB), default:  1\n");
     printf(" -x <snr>   : stopping SNR (dB),  default:  10\n");
     printf(" -n <num>   : number of trials,   default: 1000\n");
-    printf(" -r <seed>  : random seed,        default: time(NULL)\n");
+    printf(" -r         : rate {6,9,12,18,24,36,48,54} M bits/s\n");
+    printf(" -S <seed>  : random seed,        default: time(NULL)\n");
 }
+
+int frame_len = 800;
+unsigned char msg_org[4096];
 
 int frame_detected;
 int header_decoded;
 int payload_decoded;
+int bit_errors;
 
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
-                    void *                 _userdata);
+                    void *                 _userdata)
+{
+    frame_detected  = 1;
+    header_decoded  = _header_valid;
+    bit_errors      = count_bit_errors_array(_payload, msg_org, _rxvector.LENGTH);
+    payload_decoded = _header_valid && bit_errors==0;
+    return 0;
+}
 
 void run_trial(wlanframegen  _fg,
                wlanframesync _fs,
+               unsigned int  _datarate,
                float         _snr);
 
 int main(int argc, char*argv[])
@@ -62,20 +75,36 @@ int main(int argc, char*argv[])
     // options
     float           SNRdB_min   = -3.0f;    // SNR (dB), min
     float           SNRdB_step  =  1.0f;    // SNR (dB), step
-    float           SNRdB_max   = 10.0f;    // SNR (dB), max
+    float           SNRdB_max   = 15.0f;    // SNR (dB), max
     unsigned int    num_trials  = 1000;     // number of trials to run
+    unsigned int    datarate    = WLANFRAME_RATE_6;
     unsigned int    seed        =    0;     // random seed
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:d:x:n:r:")) != EOF){
+    while((dopt = getopt(argc,argv,"hs:d:x:n:r:S:")) != EOF){
         switch (dopt) {
         case 'h': usage();                      return 0;
         case 's': SNRdB_min  = atof(optarg);    break;
         case 'd': SNRdB_step = atof(optarg);    break;
         case 'x': SNRdB_max  = atof(optarg);    break;
         case 'n': num_trials = atoi(optarg);    break;
-        case 'r': seed       = atoi(optarg);    break;
+        case 'r':
+            switch ( atoi(optarg) ) {
+            case 6:  datarate = WLANFRAME_RATE_6;  break;
+            case 9:  datarate = WLANFRAME_RATE_9;  break;
+            case 12: datarate = WLANFRAME_RATE_12; break;
+            case 18: datarate = WLANFRAME_RATE_18; break;
+            case 24: datarate = WLANFRAME_RATE_24; break;
+            case 36: datarate = WLANFRAME_RATE_36; break;
+            case 48: datarate = WLANFRAME_RATE_48; break;
+            case 54: datarate = WLANFRAME_RATE_54; break;
+            default:
+                fprintf(stderr,"error: %s, invalid rate '%s'\n", argv[0], optarg);
+                exit(1);
+            }
+            break;
+        case 'S': seed       = atoi(optarg);    break;
         default:
             fprintf(stderr,"error: %s, invalid rate '%s'\n", argv[0], optarg);
             exit(1);
@@ -98,24 +127,36 @@ int main(int argc, char*argv[])
     wlanframesync fs = wlanframesync_create(callback, NULL);
 
     // start trials
+    printf("# %8s %8s %8s %8s %12s %12s %12s\n",
+            "SNR (dB)", "detect", "headers", "payloads", "bit errors", "bit trials", "BER");
     float SNRdB;
     for (SNRdB = SNRdB_min; SNRdB <= SNRdB_max; SNRdB += SNRdB_step) {
         unsigned int n;
-        unsigned int num_frames_detected = 0;
-        unsigned int num_headers_decoded = 0;
-        unsigned int num_payloads_decoded= 0;
+        unsigned long int num_frames_detected  = 0;
+        unsigned long int num_headers_decoded  = 0;
+        unsigned long int num_payloads_decoded = 0;
+        unsigned long int num_bit_errors       = 0;
+        unsigned long int num_bit_trials       = 0;
         for (n=0; n<num_trials; n++) {
-            // run trial and update counters
-            run_trial(fg, fs, SNRdB);
+            // run trial
+            run_trial(fg, fs, datarate, SNRdB);
+
+            // update counters
             num_frames_detected  += frame_detected;
             num_headers_decoded  += header_decoded;
             num_payloads_decoded += payload_decoded;
+            num_bit_errors       += bit_errors;
+            num_bit_trials       += frame_len * 8;
         }
         // print results to screen
-        printf("  %8.3f %6u %6u %6u\n", SNRdB, 
+        printf("  %8.3f %8lu %8lu %8lu %12lu %12lu %12.4e\n",
+            SNRdB, 
             num_frames_detected,
             num_headers_decoded,
-            num_payloads_decoded);
+            num_payloads_decoded,
+            num_bit_errors,
+            num_bit_trials,
+            (float)num_bit_errors / (float)num_bit_trials);
     }
 
     // destroy objects and return
@@ -124,28 +165,18 @@ int main(int argc, char*argv[])
     return 0;
 }
 
-static int callback(int                    _header_valid,
-                    unsigned char *        _payload,
-                    struct wlan_rxvector_s _rxvector,
-                    void *                 _userdata)
-{
-    frame_detected  = 1;
-    header_decoded  = _header_valid;
-    payload_decoded = 1; // TODO: check this
-    return 0;
-}
-
 void run_trial(wlanframegen  _fg,
                wlanframesync _fs,
+               unsigned int  _datarate,
                float         _snr)
 {
     struct wlan_txvector_s txvector = {
-        .LENGTH      = 16,
-        .DATARATE    = WLANFRAME_RATE_36,
+        .LENGTH      = frame_len,
+        .DATARATE    = _datarate,
         .SERVICE     = 0,
         .TXPWR_LEVEL = 0};
 
-    float noise_floor = -120.0f;        // noise floor [dB]
+    float noise_floor = -40.0f;        // noise floor [dB]
     float nstd  = powf(10.0f, noise_floor/20.0f);
     float gamma = powf(10.0f, (_snr + noise_floor)/20.0f);
 
@@ -155,10 +186,10 @@ void run_trial(wlanframegen  _fg,
     frame_detected  = 0;
     header_decoded  = 0;
     payload_decoded = 0;
+    bit_errors      = frame_len * 8 / 2; // default to 50% error rate in case frame isn't detected
 
     //
     float complex buffer[80];
-    unsigned char msg_org[txvector.LENGTH];
 
     // assemble frame and print
     unsigned int i;
