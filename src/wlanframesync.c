@@ -111,14 +111,13 @@ struct wlanframesync_s {
         WLANFRAMESYNC_STATE_RXDATA,     // receive DATA field
     } state;
     signed int timer;                   // sample timer
+    signed int block_counter;           // count number of S1 symbol hypothesis tests
     unsigned int num_symbols;           // number of received OFDM data symbols
 
 #if DEBUG_WLANFRAMESYNC
     // debugging structures
     int debug_enabled;
-    agc_crcf agc_rx;        // automatic gain control (rssi)
     windowcf debug_x;
-    windowf  debug_rssi;
     windowcf debug_framesyms;
 #endif
 };
@@ -168,9 +167,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 #if DEBUG_WLANFRAMESYNC
     // debugging structures
     q->debug_enabled   = 0;
-    q->agc_rx          = NULL;
     q->debug_x         = NULL;
-    q->debug_rssi      = NULL;
     q->debug_framesyms = NULL;
 #endif
 
@@ -183,9 +180,7 @@ void wlanframesync_destroy(wlanframesync _q)
 {
 #if DEBUG_WLANFRAMESYNC
     // free debugging objects if necessary
-    if (_q->agc_rx          != NULL) agc_crcf_destroy(_q->agc_rx);
     if (_q->debug_x         != NULL) windowcf_destroy(_q->debug_x);
-    if (_q->debug_rssi      != NULL) windowf_destroy(_q->debug_rssi);
     if (_q->debug_framesyms != NULL) windowcf_destroy(_q->debug_framesyms);
 #endif
 
@@ -256,12 +251,7 @@ void wlanframesync_execute(wlanframesync          _q,
 
 #if DEBUG_WLANFRAMESYNC
         if (_q->debug_enabled) {
-            // apply agc (estimate initial signal gain)
-            float complex y;
-            agc_crcf_execute(_q->agc_rx, x, &y);
-
             windowcf_push(_q->debug_x, x);
-            windowf_push(_q->debug_rssi, agc_crcf_get_rssi(_q->agc_rx));
         }
 #endif
 
@@ -298,7 +288,7 @@ void wlanframesync_execute(wlanframesync          _q,
 // get receiver RSSI
 float wlanframesync_get_rssi(wlanframesync _q)
 {
-    return 0.0f;
+    return 10*log10f(_q->g0);
 }
 
 // get receiver carrier frequency offset estimate
@@ -400,7 +390,6 @@ void wlanframesync_execute_rxshort0(wlanframesync _q)
 
     float complex s_hat;
     wlanframesync_S0_metrics(_q, _q->G0a, &s_hat);
-    //float g = agc_crcf_get_gain(_q->agc_rx);
     s_hat *= _q->g0;
 
     // save first 'short' symbol statistic
@@ -435,7 +424,6 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
 
     float complex s_hat;
     wlanframesync_S0_metrics(_q, _q->G0b, &s_hat);
-    //float g = agc_crcf_get_gain(_q->agc_rx);
     s_hat *= _q->g0;
 
     // save second 'short' symbol statistic
@@ -469,11 +457,13 @@ void wlanframesync_execute_rxshort1(wlanframesync _q)
     nco_crcf_set_frequency(_q->nco_rx, nu_hat);
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("   nu_hat[0]:   %12.8f\n", nu_hat);
+    printf("  nu_hat[0]:   %12.8f\n", nu_hat);
+    printf("  searching for long sequence...\n");
 #endif
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXLONG0;
+    _q->block_counter = 0;
 }
 
 void wlanframesync_execute_rxlong0(wlanframesync _q)
@@ -532,6 +522,20 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
         _q->timer = 0;
     }
 
+    // eventually time-out
+    _q->block_counter++;
+
+    // TODO: determine appropriate number here
+    if (_q->block_counter == 32) {
+#if DEBUG_WLANFRAMESYNC_PRINT
+        printf("    timeout for S1[a]\n");
+#endif
+        // set state
+        _q->state = WLANFRAMESYNC_STATE_SEEKPLCP;
+
+        // reset timer
+        _q->timer = 0;
+    }
 }
 
 void wlanframesync_execute_rxlong1(wlanframesync _q)
@@ -1199,17 +1203,8 @@ void wlanframesync_debug_enable(wlanframesync _q)
 {
     // create debugging objects if necessary
 #if DEBUG_WLANFRAMESYNC
-    // agc, rssi
-    if (_q->agc_rx == NULL)
-        _q->agc_rx = agc_crcf_create();
-    agc_crcf_set_bandwidth(_q->agc_rx,  1e-2f);
-    agc_crcf_set_gain_limits(_q->agc_rx, 1.0f, 1e7f);
-
     if (_q->debug_x == NULL)
         _q->debug_x = windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
-
-    if (_q->debug_rssi == NULL)
-        _q->debug_rssi = windowf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
 
     if (_q->debug_framesyms == NULL)
         _q->debug_framesyms = windowcf_create(DEBUG_WLANFRAMESYNC_BUFFER_LEN);
@@ -1233,9 +1228,7 @@ void wlanframesync_debug_print(wlanframesync _q,
                                const char * _filename)
 {
 #if DEBUG_WLANFRAMESYNC
-    if (_q->agc_rx          == NULL ||
-        _q->debug_x         == NULL ||
-        _q->debug_rssi      == NULL ||
+    if (_q->debug_x         == NULL ||
         _q->debug_framesyms == NULL)
     {
         fprintf(stderr,"error: wlanframe_debug_print(), debugging objects don't exist; enable debugging first\n");
@@ -1254,7 +1247,6 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"n = %u;\n", DEBUG_WLANFRAMESYNC_BUFFER_LEN);
     unsigned int i;
     float complex * rc;
-    float * r;
 
     fprintf(fid,"x = zeros(1,n);\n");
     windowcf_read(_q->debug_x, &rc);
@@ -1265,7 +1257,9 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"xlabel('sample index');\n");
     fprintf(fid,"ylabel('received signal, x');\n");
 
+#if 0
     // write agc_rssi
+    float * r;
     fprintf(fid,"\n\n");
     fprintf(fid,"agc_rssi = zeros(1,%u);\n", DEBUG_WLANFRAMESYNC_BUFFER_LEN);
     windowf_read(_q->debug_rssi, &r);
@@ -1274,6 +1268,7 @@ void wlanframesync_debug_print(wlanframesync _q,
     fprintf(fid,"figure;\n");
     fprintf(fid,"plot(agc_rssi)\n");
     fprintf(fid,"ylabel('RSSI [dB]');\n");
+#endif
     
     // write frame symbols
     fprintf(fid,"framesyms = zeros(1,n);\n");

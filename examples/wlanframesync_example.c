@@ -40,12 +40,12 @@
 void usage()
 {
     printf("Usage: wlanframesync_example [OPTION]\n");
-    printf("  h     : print help\n");
-    printf("  d     : enable debugging\n");
-    printf("  s     : signal-to-noise ratio [dB], default: 30\n");
-    printf("  F     : carrier frequency offset, default: 0.002\n");
-    printf("  n     : number of data bytes\n");
-    printf("  r     : rate {6,9,12,18,24,36,48,54} M bits/s\n");
+    printf("  -h         : print help\n");
+    printf("  -d         : enable debugging\n");
+    printf("  -s <snr>   : signal-to-noise ratio [dB], default: 30\n");
+    printf("  -F <freq>  : carrier frequency offset, default: 0.002\n");
+    printf("  -n <bytes> : number of data bytes\n");
+    printf("  -r <rate>  : rate {6,9,12,18,24,36,48,54} M bits/s\n");
 }
 
 static int callback(int                    _header_valid,
@@ -68,7 +68,7 @@ int main(int argc, char*argv[])
     int debug_enabled = 0;
     
     // channel options
-    float noise_floor = -120.0f;        // noise floor [dB]
+    float noise_floor = -20.0f;        // noise floor [dB]
     float SNRdB = 20.0f;                // signal-to-noise ratio [dB]
     float phi   = 0.0f;                 // carrier phase offset
     float dphi  = 0.0f;                 // carrier frequency offset
