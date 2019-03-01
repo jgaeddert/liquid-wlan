@@ -36,16 +36,16 @@
 #define DEBUG_WLANFRAMESYNC_BUFFER_LEN  (2048)
 
 // Thresholds for detecting short sequences
-#define WLANFRAMESYNC_S0A_ABS_THRESH    (0.4f)
+#define WLANFRAMESYNC_S0A_ABS_THRESH    (0.35f)
 //#define WLANFRAMESYNC_S0B_ABS_THRESH    (0.5f)
 
 // Thresholds for detecting first long sequence, S1[a]
-#define WLANFRAMESYNC_S1A_ABS_THRESH    (0.5f)
-#define WLANFRAMESYNC_S1A_ARG_THRESH    (0.2f)
+#define WLANFRAMESYNC_S1A_ABS_THRESH    (0.35f)
+#define WLANFRAMESYNC_S1A_ARG_THRESH    (0.3f)
 
 // Thresholds for detecting second long sequence, S1[b]
-#define WLANFRAMESYNC_S1B_ABS_THRESH    (0.5f)
-#define WLANFRAMESYNC_S1B_ARG_THRESH    (0.2f)
+#define WLANFRAMESYNC_S1B_ABS_THRESH    (0.35f)
+#define WLANFRAMESYNC_S1B_ARG_THRESH    (0.3f)
 
 struct wlanframesync_s {
     // callback
@@ -497,7 +497,7 @@ void wlanframesync_execute_rxlong0(wlanframesync _q)
     _q->s1a_hat = s_hat;
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+    printf("    s_hat[%2u] :   %12.8f <%12.8f>\n", _q->block_counter, cabsf(s_hat), cargf(s_hat));
 #endif
 
     float s_hat_abs = cabsf(s_hat);
@@ -567,7 +567,7 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
     //s_hat *= liquid_cexpjf((float)(_q->backoff)*2.0f*M_PI/(float)(_q->M));
 
 #if DEBUG_WLANFRAMESYNC_PRINT
-    printf("    s_hat   :   %12.8f <%12.8f>\n", cabsf(s_hat), cargf(s_hat));
+    printf("    s_hat[%2u] :   %12.8f <%12.8f>\n", _q->block_counter, cabsf(s_hat), cargf(s_hat));
 #endif
 
     // check conditions for s_hat
@@ -590,7 +590,7 @@ void wlanframesync_execute_rxlong1(wlanframesync _q)
         float nu_hat = wlanframesync_estimate_cfo_S1(_q->G1a, _q->G1b);
         nco_crcf_adjust_frequency(_q->nco_rx, nu_hat);
 #if DEBUG_WLANFRAMESYNC_PRINT
-        printf("   nu_hat[1]:   %12.8f\n", nu_hat);
+        printf("    nu_hat[1] :   %12.8f\n", nu_hat);
 #endif
         // TODO : de-rotate S1b by phase offset (help with equalizer)
 
