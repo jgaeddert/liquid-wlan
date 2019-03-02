@@ -33,6 +33,8 @@
 #include <liquid/liquid.h>
 #include "liquid-wlan.h"
 
+#define FILENAME_OUTPUT "wlanframesync_performance_example.dat"
+
 void usage()
 {
     printf("Usage: wlanframesync_example [OPTION]\n");
@@ -42,6 +44,7 @@ void usage()
     printf(" -x <snr>   : stopping SNR (dB),  default:  10\n");
     printf(" -n <num>   : number of trials,   default: 1000\n");
     printf(" -r         : rate {6,9,12,18,24,36,48,54} M bits/s\n");
+    printf(" -o <file>  : output filename,    default: %s\n", FILENAME_OUTPUT);
     printf(" -S <seed>  : random seed,        default: time(NULL)\n");
 }
 
@@ -78,11 +81,12 @@ int main(int argc, char*argv[])
     float           SNRdB_max   = 15.0f;    // SNR (dB), max
     unsigned int    num_trials  = 1000;     // number of trials to run
     unsigned int    datarate    = WLANFRAME_RATE_6;
+    const char *    filename    = FILENAME_OUTPUT;
     unsigned int    seed        =    0;     // random seed
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:d:x:n:r:S:")) != EOF){
+    while((dopt = getopt(argc,argv,"hs:d:x:n:r:o:S:")) != EOF){
         switch (dopt) {
         case 'h': usage();                      return 0;
         case 's': SNRdB_min  = atof(optarg);    break;
@@ -104,6 +108,7 @@ int main(int argc, char*argv[])
                 exit(1);
             }
             break;
+        case 'o': filename   = optarg;          break;
         case 'S': seed       = atoi(optarg);    break;
         default:
             fprintf(stderr,"error: %s, invalid rate '%s'\n", argv[0], optarg);
@@ -119,6 +124,14 @@ int main(int argc, char*argv[])
         exit(1);
     }
 
+    // try to open output file
+    FILE * fid = fopen(filename,"w");
+    if (fid == NULL) {
+        fprintf(stderr,"error: %s:%u, could not open %s for writing\n",
+                __FILE__,__LINE__,filename);
+        return -1;
+    }
+
     // set random seed
     srand(seed==0 ? time(NULL) : seed);
 
@@ -126,9 +139,15 @@ int main(int argc, char*argv[])
     wlanframegen fg  = wlanframegen_create();
     wlanframesync fs = wlanframesync_create(callback, NULL);
 
-    // start trials
-    printf("# %8s %8s %8s %8s %12s %12s %12s\n",
+    // print header
+    char str_buf[256];
+    sprintf(str_buf, "# %8s %8s %8s %8s %12s %12s %12s\n",
             "SNR (dB)", "detect", "headers", "payloads", "bit errors", "bit trials", "BER");
+    fprintf(stdout,"%s",str_buf);
+    fprintf(fid,   "%s",str_buf);
+    fclose(fid);
+
+    // start trials
     float SNRdB;
     for (SNRdB = SNRdB_min; SNRdB <= SNRdB_max; SNRdB += SNRdB_step) {
         unsigned int n;
@@ -149,7 +168,7 @@ int main(int argc, char*argv[])
             num_bit_trials       += frame_len * 8;
         }
         // print results to screen
-        printf("  %8.3f %8lu %8lu %8lu %12lu %12lu %12.4e\n",
+        sprintf(str_buf,"  %8.3f %8lu %8lu %8lu %12lu %12lu %12.4e\n",
             SNRdB, 
             num_frames_detected,
             num_headers_decoded,
@@ -157,6 +176,16 @@ int main(int argc, char*argv[])
             num_bit_errors,
             num_bit_trials,
             (float)num_bit_errors / (float)num_bit_trials);
+        fprintf(stdout,"%s",str_buf);
+
+        FILE * fid = fopen(filename,"a");
+        if (fid == NULL) {
+            fprintf(stderr,"error: %s:%u, could not open %s for writing\n",
+                    __FILE__,__LINE__,filename);
+            return -1;
+        }
+        fprintf(fid,   "%s",str_buf);
+        fclose(fid);
     }
 
     // destroy objects and return
