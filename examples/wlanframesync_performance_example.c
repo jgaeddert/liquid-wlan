@@ -44,7 +44,8 @@ void usage()
     printf(" -x <snr>   : SNR: maximum value (dB),               default:  10\n");
     printf(" -n <num>   : max number of trials to run,           default: 10,000\n");
     printf(" -m <bits>  : min number of bit errors for success,  default:    500\n");
-    printf(" -r         : rate {6,9,12,18,24,36,48,54} M bits/s, default: 6\n");
+    printf(" -r <rate>  : rate {6,9,12,18,24,36,48,54} M bits/s, default: 6\n");
+    printf(" -L <len>   : frame length (bytes),                  default: 800\n");
     printf(" -o <file>  : output filename,                       default: %s\n", FILENAME_OUTPUT);
     printf(" -S <seed>  : random seed,                           default: time(NULL)\n");
 }
@@ -92,7 +93,7 @@ int main(int argc, char*argv[])
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:d:x:n:m:r:o:S:")) != EOF){
+    while((dopt = getopt(argc,argv,"hs:d:x:n:m:r:L:o:S:")) != EOF){
         switch (dopt) {
         case 'h': usage();                         return 0;
         case 's': SNRdB_min      = atof(optarg);   break;
@@ -115,6 +116,7 @@ int main(int argc, char*argv[])
                 exit(1);
             }
             break;
+        case 'L': frame_len  = atoi(optarg);    break;
         case 'o': filename   = optarg;          break;
         case 'S': seed       = atoi(optarg);    break;
         default:
