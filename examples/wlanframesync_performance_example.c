@@ -48,7 +48,8 @@ void usage()
     printf(" -S <seed>  : random seed,        default: time(NULL)\n");
 }
 
-int frame_len = 800;
+unsigned int  datarate  = WLANFRAME_RATE_6;
+int           frame_len = 800;
 unsigned char msg_org[4096];
 
 int frame_detected;
@@ -62,6 +63,11 @@ static int callback(int                    _header_valid,
                     void *                 _userdata)
 {
     frame_detected  = 1;
+
+    // check known frame parameters to determine if there was an error
+    if (_rxvector.LENGTH != frame_len || _rxvector.DATARATE != datarate)
+        return 0;
+
     header_decoded  = _header_valid;
     bit_errors      = count_bit_errors_array(_payload, msg_org, _rxvector.LENGTH);
     payload_decoded = _header_valid && bit_errors==0;
@@ -70,7 +76,6 @@ static int callback(int                    _header_valid,
 
 void run_trial(wlanframegen  _fg,
                wlanframesync _fs,
-               unsigned int  _datarate,
                float         _snr);
 
 int main(int argc, char*argv[])
@@ -80,7 +85,6 @@ int main(int argc, char*argv[])
     float           SNRdB_step  =  1.0f;    // SNR (dB), step
     float           SNRdB_max   = 15.0f;    // SNR (dB), max
     unsigned int    num_trials  = 1000;     // number of trials to run
-    unsigned int    datarate    = WLANFRAME_RATE_6;
     const char *    filename    = FILENAME_OUTPUT;
     unsigned int    seed        =    0;     // random seed
 
@@ -158,7 +162,7 @@ int main(int argc, char*argv[])
         unsigned long int num_bit_trials       = 0;
         for (n=0; n<num_trials; n++) {
             // run trial
-            run_trial(fg, fs, datarate, SNRdB);
+            run_trial(fg, fs, SNRdB);
 
             // update counters
             num_frames_detected  += frame_detected;
@@ -196,12 +200,11 @@ int main(int argc, char*argv[])
 
 void run_trial(wlanframegen  _fg,
                wlanframesync _fs,
-               unsigned int  _datarate,
                float         _snr)
 {
     struct wlan_txvector_s txvector = {
         .LENGTH      = frame_len,
-        .DATARATE    = _datarate,
+        .DATARATE    = datarate,
         .SERVICE     = 0,
         .TXPWR_LEVEL = 0};
 
