@@ -39,13 +39,14 @@ void usage()
 {
     printf("Usage: wlanframesync_example [OPTION]\n");
     printf(" -h         : print help\n");
-    printf(" -s <snr>   : starting SNR (dB),  default: -3\n");
-    printf(" -d <step>  : SNR step size (dB), default:  1\n");
-    printf(" -x <snr>   : stopping SNR (dB),  default:  10\n");
-    printf(" -n <num>   : number of trials,   default: 1000\n");
-    printf(" -r         : rate {6,9,12,18,24,36,48,54} M bits/s\n");
-    printf(" -o <file>  : output filename,    default: %s\n", FILENAME_OUTPUT);
-    printf(" -S <seed>  : random seed,        default: time(NULL)\n");
+    printf(" -s <snr>   : SNR: starting value (dB),              default: -3\n");
+    printf(" -d <step>  : SNR: step size (dB),                   default:  1\n");
+    printf(" -x <snr>   : SNR: maximum value (dB),               default:  10\n");
+    printf(" -n <num>   : max number of trials to run,           default: 10,000\n");
+    printf(" -m <bits>  : min number of bit errors for success,  default:    500\n");
+    printf(" -r         : rate {6,9,12,18,24,36,48,54} M bits/s, default: 6\n");
+    printf(" -o <file>  : output filename,                       default: %s\n", FILENAME_OUTPUT);
+    printf(" -S <seed>  : random seed,                           default: time(NULL)\n");
 }
 
 unsigned int  datarate  = WLANFRAME_RATE_6;
@@ -81,22 +82,24 @@ void run_trial(wlanframegen  _fg,
 int main(int argc, char*argv[])
 {
     // options
-    float           SNRdB_min   = -3.0f;    // SNR (dB), min
-    float           SNRdB_step  =  1.0f;    // SNR (dB), step
-    float           SNRdB_max   = 15.0f;    // SNR (dB), max
-    unsigned int    num_trials  = 1000;     // number of trials to run
-    const char *    filename    = FILENAME_OUTPUT;
-    unsigned int    seed        =    0;     // random seed
+    float               SNRdB_min       = -3.0f;    // SNR (dB), min
+    float               SNRdB_step      =  1.0f;    // SNR (dB), step
+    float               SNRdB_max       = 30.0f;    // SNR (dB), max
+    unsigned long int   max_trials      = 10000;    // maximum number of trials to run
+    unsigned long int   min_bit_errors  =  500;  // minimum bit errors before success
+    const char *        filename        = FILENAME_OUTPUT;
+    unsigned int        seed            =    0;     // random seed
 
     // get options
     int dopt;
-    while((dopt = getopt(argc,argv,"hs:d:x:n:r:o:S:")) != EOF){
+    while((dopt = getopt(argc,argv,"hs:d:x:n:m:r:o:S:")) != EOF){
         switch (dopt) {
-        case 'h': usage();                      return 0;
-        case 's': SNRdB_min  = atof(optarg);    break;
-        case 'd': SNRdB_step = atof(optarg);    break;
-        case 'x': SNRdB_max  = atof(optarg);    break;
-        case 'n': num_trials = atoi(optarg);    break;
+        case 'h': usage();                         return 0;
+        case 's': SNRdB_min      = atof(optarg);   break;
+        case 'd': SNRdB_step     = atof(optarg);   break;
+        case 'x': SNRdB_max      = atof(optarg);   break;
+        case 'n': max_trials     = atoi(optarg);   break;
+        case 'm': min_bit_errors = atoi(optarg);   break;
         case 'r':
             switch ( atoi(optarg) ) {
             case 6:  datarate = WLANFRAME_RATE_6;  break;
@@ -145,42 +148,65 @@ int main(int argc, char*argv[])
 
     // print header
     char str_buf[256];
-    sprintf(str_buf, "# %8s %8s %8s %8s %12s %12s %12s\n",
-            "SNR (dB)", "detect", "headers", "payloads", "bit errors", "bit trials", "BER");
+    sprintf(str_buf, "# %8s %8s %8s %8s %8s %12s %12s %12s\n",
+            "SNR (dB)", "trials", "detect", "headers", "payloads", "bit errors", "bit trials", "BER");
     fprintf(stdout,"%s",str_buf);
     fprintf(fid,   "%s",str_buf);
     fclose(fid);
 
     // start trials
     float SNRdB;
+    int   success;
+    unsigned long int min_trials = 500;    // minimum number of trials to run
     for (SNRdB = SNRdB_min; SNRdB <= SNRdB_max; SNRdB += SNRdB_step) {
-        unsigned int n;
+        unsigned long int n                    = 0;
         unsigned long int num_frames_detected  = 0;
         unsigned long int num_headers_decoded  = 0;
         unsigned long int num_payloads_decoded = 0;
         unsigned long int num_bit_errors       = 0;
         unsigned long int num_bit_trials       = 0;
-        for (n=0; n<num_trials; n++) {
+        int               continue_running     = 1;
+
+        //
+        success = 0;
+        while (continue_running) {
             // run trial
             run_trial(fg, fs, SNRdB);
 
             // update counters
+            n                    += 1;
             num_frames_detected  += frame_detected;
             num_headers_decoded  += header_decoded;
             num_payloads_decoded += payload_decoded;
             num_bit_errors       += bit_errors;
             num_bit_trials       += frame_len * 8;
+
+            // check exit criteria
+            if (n == max_trials)
+                continue_running = 0;
+            else if (n >= min_trials && num_bit_errors >= min_bit_errors) {
+                continue_running = 0;
+                success          = 1;
+            }
+
+            // print statistics to screen
+            if (!continue_running || ((n)%100)==0) {
+                // print results to screen
+                sprintf(str_buf,"%c %8.3f %8lu %8lu %8lu %8lu %12lu %12lu %12.4e",
+                    success ? ' ' : '#',
+                    SNRdB,
+                    n,
+                    num_frames_detected,
+                    num_headers_decoded,
+                    num_payloads_decoded,
+                    num_bit_errors,
+                    num_bit_trials,
+                    (float)num_bit_errors / (float)num_bit_trials);
+                fprintf(stdout,"%s\r",str_buf);
+                fflush(stdout);
+            }
         }
-        // print results to screen
-        sprintf(str_buf,"  %8.3f %8lu %8lu %8lu %12lu %12lu %12.4e\n",
-            SNRdB, 
-            num_frames_detected,
-            num_headers_decoded,
-            num_payloads_decoded,
-            num_bit_errors,
-            num_bit_trials,
-            (float)num_bit_errors / (float)num_bit_trials);
-        fprintf(stdout,"%s",str_buf);
+        fprintf(stdout,"%s\n",str_buf);
 
         FILE * fid = fopen(filename,"a");
         if (fid == NULL) {
@@ -188,8 +214,11 @@ int main(int argc, char*argv[])
                     __FILE__,__LINE__,filename);
             return -1;
         }
-        fprintf(fid,   "%s",str_buf);
+        fprintf(fid,"%s\n",str_buf);
         fclose(fid);
+
+        if (!success)
+            break;
     }
 
     // destroy objects and return
