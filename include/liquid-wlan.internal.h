@@ -74,8 +74,8 @@ void liquid_wlan_repack_bytes(unsigned char * _sym_in,
 #   define FFT_CREATE_PLAN      fft_create_plan
 #   define FFT_DESTROY_PLAN     fft_destroy_plan
 #   define FFT_EXECUTE          fft_execute
-#   define FFT_DIR_FORWARD      FFT_FORWARD
-#   define FFT_DIR_BACKWARD     FFT_REVERSE
+#   define FFT_DIR_FORWARD      LIQUID_FFT_FORWARD
+#   define FFT_DIR_BACKWARD     LIQUID_FFT_BACKWARD
 #   define FFT_METHOD           0
 #endif
 
