@@ -259,6 +259,9 @@ void wlanframegen_assemble(wlanframegen           _q,
     }
 #endif
 
+    // reset state
+    wlanframegen_reset(_q);
+
     // set internal properties
     _q->rate   = _txvector.DATARATE;
     _q->length = _txvector.LENGTH;
