@@ -235,6 +235,14 @@ void wlanframegen_reset(wlanframegen _q)
     _q->X[37] = 0.0f;
 }
 
+// get length of frame (symbols)
+//  _q              :   framing object
+unsigned int wlanframegen_getframelen(wlanframegen _q)
+{
+    return  5 /* S0a + S0b + S1a + S1b + signal */ + _q->nsym + 1 /* NULL */;
+}
+
+
 // assemble frame (see Table 76)
 //  _q          :   framing object
 //  _payload    :   raw payload data [size: _opts.LENGTH x 1]

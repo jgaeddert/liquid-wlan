@@ -122,6 +122,10 @@ void wlanframegen_print(wlanframegen _q);
 // reset WLAN framing generator object internal state
 void wlanframegen_reset(wlanframegen _q);
 
+// get length of frame (symbols)
+//  _q          :   framing object
+unsigned int wlanframegen_getframelen(wlanframegen _q);
+
 // assemble frame (see Table 76)
 //  _q          :   framing object
 //  _payload    :   raw payload data [size: _opts.LENGTH x 1]
