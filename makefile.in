@@ -118,6 +118,10 @@ src/gentab/wlan_intlv_R54.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 54 > 
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
 
+# bindings
+examples/bind_example : % : %.cc $(objects) include/wlanframegen.hh
+	g++ -Wall -I ./include -o $@ $< $(objects) ${LDFLAGS}
+
 ##
 ## TARGET : all       - build shared library (default)
 ##
