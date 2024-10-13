@@ -142,7 +142,7 @@ void wlan_packet_encode(unsigned int    _rate,
     msg_org[0] = 0x00;
     msg_org[1] = 0x00;
     for (i=0; i<length; i++)
-        msg_org[i+2] = liquid_wlan_reverse_byte[_msg_dec[i]];
+        msg_org[i+2] = _msg_dec == NULL ? 0x00 : liquid_wlan_reverse_byte[_msg_dec[i]];
     for (i=length+2; i<dec_msg_len; i++)
         msg_org[i] = 0x00;
 

@@ -124,7 +124,7 @@ void wlanframegen_reset(wlanframegen _q);
 
 // assemble frame (see Table 76)
 //  _q          :   framing object
-//  _payload    :   raw payload data [size: _opts.LENGTH x 1]
+//  _payload    :   raw payload data [size: _opts.LENGTH x 1], set to NULL for default data (zeros)
 //  _txvector   :   framing options
 void wlanframegen_assemble(wlanframegen           _q,
                            unsigned char *        _payload,
