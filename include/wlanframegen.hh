@@ -5,6 +5,7 @@
 #include <complex>
 #include <iostream>
 #include <string>
+#include <liquid/liquid.h>
 #include "liquid-wlan.h"
 
 namespace liquid {
@@ -14,10 +15,10 @@ class framegen
 {
   public:
     // default constructor
-    framegen() { q = wlanframegen_create();  }
+    framegen() { fg = wlanframegen_create();  }
 
     // destructor
-    ~framegen() { wlanframegen_destroy(q); }
+    ~framegen() { wlanframegen_destroy(fg); }
 
     void reset() { }
 
@@ -31,13 +32,21 @@ class framegen
     friend std::ostream & operator<<(std::ostream & os, framegen & rhs)
         { os << rhs.repr(); return os; }
 
-    //void execute(unsigned char * _header,
-    //             unsigned char * _payload,
-    //             std::complex<float> * _frame)
-    //{ wlanframegen_execute(q, _header, _payload, _frame); }
+    // assemble frame (random data)
+    void assemble(unsigned int _length,
+                  unsigned int _datarate = WLANFRAME_RATE_6,
+                  unsigned int _service = 0,
+                  unsigned int _txpwr_level = 1);
+
+    /*! @brief write OFDM symbol returning flag if the frame is complete
+     *  @param _buf input sample buffer, shape: (80,)
+     *  @return boolean flag indicating if frame is complete
+     */
+    bool writesymbol(std::complex<float> * _buf)
+        { return wlanframegen_writesymbol(fg, _buf); }
 
   private:
-    wlanframegen q;
+    wlanframegen fg;
 
 #ifdef LIQUID_PYTHONLIB
   public:
