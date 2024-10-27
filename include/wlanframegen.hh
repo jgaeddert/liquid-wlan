@@ -48,7 +48,7 @@ class framegen
   private:
     wlanframegen fg;
 
-#ifdef LIQUID_PYTHONLIB
+#ifdef PYTHONLIB
   public:
     py::array_t<std::complex<float>> py_execute(py::object & _header,
                                                 py::object & _payload)
@@ -67,7 +67,7 @@ class framegen
 #endif
 };
 
-#ifdef LIQUID_PYTHONLIB
+#ifdef PYTHONLIB
 static void init_framegen(py::module &m)
 {
     py::class_<framegen>(m, "framegen", "Frame generator with 64-byte payload")
