@@ -57,24 +57,7 @@ extern "C" {
 #define LIQUID_WLAN_CONCAT(prefix, name) prefix ## name
 #define LIQUID_WLAN_VALIDATE_INPUT
 
-/* 
- * Compile-time complex data type definitions
- *
- * Default: use the C99 complex data type, otherwise
- * define complex type compatible with the C++ complex standard,
- * otherwise resort to defining binary compatible array.
- */
-#if LIQUID_WLAN_USE_COMPLEX_H==1
-#   include <complex.h>
-#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef R _Complex C
-#elif defined _GLIBCXX_COMPLEX
-#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef std::complex<R> C
-#else
-#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef struct {R real; R imag;} C;
-#endif
-//#   define LIQUID_WLAN_DEFINE_COMPLEX(R,C) typedef R C[2]
-
-LIQUID_WLAN_DEFINE_COMPLEX(float,  liquid_float_complex);
+#include <liquid/liquid.h>
 
 // rates
 #define WLANFRAME_RATE_6        (0) // BPSK,   r1/2, 1101
