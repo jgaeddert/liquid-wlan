@@ -7,6 +7,7 @@
 #include <string>
 #include <liquid/liquid.h>
 #include "liquid-wlan.h"
+#include "liquid-wlan.python.hh"
 
 namespace liquid {
 namespace wlan {
@@ -44,6 +45,9 @@ class framegen
      */
     bool writesymbol(std::complex<float> * _buf)
         { return wlanframegen_writesymbol(fg, _buf); }
+
+    // dummy property
+    unsigned int get_header_length() const { return 0; }
 
   private:
     wlanframegen fg;

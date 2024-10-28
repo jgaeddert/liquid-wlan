@@ -122,10 +122,12 @@ esac
 
 case $target_os in
 darwin*)
+    CXX_FLAGS_PYBIND="-undefined dynamic_lookup"
     SH_LIB=libliquid-wlan.dylib
     REBIND=""
     ;;
 *)
+    CXX_FLAGS_PYBIND=""
     SH_LIB=libliquid-wlan.so
     REBIND=ldconfig
     ;;
@@ -140,6 +142,7 @@ AC_SUBST(MLIBS)                     #
 AC_SUBST(SH_LIB)                    # output shared library target
 AC_SUBST(REBIND)                    # rebinding tool (e.g. ldconfig)
 AC_SUBST(ARCH_OPTION)               # compiler architecture option
+AC_SUBST(CXX_FLAGS_PYBIND)          # custom flags for pybind
 
 AC_CONFIG_FILES([makefile])
 AC_OUTPUT

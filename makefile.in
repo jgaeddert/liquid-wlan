@@ -56,6 +56,7 @@ CONFIG_CFLAGS	= @ARCH_OPTION@
 # -g : debugging info
 CFLAGS		+= $(INCLUDE_CFLAGS) -g -O2 -Wall -fPIC $(CONFIG_CFLAGS)
 CFLAGS		+= -Wno-deprecated-declarations
+CXXFLAGS	= $(CFLAGS) -std=c++14 -Wno-return-type-c-linkage
 LDFLAGS		+= @LIBS@
 ARFLAGS		= r
 PATHSEP		= /
@@ -143,7 +144,7 @@ PYBIND11_LIBS     := $(shell python3-config --libs)
 PYBIND11_LDFLAGS  := $(shell python3-config --ldflags)
 
 # re-compile targets with python extensions
-objects_python = $(patsubst *.cc.o,%.python.o,$(objects_cc))
+objects_python = $(patsubst %.cc.o,%.python.o,$(objects_cc))
 
 $(objects_python) : src/%.python.o : src/%.cc include/%.hh $(include_headers)
 	g++ ${CXXFLAGS} -D PYTHONLIB ${PYBIND11_INCLUDES} -c -o $@ $<
@@ -157,6 +158,9 @@ ${pythonlib} : src/liquid.python.o $(objects) $(objects_python)
 	g++ ${CXXFLAGS} ${PYBIND11_FLAGS} -shared -fPIC -o $@ $^ ${LIBS} ${PYBIND11_LDFLAGS} ${PYBIND11_LIBS}
 
 python: ${pythonlib}
+
+clean-python:
+	$(RM) src/*.python.o ${pythonlib}
 
 ##
 ## TARGET : all       - build shared library (default)
@@ -392,7 +396,7 @@ clean-sandbox:
 ##
 
 
-clean: clean-check clean-examples clean-sandbox
+clean: clean-check clean-examples clean-sandbox clean-python
 	$(RM) $(objects)
 	$(RM) src/gentab/wlan_interleaver_gentab
 	$(RM) src/gentab/wlan_intlv_R*.c
