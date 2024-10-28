@@ -1,6 +1,7 @@
 
 build:
   image: debian
+  tags: [docker]
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
