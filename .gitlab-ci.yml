@@ -15,6 +15,7 @@ build:
     - ./bootstrap.sh
     - ./configure
     - make
+    - make python
     - make check
     - python3 -c "import liquidwlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
 
