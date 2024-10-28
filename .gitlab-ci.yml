@@ -9,7 +9,7 @@ build:
     - apt -qq install -y --no-install-recommends build-essential cmake
     - apt -qq install -y --no-install-recommends python3-pip python3-dev pybind11-dev virtualenv
     - apt -qq install -y --no-install-recommends libliquid-dev
-    - virtualenv env/liquid-wlan -p python3.10
+    - virtualenv env/liquid-wlan
     - source env/liquid-wlan/bin/activate
     - pip install -r requirements.txt
     - ./bootstrap.sh
