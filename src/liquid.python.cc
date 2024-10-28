@@ -5,7 +5,7 @@
 namespace liquid {
 namespace wlan {
 
-PYBIND11_MODULE(liquid_wlan, m) {
+PYBIND11_MODULE(liquidwlan, m) {
     m.doc() = "software-defined radio signal processing library";
 
     m.def("version", [](){return "0.1.0";}, R"pbdoc(
