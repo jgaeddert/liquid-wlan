@@ -31,3 +31,21 @@ void wlan::framegen::assemble(unsigned int _length,
     delete [] payload;
 }
 
+#ifdef PYTHONLIB
+void init_framegen(py::module &m)
+{
+    py::class_<wlan::framegen>(m, "framegen", "Frame generator with 64-byte payload")
+        .def(py::init<>())
+        .def("__repr__", &wlan::framegen::repr)
+        .def_property_readonly("header_len",
+            &wlan::framegen::get_header_length,
+            "get length of header (bytes)")
+        .def("execute",
+            &wlan::framegen::py_execute,
+            "generate a frame given header and payload",
+            py::arg("header")=py::none(),
+            py::arg("payload")=py::none())
+        ;
+}
+#endif
+
