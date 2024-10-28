@@ -1,0 +1,19 @@
+
+build:
+  image: debian
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - apt -qq update
+    - apt -qq install -y --no-install-recommends build-essential cmake
+    - apt -qq install -y --no-install-recommends python3-pip python3-dev pybind11-dev virtualenv
+    - apt -qq install -y --no-install-recommends libliquid-dev
+    - virtualenv env/liquid-wlan -p python3.10
+    - source env/liquid-wlan/bin/activate
+    - pip install -r requirements.txt
+    - ./bootstrap.sh
+    - ./configure
+    - make
+    - make check
+    - python3 -c "import liquidwlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
+
