@@ -6,7 +6,7 @@ build:
     DEBIAN_FRONTEND: noninteractive
   script:
     - apt -qq update
-    - apt -qq install -y --no-install-recommends build-essential cmake
+    - apt -qq install -y --no-install-recommends automake autoconf build-essential
     - apt -qq install -y --no-install-recommends python3-pip python3-dev pybind11-dev virtualenv
     - apt -qq install -y --no-install-recommends libliquid-dev
     - virtualenv env/liquid-wlan
