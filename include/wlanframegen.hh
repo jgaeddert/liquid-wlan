@@ -46,28 +46,18 @@ class framegen
     bool writesymbol(std::complex<float> * _buf)
         { return wlanframegen_writesymbol(fg, _buf); }
 
-    // dummy property
-    unsigned int get_header_length() const { return 0; }
+    /*! get length of frame in symbols (each 80-samples long) */
+    unsigned int length() const
+        { return wlanframegen_getframelen(fg); }
 
   private:
     wlanframegen fg;
 
 #ifdef PYTHONLIB
   public:
-    py::array_t<std::complex<float>> py_execute(py::object & _header,
-                                                py::object & _payload)
-    {
-        // TODO: assemble header and determine length
-        unsigned int frame_len = 100;
-
-        // allocate output buffer
-        py::array_t<std::complex<float>> buf(frame_len);
-
-        // TODO: assemble and generate frame
-
-        // pass to top-level execute method
-        return buf;
-    }
+    /*! generate frame of a fixed length and data rate */
+    py::array_t<std::complex<float>> py_execute(unsigned int _length=200,
+                                                unsigned int _datarate=6);
 #endif
 };
 

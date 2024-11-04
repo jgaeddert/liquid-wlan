@@ -32,19 +32,39 @@ void wlan::framegen::assemble(unsigned int _length,
 }
 
 #ifdef PYTHONLIB
+py::array_t<std::complex<float>> wlan::framegen::py_execute(unsigned int _length,
+                                                            unsigned int _datarate)
+{
+    // assemble frame
+    assemble(_length, _datarate);
+
+    // determine length of frame in samples
+    unsigned int frame_len = length();
+
+    // allocate output buffer
+    py::array_t<std::complex<float>> buf(80*frame_len);
+
+    // generate frame
+    std::complex<float> * p = (std::complex<float>*) buf.request().ptr;
+    for (auto i=0U; i<frame_len; i++)
+        wlanframegen_writesymbol(fg, p + i*80);
+
+    // pass to top-level execute method
+    return buf;
+}
 void init_framegen(py::module &m)
 {
     py::class_<wlan::framegen>(m, "framegen", "Frame generator with 64-byte payload")
         .def(py::init<>())
         .def("__repr__", &wlan::framegen::repr)
-        .def_property_readonly("header_len",
-            &wlan::framegen::get_header_length,
-            "get length of header (bytes)")
+        .def_property_readonly("length",
+            &wlan::framegen::length,
+            "get length of frame (symbols each 80 samples long)")
         .def("execute",
             &wlan::framegen::py_execute,
             "generate a frame given header and payload",
-            py::arg("header")=py::none(),
-            py::arg("payload")=py::none())
+            py::arg("length")=200,
+            py::arg("datarate")=6)
         ;
 }
 #endif
