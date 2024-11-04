@@ -53,7 +53,7 @@ def plot_spectrum(Sxx,labels):
     t_scale, t_units = 1e+3, 'ms'
     f_scale, f_units = 1e-6, 'MHz'
 
-    fig, ax = plt.subplots(1,figsize=(12,12))
+    fig, ax = plt.subplots(1,figsize=(15,12))
     plt.set_cmap('viridis')
     im = ax.pcolormesh(f*f_scale,t*t_scale,Sxx,shading='auto') #vmin=np.percentile(Sxx,10))
     ax.set_ylabel('Time [%s]' % t_units)
@@ -79,7 +79,7 @@ def plot_spectrum(Sxx,labels):
         #basename = '%s/plots/dataset_%s%.3d' % (context.output, extra, meta['num_callbacks'])
         basename = 'wifi_generator_truth'
         fig.savefig(basename+'.png', bbox_inches='tight', dpi=120)
-    if True: #context.display:
+    if False: #context.display:
         plt.show()
     plt.close(fig)
 
@@ -165,11 +165,6 @@ def main():
 
     plot_spectrum(im,labels)
 
-    fig,ax = plt.subplots(1,figsize=(8,8))
-    ax.pcolormesh(f*100 + 2450,t/100e3,Sxx,shading='auto')
-    ax.set_xlabel('Frequency [MHz]')
-    ax.set_ylabel('Time [ms]')
-    
     if args.display:
         plt.show()
 
