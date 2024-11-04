@@ -3,6 +3,7 @@
 import argparse, sys
 import liquid as dsp
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 sys.path.extend(['.','..'])
 import liquidwlan as wlan
@@ -43,6 +44,45 @@ def export_image(im, filename, grayscale=False, imsize=(640,640), dpi=96):
     fig.savefig(filename, dpi=dpi)
     plt.close(fig)
 
+def plot_spectrum(Sxx,labels):
+    fs, fc, dur = 100e6, 2450e6, 10e-3
+    # plot spectrum
+    time, nfft = Sxx.shape
+    f = (np.arange(nfft)/nfft - 0.5)*fs + fc
+    t = np.arange(time)/time * dur
+    t_scale, t_units = 1e+3, 'ms'
+    f_scale, f_units = 1e-6, 'MHz'
+
+    fig, ax = plt.subplots(1,figsize=(12,12))
+    plt.set_cmap('viridis')
+    im = ax.pcolormesh(f*f_scale,t*t_scale,Sxx,shading='auto') #vmin=np.percentile(Sxx,10))
+    ax.set_ylabel('Time [%s]' % t_units)
+    ax.set_xlabel('Frequency [%s]' % f_units)
+    fig.colorbar(im,orientation='vertical')
+
+    # plot signals
+    for label in labels:
+        print('  ',label)
+        ts  = label['t0']/fs*t_scale
+        dur = label['dur']/fs*t_scale
+        bw  = label['bw']*fs*f_scale
+        f0  = (label['fc']*fs + fc)*f_scale
+        rect = patches.Rectangle((f0-bw/2,ts),bw,dur,fill=False,edgecolor='white',linewidth=1)
+        ax.add_artist(rect)
+        #rx,ry = rect.get_xy()
+        #cx,cy = rx+rect.get_width(), ry+rect.get_height()/2
+        #ax.annotate('signal',(cx,cy),color='white',ha='left',va='center',fontsize=8)
+
+    if True: #context.plot:
+        #extra = '' if context.id is None else context.id+'_'
+        #os.makedirs(f"{context.output}/plots", exist_ok=True)
+        #basename = '%s/plots/dataset_%s%.3d' % (context.output, extra, meta['num_callbacks'])
+        basename = 'wifi_generator_truth'
+        fig.savefig(basename+'.png', bbox_inches='tight', dpi=120)
+    if True: #context.display:
+        plt.show()
+    plt.close(fig)
+
 def main():
     # options
     p = argparse.ArgumentParser(description=__doc__)
@@ -56,6 +96,8 @@ def main():
     #nfft = 640; time = 640; delay = 244
     num_samples, psd_delay = int(5e6), 244
     num_samples, psd_delay = int(1e6)-100, 195
+    center_freq, sample_rate = 2450e6, 100e6
+    dur = num_samples / sample_rate
 
     # create buffer of samples
     nstd = 10**(args.noise_floor/20)
@@ -70,8 +112,8 @@ def main():
 
     # loop over relative center frequencies
     labels = []
-    for f0 in (2412,2437,2462,):
-        fc = (f0 - 2450)/100
+    for f0 in (2412e6,2437e6,2462e6,):
+        fc = (f0 - center_freq)/sample_rate
         # starting index of signal
         i0 = int(np.random.uniform(1e3,0.7*num_samples))
         while True:
@@ -97,6 +139,9 @@ def main():
             t = np.arange(n)
             buf[i0:i1] += gain * y * np.exp(2j*np.pi*fc*t)
 
+            # save label
+            labels.append({'t0':i0, 'dur':n, 'fc':fc, 'bw':20e6/sample_rate})
+
             # add delay; either back-to-back or with large delay
             delay = np.random.uniform(500e3,900e3)
             if np.random.uniform(0,100) < 25:
@@ -117,6 +162,8 @@ def main():
     print('saving image...')
     export_image(im, 'wifi_generator.png', grayscale=args.gray)
     print('done')
+
+    plot_spectrum(im,labels)
 
     fig,ax = plt.subplots(1,figsize=(8,8))
     ax.pcolormesh(f*100 + 2450,t/100e3,Sxx,shading='auto')
