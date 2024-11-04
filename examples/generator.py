@@ -73,7 +73,7 @@ def main():
     for f0 in (2412,2437,2462,):
         fc = (f0 - 2450)/100
         # starting index of signal
-        i0 = int(np.random.uniform(1e3,4e3))
+        i0 = int(np.random.uniform(1e3,0.7*num_samples))
         while True:
             if i0 >= len(buf):
                 break
@@ -92,15 +92,16 @@ def main():
                 y = y[:n]
 
             # add signal
-            snr = np.random.uniform(-3,20)
+            snr = np.random.uniform(3,25)
             gain = 10**((args.noise_floor+snr)/20)
             t = np.arange(n)
             buf[i0:i1] += gain * y * np.exp(2j*np.pi*fc*t)
 
-            # add delay
-            delay = int(np.random.uniform(8e3,20e3))
-            if np.random.choice((True,False)): delay *= 10
-            i0 = i1 + delay
+            # add delay; either back-to-back or with large delay
+            delay = np.random.uniform(500e3,900e3)
+            if np.random.uniform(0,100) < 25:
+                delay = np.random.uniform(2e3,10e3)
+            i0 = i1 + int(delay)
 
     # compute spectrum waterfall
     psd = dsp.spwaterfall(nfft=640,time=640,delay=psd_delay)
