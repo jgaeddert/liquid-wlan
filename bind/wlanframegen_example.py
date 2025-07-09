@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-'''demonstrate fractional sample delay object'''
+'''generate and plot frame'''
 import argparse, sys
 import liquid as dsp
 import matplotlib.pyplot as plt
 import numpy as np
-sys.path.extend(['.','..'])
-import liquidwlan as wlan
+sys.path.extend(['.','..','./build'])
+import liquid_wlan as wlan
 
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('-nodisplay', action='store_true', help='disable display')
