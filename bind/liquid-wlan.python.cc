@@ -4,7 +4,7 @@
 
 void init_framegen(py::module &m);
 
-PYBIND11_MODULE(liquidwlan, m) {
+PYBIND11_MODULE(liquid_wlan, m) {
     m.doc() =
     R"pbdoc(
         software-defined radio WLAN library
@@ -15,6 +15,10 @@ PYBIND11_MODULE(liquidwlan, m) {
     init_framegen(m);
 
     // attributes
-    m.attr("__version__") = "0.1.0";
+#ifdef VERSION_INFO
+    m.attr("__version__") = "1.0.0"; //VERSION_INFO;
+#else
+    m.attr("__version__") = "dev";
+#endif
 }
 

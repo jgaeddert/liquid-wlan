@@ -1,7 +1,7 @@
 #ifndef __LIQUID_WLAN_PYTHON_HH__
 #define __LIQUID_WLAN_PYTHON_HH__
 
-#ifdef PYTHONLIB
+#ifdef LIQUID_PYTHONLIB
 
 #include <complex>
 #include <pybind11/pybind11.h>
@@ -13,7 +13,7 @@
 namespace py = pybind11;
 using namespace pybind11::literals;
 
-#endif // PYTHONLIB
+#endif // LIQUID_PYTHONLIB
 
 #endif // __LIQUID_WLAN_PYTHON_HH__
 

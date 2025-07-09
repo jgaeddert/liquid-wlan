@@ -53,7 +53,7 @@ class framegen
   private:
     wlanframegen fg;
 
-#ifdef PYTHONLIB
+#ifdef LIQUID_PYTHONLIB
   public:
     /*! generate frame of a fixed length and data rate */
     py::array_t<std::complex<float>> py_execute(unsigned int _length=200,

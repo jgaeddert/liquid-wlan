@@ -31,7 +31,7 @@ void wlan::framegen::assemble(unsigned int _length,
     delete [] payload;
 }
 
-#ifdef PYTHONLIB
+#ifdef LIQUID_PYTHONLIB
 py::array_t<std::complex<float>> wlan::framegen::py_execute(unsigned int _length,
                                                             unsigned int _datarate)
 {
@@ -67,5 +67,5 @@ void init_framegen(py::module &m)
             py::arg("datarate")=6)
         ;
 }
-#endif
+#endif // LIQUID_PYTHONLIB
 

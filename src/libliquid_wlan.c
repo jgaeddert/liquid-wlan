@@ -24,15 +24,15 @@
 
 #include "liquid-wlan.h"
 
-const char liquid_wlan_version[] = LIQUID_WLAN_VERSION;
+const char liquid_wlan_version[] = "1.0.0";
 
 const char * liquid_wlan_libversion(void)
 {
-    return LIQUID_WLAN_VERSION;
+    return liquid_wlan_version;
 }
 
 int liquid_wlan_libversion_number(void)
 {
-    return LIQUID_WLAN_VERSION_NUMBER;
+    return 0x010000;
 }
 

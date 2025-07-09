@@ -20,6 +20,7 @@ project(liquid-wlan VERSION ${LIQUID_VERSION} LANGUAGES C CXX)
 #option(BUILD_DOC        "Set to ON to build documentation"      OFF)
 #option(COVERAGE         "Set to ON to build with code coverage" OFF)
 #option(PROFILE        "Set to ON to build with profiling"     OFF)
+option(PYTHON           "Set to ON to build python bindings"   ON)
 
 # add 'cmake' subdirectory available for custom scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -71,8 +72,8 @@ include_directories(include .)
 
 # ---------------------------------------- main library ----------------------------------------
 
-# src/libliquid_wlan.c
 add_library(${LIBNAME} SHARED
+    src/libliquid_wlan.c
 	src/wlan_data_scrambler.c
 	src/wlan_fec.c
 	src/wlan_interleaver.c
@@ -147,6 +148,36 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Software-Defined Wi-Fi 802.11a/g Library"
 set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
 set(CPACK_VERBATIM_VARIABLES TRUE)
 include(CPack)
+
+# ---------------------------------------- python bindings ----------------------------------------
+
+if(PYTHON)
+    set(PYBIND11_NEWPYTHON ON)
+    find_package(pybind11 CONFIG REQUIRED)
+
+    set(LIBNAME_PYTHON pyliquid_wlan)
+    pybind11_add_module(${LIBNAME_PYTHON} MODULE
+        bind/liquid-wlan.python.cc
+        bind/wlanframegen.cc
+        $<TARGET_OBJECTS:${LIBNAME}>
+    )
+
+    # Use different names for cmake target and output file since we cannot use
+    # the cmake target 'liquid' more than once, but we also want the python package
+    # to called 'liquid_wlan' and not something odd like 'pyliquid_wlan'
+    # see: https://stackoverflow.com/questions/67212833/python-library-and-cmake-target-with-the-same-name#67226146
+    set_target_properties(${LIBNAME_PYTHON} PROPERTIES OUTPUT_NAME liquid_wlan)
+
+    # enable python extensions to C++ classes
+    target_compile_definitions(${LIBNAME_PYTHON} PUBLIC LIQUID_PYTHONLIB)
+    # pull version info from top of this file
+    target_compile_definitions(${LIBNAME_PYTHON} PRIVATE VERSION_INFO="${liquid_wlan_VERSION}")
+
+    target_link_libraries(${LIBNAME_PYTHON} PUBLIC c m fftw3f liquid)
+
+    install(TARGETS ${LIBNAME_PYTHON} LIBRARY DESTINATION .)
+endif(PYTHON)
+
 
 # ---------------------------------------- summary ----------------------------------------
 
