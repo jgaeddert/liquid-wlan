@@ -1,7 +1,7 @@
 # cmake build file for liquid-wlan
 cmake_minimum_required(VERSION 3.10)
 
-# parse version number from include/liquid.h
+# parse version number from include/liquid-wlan.h
 include(cmake/version.cmake)
 get_version("${CMAKE_CURRENT_SOURCE_DIR}/include/liquid-wlan.h" LIQUID_VERSION)
 
@@ -101,7 +101,7 @@ add_library(${LIBNAME} SHARED
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 target_include_directories(${LIBNAME} PRIVATE ${INCLUDE})
-#target_sources(${LIBNAME} PUBLIC FILE_SET HEADERS FILES include/liquid.h)
+#target_sources(${LIBNAME} PUBLIC FILE_SET HEADERS FILES include/liquid-wlan.h)
 
 target_link_libraries(${LIBNAME} c m fftw3f liquid)
 
@@ -123,7 +123,7 @@ install(TARGETS
           #COMPONENT Development
         )
 
-install(FILES include/liquid.h DESTINATION include/liquid)
+install(FILES include/liquid-wlan.h DESTINATION include/liquid)
 
 # examples
 add_subdirectory(examples)
