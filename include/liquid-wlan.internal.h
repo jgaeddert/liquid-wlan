@@ -21,7 +21,7 @@
 #define __LIQUID_WLAN_INTERNAL_H__
 
 // Configuration file
-#include "config.h"
+//#include "config.h"
 
 #include <complex.h>
 #include <liquid/liquid.h>

@@ -31,14 +31,10 @@
 #  undef LIQUID_WLAN_VERSION_NUMBER
 #endif
 
-/*
- * Compile-time version numbers
- * 
- * LIQUID_WLAN_VERSION = "X.Y.Z"
- * LIQUID_WLAN_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
- */
-#define LIQUID_WLAN_VERSION          "0.1.0"
-#define LIQUID_WLAN_VERSION_NUMBER   1000
+#define LIQUID_WLAN_VERSION_MAJOR    1
+#define LIQUID_WLAN_VERSION_MINOR    0
+#define LIQUID_WLAN_VERSION_PATCH    0
+#define LIQUID_WLAN_VERSION_DEV      0
 
 /*
  * Run-time library version numbers
