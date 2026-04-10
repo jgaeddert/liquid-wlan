@@ -21,6 +21,7 @@ project(liquid-wlan VERSION ${LIQUID_VERSION} LANGUAGES C CXX)
 #option(COVERAGE         "Set to ON to build with code coverage" OFF)
 #option(PROFILE        "Set to ON to build with profiling"     OFF)
 option(PYTHON           "Set to ON to build python bindings"   ON)
+option(BUILD_LIQUID     "Set to ON to fetch and build liquid separately" OFF)
 
 # add 'cmake' subdirectory available for custom scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -49,6 +50,23 @@ include (CheckSymbolExists)
 #if (FIND_FFTW)
 #    find_package(fftw3f)
 #endif()
+if (BUILD_LIQUID)
+    # dynamically fetch content
+    include(FetchContent)
+    FetchContent_Declare(
+        liquid
+        GIT_REPOSITORY https://github.com/jgaeddert/liquid-dsp.git
+        GIT_TAG        master #v1.7.0
+        )
+    set(BUILD_AUTOTESTS  OFF CACHE INTERNAL "Disable building liquid tests")
+    set(BUILD_BENCHMARKS OFF CACHE INTERNAL "Disable building liquid benchmarks")
+    set(BUILD_EXAMPLES   OFF CACHE INTERNAL "Disable building liquid examples")
+    FetchContent_MakeAvailable(liquid)
+    # FetchContent_Populate(liquid) <- older policy, see CMP0169
+else()
+    # check for local installation
+    find_package(liquid REQUIRED)
+endif(BUILD_LIQUID)
 
 # global flags
 if (MSVC)
