@@ -177,6 +177,7 @@ if(PYTHON)
     pybind11_add_module(${LIBNAME_PYTHON} MODULE
         bind/liquid-wlan.python.cc
         bind/wlanframegen.cc
+        bind/wlanframesync.cc
         $<TARGET_OBJECTS:${LIBNAME}>
     )
 

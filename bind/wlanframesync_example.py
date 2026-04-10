@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''generate and synchronize frame'''
+'''generate and plot frame'''
 import argparse, sys
 import liquid as dsp
 import matplotlib.pyplot as plt
@@ -18,13 +18,6 @@ fg = wlan.framegen()
 buf = fg.execute()
 print(buf.shape)
 
-# try to receive frame
-def callback(context,header,payload,stats):
-    print('frame detected!')
-fs = wlan.framesync(callback,None)
-fs.execute(buf)
-
-'''
 # estimate spectrum and plot results
 psd = dsp.spgram(nfft=600,wlen=400,delay=10)
 psd.execute(buf)
@@ -40,5 +33,4 @@ ax.set_xlabel('Frequency [f/Fs]')
 ax.set_ylabel('PSD [dB]')
 ax.grid(True, zorder=5)
 plt.show()
-'''
 

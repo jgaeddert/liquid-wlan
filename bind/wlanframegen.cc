@@ -52,6 +52,7 @@ py::array_t<std::complex<float>> wlan::framegen::py_execute(unsigned int _length
     // pass to top-level execute method
     return buf;
 }
+
 void init_framegen(py::module &m)
 {
     py::class_<wlan::framegen>(m, "framegen", "Frame generator with 64-byte payload")

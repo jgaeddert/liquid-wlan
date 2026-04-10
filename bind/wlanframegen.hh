@@ -26,7 +26,7 @@ class framegen
     // object type
     std::string type() const { return "framegen"; }
 
-    std::string repr() const { return std::string("<liquid.wlen.framegen") +
+    std::string repr() const { return std::string("<liquid.wlan.framegen") +
                     ">"; }
 
     // overloaded << operator for output stream extraction

@@ -3,8 +3,10 @@
 #include "wlanframegen.hh"
 
 void init_framegen(py::module &m);
+void init_framesync(py::module &m);
 
-PYBIND11_MODULE(liquid_wlan, m) {
+PYBIND11_MODULE(liquid_wlan, m)
+{
     m.doc() =
     R"pbdoc(
         software-defined radio WLAN library
@@ -13,6 +15,7 @@ PYBIND11_MODULE(liquid_wlan, m) {
 
     // initialize objects
     init_framegen(m);
+    init_framesync(m);
 
     // attributes
 #ifdef VERSION_INFO

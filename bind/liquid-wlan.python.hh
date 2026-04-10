@@ -13,6 +13,18 @@
 namespace py = pybind11;
 using namespace pybind11::literals;
 
+// user context, payload, info
+typedef std::function<py::object(py::object,
+                                 py::array_t<uint8_t>,
+                                 py::dict)> py_framesync_callback;
+
+// default callback function
+static py_framesync_callback py_framesync_callback_default =
+    [](py::object,
+       py::array_t<uint8_t>,
+       py::dict)
+    { return py::none(); };
+
 #endif // LIQUID_PYTHONLIB
 
 #endif // __LIQUID_WLAN_PYTHON_HH__
