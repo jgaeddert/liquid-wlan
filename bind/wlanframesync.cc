@@ -24,7 +24,7 @@ void wlan::framesync::py_execute(py::array_t<std::complex<float>> & _buf)
     execute((std::complex<float>*) info.ptr, info.shape[0]);
 }
 
-int py_callback_wrapper_framesync(
+int wlan::py_callback_wrapper_framesync(
         int                    _header_valid,
         unsigned char *        _payload,
         struct wlan_rxvector_s _rxvector,
