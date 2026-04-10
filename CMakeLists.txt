@@ -170,7 +170,7 @@ include(CPack)
 # ---------------------------------------- python bindings ----------------------------------------
 
 if(PYTHON)
-    set(PYBIND11_FINDPYTHON ON)
+    set(PYBIND11_NEWPYTHON ON)
     find_package(pybind11 CONFIG REQUIRED)
 
     set(LIBNAME_PYTHON pyliquid_wlan)
