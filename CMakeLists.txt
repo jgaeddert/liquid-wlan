@@ -10,18 +10,18 @@ project(liquid-wlan VERSION ${LIQUID_VERSION} LANGUAGES C CXX)
 
 # ---------------------------------------- options ----------------------------------------
 
+option(FIND_FFTW        "Set to ON to find FFTW library"                ON)
+option(BUILD_PYTHON     "Set to ON to build python bindings"            OFF)
+option(BUILD_LIQUID     "Set to ON to fetch/build liquid separately"    ON)
 #option(BUILD_EXAMPLES   "Set to ON to build examples"           ON)
 #option(BUILD_AUTOTESTS  "Set to ON to build autotest program"   ON)
 #option(BUILD_BENCHMARKS "Set to ON to build benchmark program"  ON)
 #option(ENABLE_SIMD      "Set to ON to build SIMD extensions"    ON)
 #option(FIND_SIMD        "Set to ON to find SIMD extensions"     ON)
-#option(FIND_FFTW        "Set to ON to find FFTW library"        ON)
 #option(BUILD_SANDBOX    "Set to ON to build sandbox programs"   OFF)
 #option(BUILD_DOC        "Set to ON to build documentation"      OFF)
 #option(COVERAGE         "Set to ON to build with code coverage" OFF)
 #option(PROFILE        "Set to ON to build with profiling"     OFF)
-option(PYTHON           "Set to ON to build python bindings"   ON)
-option(BUILD_LIQUID     "Set to ON to fetch and build liquid separately" OFF)
 
 # add 'cmake' subdirectory available for custom scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -47,9 +47,10 @@ include (CheckSymbolExists)
 
 # check external libraries
 #variable_watch(fftw3f_INCLUDE_DIR)
-#if (FIND_FFTW)
-#    find_package(fftw3f)
-#endif()
+if (FIND_FFTW)
+    find_package(fftw3f)
+endif()
+
 if (BUILD_LIQUID)
     # dynamically fetch content
     include(FetchContent)
@@ -124,7 +125,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${LIBNAME} PRIVATE ${INCLUDE})
 #target_sources(${LIBNAME} PUBLIC FILE_SET HEADERS FILES include/liquid-wlan.h)
 
-target_link_libraries(${LIBNAME} c m fftw3f liquid)
+target_link_libraries(${LIBNAME} c m liquid)
+if (fftw3f_FOUND)
+    target_link_libraries(${LIBNAME} fftw3f)
+endif()
 
 set_target_properties(${LIBNAME} PROPERTIES VERSION ${LIQUID_VERSION} SOVERSION 1)
 
@@ -195,7 +199,10 @@ if(PYTHON)
     # pull version info from top of this file
     target_compile_definitions(${LIBNAME_PYTHON} PRIVATE VERSION_INFO="${liquid_wlan_VERSION}")
 
-    target_link_libraries(${LIBNAME_PYTHON} PUBLIC c m fftw3f liquid)
+    target_link_libraries(${LIBNAME_PYTHON} PUBLIC c m liquid)
+    if (fftw3f_FOUND)
+        target_link_libraries(${LIBNAME_PYTHON} fftw3f)
+    endif()
 
     install(TARGETS ${LIBNAME_PYTHON} LIBRARY DESTINATION .)
 endif(PYTHON)
