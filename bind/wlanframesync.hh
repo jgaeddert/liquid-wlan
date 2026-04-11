@@ -103,12 +103,15 @@ class framesync
 
     void py_execute(py::array_t<std::complex<float>> & _buf);
 
-    py::tuple py_get_framedatastats() const
+    py::dict py_get_framedatastats() const
     {
-        //framedatastats_s v = wlanframesync_get_framedatastats(fs);
-        //return py::make_tuple(v.num_frames_detected,
-        //    v.num_headers_valid, v.num_payloads_valid, v.num_bytes_received);
-        return py::make_tuple(0, 0, 0, 0);
+        framedatastats_s v = wlanframesync_get_framedatastats(fs);
+        return py::dict(
+            "num_frames_detected"_a = v.num_frames_detected,
+            "num_headers_valid"_a   = v.num_headers_valid,
+            "num_payloads_valid"_a  = v.num_payloads_valid,
+            "num_bytes_received"_a  = v.num_bytes_received
+            );
     }
 #endif
 };

@@ -4,6 +4,7 @@ import argparse, sys
 import liquid as dsp
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 sys.path.extend(['.','..','./build'])
 import liquid_wlan as wlan
 
@@ -24,6 +25,8 @@ def callback(context,payload,stats):
 
 fs = wlan.framesync(callback,None)
 fs.execute(buf)
+
+print(json.dumps(fs.framedatastats,indent=2))
 
 '''
 # estimate spectrum and plot results

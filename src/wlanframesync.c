@@ -364,6 +364,7 @@ void wlanframesync_execute_seekplcp(wlanframesync _q)
         _q->timer = (16 + dt) % 16;
         //_q->timer += 32; // add delay to help ensure good S0 estimate (multiple of 16)
         _q->state = WLANFRAMESYNC_STATE_RXSHORT0;
+        _q->framedatastats.num_frames_detected++;
 
 #if DEBUG_WLANFRAMESYNC_PRINT
         printf("********** frame detected! ************\n");
@@ -716,6 +717,7 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
         wlanframesync_reset(_q);
         return;
     }
+    _q->framedatastats.num_headers_valid++;
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
@@ -786,6 +788,8 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
     if (_q->num_symbols == _q->nsym) {
         // decode message
         wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
+        _q->framedatastats.num_payloads_valid++; // TODO: validate CRC?
+        _q->framedatastats.num_bytes_received += _q->length;
 
         // assemble RX vector
         struct wlan_rxvector_s rxvector;
