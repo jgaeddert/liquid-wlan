@@ -19,8 +19,8 @@ void usage()
     printf(" -s <snr>   : SNR: starting value (dB),              default: -3\n");
     printf(" -d <step>  : SNR: step size (dB),                   default:  1\n");
     printf(" -x <snr>   : SNR: maximum value (dB),               default:  10\n");
-    printf(" -n <num>   : max number of trials to run,           default: 10,000\n");
-    printf(" -m <bits>  : min number of bit errors for success,  default:    500\n");
+    printf(" -n <num>   : max number of trials to run,           default: 1,000\n");
+    printf(" -m <bits>  : min number of bit errors for success,  default:   100\n");
     printf(" -r <rate>  : rate {6,9,12,18,24,36,48,54} M bits/s, default: 6\n");
     printf(" -L <len>   : frame length (bytes),                  default: 800\n");
     printf(" -o <file>  : output filename,                       default: %s\n", FILENAME_OUTPUT);
@@ -63,8 +63,8 @@ int main(int argc, char*argv[])
     float               SNRdB_min       = -3.0f;    // SNR (dB), min
     float               SNRdB_step      =  1.0f;    // SNR (dB), step
     float               SNRdB_max       = 30.0f;    // SNR (dB), max
-    unsigned long int   max_trials      = 10000;    // maximum number of trials to run
-    unsigned long int   min_bit_errors  =  500;  // minimum bit errors before success
+    unsigned long int   max_trials      = 1000;     // maximum number of trials to run
+    unsigned long int   min_bit_errors  =  100;     // minimum bit errors before success
     const char *        filename        = FILENAME_OUTPUT;
     unsigned int        seed            =    0;     // random seed
 
