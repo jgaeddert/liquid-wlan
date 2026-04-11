@@ -31,6 +31,7 @@ int wlanframesync_runtest(unsigned int _rate);
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata);
 
 int main() {
@@ -151,6 +152,7 @@ int wlanframesync_runtest(unsigned int _rate)
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata)
 {
     printf("**** callback invoked\n");

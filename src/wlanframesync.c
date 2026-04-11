@@ -28,7 +28,9 @@
 struct wlanframesync_s {
     // callback
     wlanframesync_callback callback;// user-defined callback function
-    void * userdata;                // user-defined context field
+    void *                 userdata;// user-defined context field
+    framesyncstats_s framesyncstats;// frame statistic object (synchronizer)
+    framedatastats_s framedatastats;// frame statistic object (packet statistics)
 
     // options
     unsigned int rate;              // primitive data rate
@@ -141,7 +143,8 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 
     // reset object
     wlanframesync_reset(q);
-    
+    framedatastats_reset(&q->framedatastats);
+
 #if DEBUG_WLANFRAMESYNC
     // debugging structures
     q->debug_enabled   = 0;
@@ -202,6 +205,18 @@ void wlanframesync_reset(wlanframesync _q)
 
     // reset pilot sequence generator
     wlan_lfsr_reset(_q->ms_pilot);
+
+    // reset framesyncstats internals
+    _q->framesyncstats.evm           = 0;
+    _q->framesyncstats.rssi          = 0;
+    _q->framesyncstats.cfo           = 0;
+    _q->framesyncstats.framesyms     = NULL;
+    _q->framesyncstats.num_framesyms = 0;
+    _q->framesyncstats.mod_scheme    = LIQUID_MODEM_UNKNOWN;
+    _q->framesyncstats.mod_bps       = 0;
+    _q->framesyncstats.check         = LIQUID_CRC_UNKNOWN;
+    _q->framesyncstats.fec0          = LIQUID_FEC_UNKNOWN;
+    _q->framesyncstats.fec1          = LIQUID_FEC_UNKNOWN;
 }
 
 // execute framing synchronizer on input buffer
@@ -682,7 +697,7 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
             rxvector.DATARATE   = WLANFRAME_RATE_INVALID;
             rxvector.SERVICE    = 0;
             //int retval =
-            _q->callback(0, NULL, rxvector, _q->userdata);
+            _q->callback(0, NULL, rxvector, _q->framesyncstats, _q->userdata);
         }
 
         // reset synchronizer and return
@@ -770,7 +785,7 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
         // invoke callback
         if (_q->callback != NULL) {
             //int retval =
-            _q->callback(1, _q->msg_dec, rxvector, _q->userdata);
+            _q->callback(1, _q->msg_dec, rxvector, _q->framesyncstats, _q->userdata);
         }
 
         // reset and return

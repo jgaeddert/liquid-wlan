@@ -28,6 +28,7 @@ int wlan::py_callback_wrapper_framesync(
         int                    _header_valid,
         unsigned char *        _payload,
         struct wlan_rxvector_s _rxvector,
+        framesyncstats_s       _stats,
         void *                 _userdata)
 {
     // type cast user data as frame synchronizer

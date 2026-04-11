@@ -27,6 +27,7 @@ void usage()
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata);
 
 int main(int argc, char*argv[])
@@ -175,6 +176,7 @@ int main(int argc, char*argv[])
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata)
 {
     printf("**** callback invoked (header: %s)\n", _header_valid ? "valid" : "INVALID");

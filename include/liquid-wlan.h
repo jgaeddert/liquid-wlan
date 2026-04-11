@@ -134,7 +134,7 @@ typedef struct wlanframesync_s * wlanframesync;
 typedef int (*wlanframesync_callback)(int                    _header_valid,
                                       unsigned char *        _payload,
                                       struct wlan_rxvector_s _rxvector,
-                                      // statistics
+                                      framesyncstats_s       _stats,
                                       void *                 _userdata);
 
 // create WLAN framing synchronizer object

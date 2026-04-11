@@ -18,6 +18,7 @@ int py_callback_wrapper_framesync(
         int                    _header_valid,
         unsigned char *        _payload,
         struct wlan_rxvector_s _rxvector,
+        framesyncstats_s       _stats,
         void *                 _userdata);
 #endif
 
@@ -87,6 +88,7 @@ class framesync
         int                    _header_valid,
         unsigned char *        _payload,
         struct wlan_rxvector_s _rxvector,
+        framesyncstats_s       _stats,
         void *                 _userdata);
 
   public:
