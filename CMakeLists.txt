@@ -147,7 +147,7 @@ install(FILES include/liquid-wlan.h DESTINATION include/liquid)
 add_subdirectory(examples)
 
 # sandbox
-#add_subdirectory(sandbox)
+add_subdirectory(sandbox)
 
 # autotest
 # TODO

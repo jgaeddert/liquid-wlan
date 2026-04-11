@@ -17,7 +17,7 @@
 #include <time.h>
 
 #include <liquid/liquid.h>
-#include "liquid-wlan.h"
+#include "liquid-wlan.internal.h"
 
 int main(int argc, char*argv[])
 {
