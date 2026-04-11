@@ -80,6 +80,9 @@ endif()
 include (CheckTypeSize)
 check_type_size(int SIZEOF_INT LANGUAGE C)
 
+# always enable testing
+enable_testing()
+
 #configure_file(cmake/config.h.cmake config.h)
 
 # this file can only use the @VARIABLE@ syntax
@@ -150,7 +153,7 @@ add_subdirectory(examples)
 add_subdirectory(sandbox)
 
 # autotest
-# TODO
+add_subdirectory(autotest)
 
 # benchmarks
 # TODO

@@ -16,5 +16,7 @@ foreach(example IN LISTS SANDBOX)
     target_include_directories(${example} PRIVATE ${INCLUDE})
     target_link_libraries(${example} ${LIBNAME})
 
+    # add program as a test
+    add_test(NAME ${example} COMMAND ${example})
 endforeach()
 

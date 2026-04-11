@@ -56,11 +56,10 @@ int main(int argc, char*argv[])
     // destroy objects
     wlanframegen_destroy(fg);
     
-
     // run test
     unsigned int num_errors=0;
     for (i=0; i<881; i++) {
-        float e = fabsf( frame[i] - frame_test[i] );
+        float e = cabsf( frame[i] - frame_test[i] );
         printf("  x[%3u] = %8.4f + j%8.4f (%8.4f + j%8.4f), e = %12.4e %s\n",
                 i,
                 crealf(frame[i]),      cimagf(frame[i]),
