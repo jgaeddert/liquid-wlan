@@ -143,7 +143,7 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
 
     // reset object
     wlanframesync_reset(q);
-    framedatastats_reset(&q->framedatastats);
+    wlanframesync_reset_framedatastats(q);
 
 #if DEBUG_WLANFRAMESYNC
     // debugging structures
@@ -288,6 +288,18 @@ float wlanframesync_get_rssi(wlanframesync _q)
 float wlanframesync_get_cfo(wlanframesync _q)
 {
     return 0.0f;
+}
+
+// Reset frame data statistics
+int wlanframesync_reset_framedatastats(wlanframesync _q)
+{
+    return framedatastats_reset(&_q->framedatastats);
+}
+
+// Get frame data statistics
+framedatastats_s wlanframesync_get_framedatastats(wlanframesync _q)
+{
+    return _q->framedatastats;
 }
 
 

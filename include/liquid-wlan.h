@@ -164,6 +164,12 @@ void wlanframesync_execute(wlanframesync          _q,
 float wlanframesync_get_rssi(wlanframesync _q); // received signal strength indication
 float wlanframesync_get_cfo(wlanframesync _q);  // carrier offset estimate
 
+// Reset frame data statistics
+int wlanframesync_reset_framedatastats(wlanframesync _q);
+
+// Get frame data statistics
+framedatastats_s wlanframesync_get_framedatastats(wlanframesync _q);
+
 // 
 // internal/debugging methods
 //
