@@ -18,7 +18,7 @@ main:
   script:
     - mkdir build
     - cd build
-    - cmake -D PYTHON=OFF ..
+    - cmake -D BUILD_LIQUID=ON -D PYTHON=OFF ..
     - make -j2
     - ctest -j2
 
@@ -32,7 +32,7 @@ bind:
     - pip install -r requirements.txt
     - mkdir build
     - cd build
-    - cmake -D PYTHON=ON ..
+    - cmake -D BUILD_LIQUID=ON -D PYTHON=ON ..
     - make -j2
     - python3 -c "import liquidwlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
 
