@@ -1,21 +1,38 @@
+# gitlab ci/cd pipeline configuration
+image: debian
 
-build:
-  image: debian
-  tags: [docker]
-  variables:
-    DEBIAN_FRONTEND: noninteractive
+stages:
+  - build
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+
+before_script:
+  - apt-get -qq update
+  - apt -qq install -y --no-install-recommends automake autoconf build-essential
+  - apt-get -qq install -y --no-install-recommends build-essential cmake time curl virtualenv
+
+main:
+  stage: build
+  #tags: [docker]
   script:
-    - apt -qq update
-    - apt -qq install -y --no-install-recommends automake autoconf build-essential
+    - mkdir build
+    - cd build
+    - cmake -D PYTHON=OFF ..
+    - make -j2
+    - ctest -j2
+
+bind:
+  stage: build
+  #tags: [docker]
+  script:
     - apt -qq install -y --no-install-recommends python3-pip python3-dev pybind11-dev virtualenv
-    - apt -qq install -y --no-install-recommends libliquid-dev
     - virtualenv env/liquid-wlan
     - source env/liquid-wlan/bin/activate
     - pip install -r requirements.txt
-    - ./bootstrap.sh
-    - ./configure
-    - make
-    - make python
-    - make check
+    - mkdir build
+    - cd build
+    - cmake -D PYTHON=ON ..
+    - make -j2
     - python3 -c "import liquidwlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
 
