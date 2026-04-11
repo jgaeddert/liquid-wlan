@@ -19,7 +19,7 @@ PYBIND11_MODULE(liquid_wlan, m)
 
     // attributes
 #ifdef VERSION_INFO
-    m.attr("__version__") = "1.0.0"; //VERSION_INFO;
+    m.attr("__version__") = VERSION_INFO;
 #else
     m.attr("__version__") = "dev";
 #endif

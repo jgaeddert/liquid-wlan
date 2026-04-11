@@ -34,5 +34,5 @@ bind:
     - cd build
     - cmake -D BUILD_LIQUID=ON -D PYTHON=ON ..
     - make -j2
-    - python3 -c "import liquidwlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
+    - python3 -c "import liquid_wlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
 

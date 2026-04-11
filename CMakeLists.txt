@@ -176,7 +176,7 @@ include(CPack)
 
 # ---------------------------------------- python bindings ----------------------------------------
 
-if(PYTHON)
+if(BUILD_PYTHON)
     set(PYBIND11_NEWPYTHON ON)
     find_package(pybind11 CONFIG REQUIRED)
 
@@ -197,15 +197,15 @@ if(PYTHON)
     # enable python extensions to C++ classes
     target_compile_definitions(${LIBNAME_PYTHON} PUBLIC LIQUID_PYTHONLIB)
     # pull version info from top of this file
-    target_compile_definitions(${LIBNAME_PYTHON} PRIVATE VERSION_INFO="${liquid_wlan_VERSION}")
+    target_compile_definitions(${LIBNAME_PYTHON} PRIVATE VERSION_INFO="${PROJECT_VERSION}")
 
     target_link_libraries(${LIBNAME_PYTHON} PUBLIC c m liquid)
     if (fftw3f_FOUND)
-        target_link_libraries(${LIBNAME_PYTHON} fftw3f)
+        target_link_libraries(${LIBNAME_PYTHON} PUBLIC fftw3f)
     endif()
 
     install(TARGETS ${LIBNAME_PYTHON} LIBRARY DESTINATION .)
-endif(PYTHON)
+endif(BUILD_PYTHON)
 
 
 # ---------------------------------------- summary ----------------------------------------
