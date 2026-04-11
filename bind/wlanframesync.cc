@@ -70,22 +70,12 @@ void init_framesync(py::module &m)
         .def("execute",
              &wlan::framesync::py_execute,
              "execute on a block of samples")
-#if 0
         .def("reset_framedatastats",
              &wlan::framesync::reset_framedatastats,
              "reset frame statistics data")
         .def_property_readonly("framedatastats",
             &wlan::framesync::py_get_framedatastats,
             "get frame data statistics")
-        .def_property_readonly("header_len",
-            &wlan::framesync::get_header_length,
-            "get length of header (bytes)")
-        .def_property_readonly("payload_len",
-            &wlan::framesync::get_payload_length,
-            "get length of payload (bytes)")
-        .def_property_readonly("frame_len",
-            &wlan::framesync::get_frame_length,
-            "get length of output frame (samples)")
         .def_property_readonly("num_frames_detected",
             &wlan::framesync::get_num_frames_detected,
             "get number of frames currently detected")
@@ -98,6 +88,7 @@ void init_framesync(py::module &m)
         .def_property_readonly("num_bytes_received",
             &wlan::framesync::get_num_bytes_received,
             "get number of bytes currently received")
+#if 0
         .def_property("threshold",
             &wlan::framesync::get_threshold,
             &wlan::framesync::set_threshold,

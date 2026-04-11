@@ -59,6 +59,7 @@ class framesync
     // get/set detection threshold
     void  set_threshold(float _threshold) { wlanframesync_set_threshold(fs,_threshold); }
     float get_threshold() const           { return wlanframesync_get_threshold(fs);     }
+#endif
 
     // specific frame data statistics
     unsigned int get_num_frames_detected() const
@@ -74,7 +75,6 @@ class framesync
 
     framedatastats_s get_framedatastats() const
         { return wlanframesync_get_framedatastats(fs); }
-#endif
 
   private:
     wlanframesync fs;
