@@ -95,6 +95,11 @@ struct wlanframesync_s
     signed int block_counter;           // count number of S1 symbol hypothesis tests
     unsigned int num_symbols;           // number of received OFDM data symbols
 
+    // symbol buffer for callback
+    float complex * buf_syms;           // symbol buffer for callback
+    unsigned int    buf_syms_len;       // maximum number of symbols to store
+    unsigned int    buf_syms_idx;       // index of symbol
+
 #if DEBUG_WLANFRAMESYNC
     // debugging structures
     int debug_enabled;
@@ -146,6 +151,11 @@ wlanframesync wlanframesync_create(wlanframesync_callback _callback,
     wlanframesync_reset(q);
     wlanframesync_reset_framedatastats(q);
 
+    // symbol buffer for callback
+    q->buf_syms_len  = 1024;
+    q->buf_syms_idx  = 0;
+    q->buf_syms      = (float complex*)malloc(q->buf_syms_len*sizeof(float complex));
+
 #if DEBUG_WLANFRAMESYNC
     // debugging structures
     q->debug_enabled   = 0;
@@ -178,6 +188,8 @@ void wlanframesync_destroy(wlanframesync _q)
 
     // free memory for encoded message
     free(_q->msg_enc);
+
+    free(_q->buf_syms);
 
     // free main object memory
     free(_q);
@@ -742,6 +754,7 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
+    _q->buf_syms_idx = 0;
 }
 
 // receive data symbols
@@ -789,6 +802,8 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
             if (_q->debug_enabled)
                 windowcf_push(_q->debug_framesyms, _q->buf_freq[k]);
 #endif
+            if (_q->buf_syms_idx < _q->buf_syms_len)
+                _q->buf_syms[_q->buf_syms_idx++] = _q->buf_freq[k];
 
         }
     }
@@ -818,6 +833,8 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
         _q->framesyncstats.evm  = 0;
         _q->framesyncstats.rssi = wlanframesync_get_rssi(_q);
         _q->framesyncstats.cfo  = wlanframesync_get_cfo(_q);
+        _q->framesyncstats.framesyms     = _q->buf_syms;
+        _q->framesyncstats.num_framesyms = _q->buf_syms_idx;
 
         // assemble RX vector
         struct wlan_rxvector_s rxvector;

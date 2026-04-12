@@ -200,6 +200,15 @@ static int callback(int                    _header_valid,
     unsigned int num_bit_errors = count_bit_errors_array(_payload, msg_org, _rxvector.LENGTH);
     printf("bit errors : %4u / %4u\n", num_bit_errors, 8*_rxvector.LENGTH);
 
+#if 0
+    // write frame symbols to file
+    FILE * fid = fopen("framesyms.txt","w");
+    unsigned int i;
+    for (i=0; i<_stats.num_framesyms; i++)
+        fprintf(fid,"%12.4e %12.4e\n", crealf(_stats.framesyms[i]), cimagf(_stats.framesyms[i]));
+    fclose(fid);
+#endif
+
     return 0;
 }
 
