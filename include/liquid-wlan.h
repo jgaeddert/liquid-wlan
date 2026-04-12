@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
+ * Copyright (c) 2011-2026 Joseph Gaeddert
  *
  * This file is part of liquid.
  *
@@ -31,14 +30,10 @@
 #  undef LIQUID_WLAN_VERSION_NUMBER
 #endif
 
-/*
- * Compile-time version numbers
- * 
- * LIQUID_WLAN_VERSION = "X.Y.Z"
- * LIQUID_WLAN_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
- */
-#define LIQUID_WLAN_VERSION          "0.1.0"
-#define LIQUID_WLAN_VERSION_NUMBER   1000
+#define LIQUID_WLAN_VERSION_MAJOR    1
+#define LIQUID_WLAN_VERSION_MINOR    0
+#define LIQUID_WLAN_VERSION_PATCH    0
+#define LIQUID_WLAN_VERSION_DEV      0
 
 /*
  * Run-time library version numbers
@@ -139,6 +134,7 @@ typedef struct wlanframesync_s * wlanframesync;
 typedef int (*wlanframesync_callback)(int                    _header_valid,
                                       unsigned char *        _payload,
                                       struct wlan_rxvector_s _rxvector,
+                                      framesyncstats_s       _stats,
                                       void *                 _userdata);
 
 // create WLAN framing synchronizer object
@@ -167,6 +163,12 @@ void wlanframesync_execute(wlanframesync          _q,
 // query methods
 float wlanframesync_get_rssi(wlanframesync _q); // received signal strength indication
 float wlanframesync_get_cfo(wlanframesync _q);  // carrier offset estimate
+
+// Reset frame data statistics
+int wlanframesync_reset_framedatastats(wlanframesync _q);
+
+// Get frame data statistics
+framedatastats_s wlanframesync_get_framedatastats(wlanframesync _q);
 
 // 
 // internal/debugging methods

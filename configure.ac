@@ -1,26 +1,5 @@
-## 
-## Copyright (c) 2011 Joseph Gaeddert
-## Copyright (c) 2011 Virginia Polytechnic Institute & State University
-##
-## This file is part of liquid.
-##
-## liquid is free software: you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or
-## (at your option) any later version.
-##
-## liquid is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
-## You should have received a copy of the GNU General Public License
-## along with liquid.  If not, see <http://www.gnu.org/licenses/>.
-
-# 
 # liquid WLAN library configure
 # Process with autoconf to generate configure script
-#
 
 AC_INIT([liquid-wlan],[0.1.0],[liquid@vt.edu])
 AC_CONFIG_SRCDIR([src/libliquid_wlan.c])
@@ -122,10 +101,12 @@ esac
 
 case $target_os in
 darwin*)
+    CXX_FLAGS_PYBIND="-undefined dynamic_lookup"
     SH_LIB=libliquid-wlan.dylib
     REBIND=""
     ;;
 *)
+    CXX_FLAGS_PYBIND=""
     SH_LIB=libliquid-wlan.so
     REBIND=ldconfig
     ;;
@@ -140,6 +121,7 @@ AC_SUBST(MLIBS)                     #
 AC_SUBST(SH_LIB)                    # output shared library target
 AC_SUBST(REBIND)                    # rebinding tool (e.g. ldconfig)
 AC_SUBST(ARCH_OPTION)               # compiler architecture option
+AC_SUBST(CXX_FLAGS_PYBIND)          # custom flags for pybind
 
 AC_CONFIG_FILES([makefile])
 AC_OUTPUT

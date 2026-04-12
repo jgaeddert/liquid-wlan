@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
+ * Copyright (c) 2011-2026 Joseph Gaeddert
  *
  * This file is part of liquid.
  *
@@ -21,7 +20,7 @@
 #define __LIQUID_WLAN_INTERNAL_H__
 
 // Configuration file
-#include "config.h"
+//#include "config.h"
 
 #include <complex.h>
 #include <liquid/liquid.h>

@@ -1,26 +1,4 @@
-/*
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
- *
- * This file is part of liquid.
- *
- * liquid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * liquid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-//
-// wlanframegen.c
-//
+// WLAN frame generator
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,23 +8,24 @@
 
 #include "liquid-wlan.internal.h"
 
-#define DEBUG_WLANFRAMEGEN            0
+// enable debugging for frame generator
+#define DEBUG_WLANFRAMEGEN 0
 
 struct wlanframegen_s {
     // options
-    unsigned int rate;      // primitive data rate
-    unsigned int length;    // original data length (bytes)
-    unsigned int seed;      // data scrambler seed
+    unsigned int rate;              // primitive data rate
+    unsigned int length;            // original data length (bytes)
+    unsigned int seed;              // data scrambler seed
 
-    float g;                // scaling factor (gain)
+    float g;                        // scaling factor (gain)
 
     // transform object
-    FFT_PLAN ifft;          // ifft object
-    float complex * X;      // frequency-domain buffer
-    float complex * x;      // time-domain buffer
+    FFT_PLAN ifft;                  // ifft object
+    float complex * buf_freq;       // frequency-domain buffer
+    float complex * buf_time;       // time-domain buffer
 
     // pilot sequence generator
-    wlan_lfsr ms_pilot;     // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
+    wlan_lfsr ms_pilot;             // g = x^7 + x^4 + 1 = 1001 0001(bin) = 0x91(hex)
     
     // DATA field modulation scheme
     unsigned int mod_scheme;
@@ -94,9 +73,9 @@ wlanframegen wlanframegen_create()
     wlanframegen q = (wlanframegen) malloc(sizeof(struct wlanframegen_s));
 
     // allocate memory for transform objects
-    q->X = (float complex*) malloc(64*sizeof(float complex));
-    q->x = (float complex*) malloc(64*sizeof(float complex));
-    q->ifft = FFT_CREATE_PLAN(64, q->X, q->x, FFT_DIR_BACKWARD, FFT_METHOD);
+    q->buf_freq = (float complex*) malloc(64*sizeof(float complex));
+    q->buf_time = (float complex*) malloc(64*sizeof(float complex));
+    q->ifft = FFT_CREATE_PLAN(64, q->buf_freq, q->buf_time, FFT_DIR_BACKWARD, FFT_METHOD);
 
     // create pilot sequence generator
     q->ms_pilot = wlan_lfsr_create(7, 0x91, 0x7f);
@@ -149,8 +128,8 @@ wlanframegen wlanframegen_create()
 void wlanframegen_destroy(wlanframegen _q)
 {
     // free transform array memory
-    free(_q->X);
-    free(_q->x);
+    free(_q->buf_freq);
+    free(_q->buf_time);
     FFT_DESTROY_PLAN(_q->ifft);
     
     // destroy pilot sequence generator
@@ -221,18 +200,18 @@ void wlanframegen_reset(wlanframegen _q)
         _q->postfix[i] = 0.0f;
 
     // force NULL subcarriers to zero
-    _q->X[ 0] = 0.0f;
-    _q->X[27] = 0.0f;
-    _q->X[28] = 0.0f;
-    _q->X[29] = 0.0f;
-    _q->X[30] = 0.0f;
-    _q->X[31] = 0.0f;
-    _q->X[32] = 0.0f;
-    _q->X[33] = 0.0f;
-    _q->X[34] = 0.0f;
-    _q->X[35] = 0.0f;
-    _q->X[36] = 0.0f;
-    _q->X[37] = 0.0f;
+    _q->buf_freq[ 0] = 0.0f;
+    _q->buf_freq[27] = 0.0f;
+    _q->buf_freq[28] = 0.0f;
+    _q->buf_freq[29] = 0.0f;
+    _q->buf_freq[30] = 0.0f;
+    _q->buf_freq[31] = 0.0f;
+    _q->buf_freq[32] = 0.0f;
+    _q->buf_freq[33] = 0.0f;
+    _q->buf_freq[34] = 0.0f;
+    _q->buf_freq[35] = 0.0f;
+    _q->buf_freq[36] = 0.0f;
+    _q->buf_freq[37] = 0.0f;
 }
 
 // get length of frame (symbols)
@@ -397,10 +376,10 @@ void wlanframegen_compute_symbol(wlanframegen _q)
     unsigned int pilot_phase = wlan_lfsr_advance(_q->ms_pilot);
 
     // set pilots
-    _q->X[43] = pilot_phase ? -1.0f :  1.0f;
-    _q->X[57] = pilot_phase ? -1.0f :  1.0f;
-    _q->X[ 7] = pilot_phase ? -1.0f :  1.0f;
-    _q->X[21] = pilot_phase ?  1.0f : -1.0f;
+    _q->buf_freq[43] = pilot_phase ? -1.0f :  1.0f;
+    _q->buf_freq[57] = pilot_phase ? -1.0f :  1.0f;
+    _q->buf_freq[ 7] = pilot_phase ? -1.0f :  1.0f;
+    _q->buf_freq[21] = pilot_phase ?  1.0f : -1.0f;
 
     // NOTE : NULL subcarriers have been set to zero in reset() method
 
@@ -486,11 +465,11 @@ void wlanframegen_writesymbol_S1a(wlanframegen _q,
     // NOTE : the 'long' sequence is like a 128-sample symbol with
     //        a 32-sample cyclic prefix; need to split appropriately
     //        (see diagram above)
-    memmove(&_q->x[ 0], &wlanframe_s1[48], 16*sizeof(float complex));
-    memmove(&_q->x[16], &wlanframe_s1[ 0], 48*sizeof(float complex));
+    memmove(&_q->buf_time[ 0], &wlanframe_s1[48], 16*sizeof(float complex));
+    memmove(&_q->buf_time[16], &wlanframe_s1[ 0], 48*sizeof(float complex));
     
     // generate first 'long sequence' symbol
-    wlanframegen_gensymbol(_q->x,
+    wlanframegen_gensymbol(_q->buf_time,
                            _q->postfix,
                            _q->rampup,
                            _q->rampup_len,
@@ -504,10 +483,10 @@ void wlanframegen_writesymbol_S1b(wlanframegen _q,
     // NOTE : the 'long' sequence is like a 128-sample symbol with
     //        a 32-sample cyclic prefix; need to split appropriately
     //        (see diagram above)
-    memmove(_q->x, wlanframe_s1, 64*sizeof(float complex));
+    memmove(_q->buf_time, wlanframe_s1, 64*sizeof(float complex));
     
     // generate first 'long sequence' symbol
-    wlanframegen_gensymbol(_q->x,
+    wlanframegen_gensymbol(_q->buf_time,
                            _q->postfix,
                            _q->rampup,
                            _q->rampup_len,
@@ -519,59 +498,59 @@ void wlanframegen_writesymbol_signal(wlanframegen _q,
                                      float complex * _buffer)
 {
     // load 48 SIGNAL BPSK symbols onto appropriate subcarriers
-    _q->X[38] = (_q->signal_int[0] & 0x80) ? 1.0f : -1.0f;
-    _q->X[39] = (_q->signal_int[0] & 0x40) ? 1.0f : -1.0f;
-    _q->X[40] = (_q->signal_int[0] & 0x20) ? 1.0f : -1.0f;
-    _q->X[41] = (_q->signal_int[0] & 0x10) ? 1.0f : -1.0f;
-    _q->X[42] = (_q->signal_int[0] & 0x08) ? 1.0f : -1.0f;
+    _q->buf_freq[38] = (_q->signal_int[0] & 0x80) ? 1.0f : -1.0f;
+    _q->buf_freq[39] = (_q->signal_int[0] & 0x40) ? 1.0f : -1.0f;
+    _q->buf_freq[40] = (_q->signal_int[0] & 0x20) ? 1.0f : -1.0f;
+    _q->buf_freq[41] = (_q->signal_int[0] & 0x10) ? 1.0f : -1.0f;
+    _q->buf_freq[42] = (_q->signal_int[0] & 0x08) ? 1.0f : -1.0f;
     //    43  : pilot
-    _q->X[44] = (_q->signal_int[0] & 0x04) ? 1.0f : -1.0f;
-    _q->X[45] = (_q->signal_int[0] & 0x02) ? 1.0f : -1.0f;
-    _q->X[46] = (_q->signal_int[0] & 0x01) ? 1.0f : -1.0f;
-    _q->X[47] = (_q->signal_int[1] & 0x80) ? 1.0f : -1.0f;
-    _q->X[48] = (_q->signal_int[1] & 0x40) ? 1.0f : -1.0f;
-    _q->X[49] = (_q->signal_int[1] & 0x20) ? 1.0f : -1.0f;
-    _q->X[50] = (_q->signal_int[1] & 0x10) ? 1.0f : -1.0f;
-    _q->X[51] = (_q->signal_int[1] & 0x08) ? 1.0f : -1.0f;
-    _q->X[52] = (_q->signal_int[1] & 0x04) ? 1.0f : -1.0f;
-    _q->X[53] = (_q->signal_int[1] & 0x02) ? 1.0f : -1.0f;
-    _q->X[54] = (_q->signal_int[1] & 0x01) ? 1.0f : -1.0f;
-    _q->X[55] = (_q->signal_int[2] & 0x80) ? 1.0f : -1.0f;
-    _q->X[56] = (_q->signal_int[2] & 0x40) ? 1.0f : -1.0f;
+    _q->buf_freq[44] = (_q->signal_int[0] & 0x04) ? 1.0f : -1.0f;
+    _q->buf_freq[45] = (_q->signal_int[0] & 0x02) ? 1.0f : -1.0f;
+    _q->buf_freq[46] = (_q->signal_int[0] & 0x01) ? 1.0f : -1.0f;
+    _q->buf_freq[47] = (_q->signal_int[1] & 0x80) ? 1.0f : -1.0f;
+    _q->buf_freq[48] = (_q->signal_int[1] & 0x40) ? 1.0f : -1.0f;
+    _q->buf_freq[49] = (_q->signal_int[1] & 0x20) ? 1.0f : -1.0f;
+    _q->buf_freq[50] = (_q->signal_int[1] & 0x10) ? 1.0f : -1.0f;
+    _q->buf_freq[51] = (_q->signal_int[1] & 0x08) ? 1.0f : -1.0f;
+    _q->buf_freq[52] = (_q->signal_int[1] & 0x04) ? 1.0f : -1.0f;
+    _q->buf_freq[53] = (_q->signal_int[1] & 0x02) ? 1.0f : -1.0f;
+    _q->buf_freq[54] = (_q->signal_int[1] & 0x01) ? 1.0f : -1.0f;
+    _q->buf_freq[55] = (_q->signal_int[2] & 0x80) ? 1.0f : -1.0f;
+    _q->buf_freq[56] = (_q->signal_int[2] & 0x40) ? 1.0f : -1.0f;
     //    57  : pilot
-    _q->X[58] = (_q->signal_int[2] & 0x20) ? 1.0f : -1.0f;
-    _q->X[59] = (_q->signal_int[2] & 0x10) ? 1.0f : -1.0f;
-    _q->X[60] = (_q->signal_int[2] & 0x08) ? 1.0f : -1.0f;
-    _q->X[61] = (_q->signal_int[2] & 0x04) ? 1.0f : -1.0f;
-    _q->X[62] = (_q->signal_int[2] & 0x02) ? 1.0f : -1.0f;
-    _q->X[63] = (_q->signal_int[2] & 0x01) ? 1.0f : -1.0f;
+    _q->buf_freq[58] = (_q->signal_int[2] & 0x20) ? 1.0f : -1.0f;
+    _q->buf_freq[59] = (_q->signal_int[2] & 0x10) ? 1.0f : -1.0f;
+    _q->buf_freq[60] = (_q->signal_int[2] & 0x08) ? 1.0f : -1.0f;
+    _q->buf_freq[61] = (_q->signal_int[2] & 0x04) ? 1.0f : -1.0f;
+    _q->buf_freq[62] = (_q->signal_int[2] & 0x02) ? 1.0f : -1.0f;
+    _q->buf_freq[63] = (_q->signal_int[2] & 0x01) ? 1.0f : -1.0f;
     //     0  : NULL
-    _q->X[ 1] = (_q->signal_int[3] & 0x80) ? 1.0f : -1.0f;
-    _q->X[ 2] = (_q->signal_int[3] & 0x40) ? 1.0f : -1.0f;
-    _q->X[ 3] = (_q->signal_int[3] & 0x20) ? 1.0f : -1.0f;
-    _q->X[ 4] = (_q->signal_int[3] & 0x10) ? 1.0f : -1.0f;
-    _q->X[ 5] = (_q->signal_int[3] & 0x08) ? 1.0f : -1.0f;
-    _q->X[ 6] = (_q->signal_int[3] & 0x04) ? 1.0f : -1.0f;
+    _q->buf_freq[ 1] = (_q->signal_int[3] & 0x80) ? 1.0f : -1.0f;
+    _q->buf_freq[ 2] = (_q->signal_int[3] & 0x40) ? 1.0f : -1.0f;
+    _q->buf_freq[ 3] = (_q->signal_int[3] & 0x20) ? 1.0f : -1.0f;
+    _q->buf_freq[ 4] = (_q->signal_int[3] & 0x10) ? 1.0f : -1.0f;
+    _q->buf_freq[ 5] = (_q->signal_int[3] & 0x08) ? 1.0f : -1.0f;
+    _q->buf_freq[ 6] = (_q->signal_int[3] & 0x04) ? 1.0f : -1.0f;
     //     7  : pilot
-    _q->X[ 8] = (_q->signal_int[3] & 0x02) ? 1.0f : -1.0f;
-    _q->X[ 9] = (_q->signal_int[3] & 0x01) ? 1.0f : -1.0f;
-    _q->X[10] = (_q->signal_int[4] & 0x80) ? 1.0f : -1.0f;
-    _q->X[11] = (_q->signal_int[4] & 0x40) ? 1.0f : -1.0f;
-    _q->X[12] = (_q->signal_int[4] & 0x20) ? 1.0f : -1.0f;
-    _q->X[13] = (_q->signal_int[4] & 0x10) ? 1.0f : -1.0f;
-    _q->X[14] = (_q->signal_int[4] & 0x08) ? 1.0f : -1.0f;
-    _q->X[15] = (_q->signal_int[4] & 0x04) ? 1.0f : -1.0f;
-    _q->X[16] = (_q->signal_int[4] & 0x02) ? 1.0f : -1.0f;
-    _q->X[17] = (_q->signal_int[4] & 0x01) ? 1.0f : -1.0f;
-    _q->X[18] = (_q->signal_int[5] & 0x80) ? 1.0f : -1.0f;
-    _q->X[19] = (_q->signal_int[5] & 0x40) ? 1.0f : -1.0f;
-    _q->X[20] = (_q->signal_int[5] & 0x20) ? 1.0f : -1.0f;
+    _q->buf_freq[ 8] = (_q->signal_int[3] & 0x02) ? 1.0f : -1.0f;
+    _q->buf_freq[ 9] = (_q->signal_int[3] & 0x01) ? 1.0f : -1.0f;
+    _q->buf_freq[10] = (_q->signal_int[4] & 0x80) ? 1.0f : -1.0f;
+    _q->buf_freq[11] = (_q->signal_int[4] & 0x40) ? 1.0f : -1.0f;
+    _q->buf_freq[12] = (_q->signal_int[4] & 0x20) ? 1.0f : -1.0f;
+    _q->buf_freq[13] = (_q->signal_int[4] & 0x10) ? 1.0f : -1.0f;
+    _q->buf_freq[14] = (_q->signal_int[4] & 0x08) ? 1.0f : -1.0f;
+    _q->buf_freq[15] = (_q->signal_int[4] & 0x04) ? 1.0f : -1.0f;
+    _q->buf_freq[16] = (_q->signal_int[4] & 0x02) ? 1.0f : -1.0f;
+    _q->buf_freq[17] = (_q->signal_int[4] & 0x01) ? 1.0f : -1.0f;
+    _q->buf_freq[18] = (_q->signal_int[5] & 0x80) ? 1.0f : -1.0f;
+    _q->buf_freq[19] = (_q->signal_int[5] & 0x40) ? 1.0f : -1.0f;
+    _q->buf_freq[20] = (_q->signal_int[5] & 0x20) ? 1.0f : -1.0f;
     //    21  : pilot
-    _q->X[22] = (_q->signal_int[5] & 0x10) ? 1.0f : -1.0f;
-    _q->X[23] = (_q->signal_int[5] & 0x08) ? 1.0f : -1.0f;
-    _q->X[24] = (_q->signal_int[5] & 0x04) ? 1.0f : -1.0f;
-    _q->X[25] = (_q->signal_int[5] & 0x02) ? 1.0f : -1.0f;
-    _q->X[26] = (_q->signal_int[5] & 0x01) ? 1.0f : -1.0f;
+    _q->buf_freq[22] = (_q->signal_int[5] & 0x10) ? 1.0f : -1.0f;
+    _q->buf_freq[23] = (_q->signal_int[5] & 0x08) ? 1.0f : -1.0f;
+    _q->buf_freq[24] = (_q->signal_int[5] & 0x04) ? 1.0f : -1.0f;
+    _q->buf_freq[25] = (_q->signal_int[5] & 0x02) ? 1.0f : -1.0f;
+    _q->buf_freq[26] = (_q->signal_int[5] & 0x01) ? 1.0f : -1.0f;
 
     // run transform
     wlanframegen_compute_symbol(_q);
@@ -581,12 +560,12 @@ void wlanframegen_writesymbol_signal(wlanframegen _q,
     // apply gain
     unsigned int i;
     for (i=0; i<64; i++)
-        _q->x[i] /= sqrtf(64.0f);
+        _q->buf_time[i] /= sqrtf(64.0f);
     
     // validate against Table G.12
 
     // generate SIGNAL symbol
-    wlanframegen_gensymbol(_q->x,
+    wlanframegen_gensymbol(_q->buf_time,
                            _q->postfix,
                            _q->rampup,
                            _q->rampup_len,
@@ -619,7 +598,7 @@ void wlanframegen_writesymbol_data(wlanframegen _q,
         } else {
             // DATA subcarrier
             assert(n<48);
-            _q->X[k] = wlan_modulate(_q->mod_scheme, _q->modem_syms[n]);
+            _q->buf_freq[k] = wlan_modulate(_q->mod_scheme, _q->modem_syms[n]);
             n++;
         }
     }
@@ -630,10 +609,10 @@ void wlanframegen_writesymbol_data(wlanframegen _q,
 
     // apply gain
     for (i=0; i<64; i++)
-        _q->x[i] /= sqrtf(64.0f);
+        _q->buf_time[i] /= sqrtf(64.0f);
     
     // generate SIGNAL symbol
-    wlanframegen_gensymbol(_q->x,
+    wlanframegen_gensymbol(_q->buf_time,
                            _q->postfix,
                            _q->rampup,
                            _q->rampup_len,
@@ -645,15 +624,15 @@ void wlanframegen_writesymbol_null(wlanframegen _q,
                                    float complex * _buffer)
 {
 #if 0
-    memset(_q->x, 0x00, 64*sizeof(float complex));
+    memset(_q->buf_time, 0x00, 64*sizeof(float complex));
 #else
     unsigned int i;
     for (i=0; i<64; i++)
-        _q->x[i] = 0.0f;
+        _q->buf_time[i] = 0.0f;
 #endif
     
     // generate symbol
-    wlanframegen_gensymbol(_q->x,
+    wlanframegen_gensymbol(_q->buf_time,
                            _q->postfix,
                            _q->rampup,
                            _q->rampup_len,

@@ -1,22 +1,3 @@
-# Copyright (c) 2011 Joseph Gaeddert
-# Copyright (c) 2011 Virginia Polytechnic Institute & State University
-#
-# This file is part of liquid.
-#
-# liquid is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# liquid is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with liquid.  If not, see <http://www.gnu.org/licenses/>.
-
-# 
 # Makefile for liquid WLAN libraries
 #
 # Targets:
@@ -30,7 +11,6 @@
 #    examples            :   build all examples
 #
 #    clean-examples      :   clean examples programs
-#
 
 # paths
 srcdir = @srcdir@
@@ -55,6 +35,8 @@ INCLUDE_CFLAGS	= $(addprefix -I ,$(include_dirs))
 CONFIG_CFLAGS	= @ARCH_OPTION@
 # -g : debugging info
 CFLAGS		+= $(INCLUDE_CFLAGS) -g -O2 -Wall -fPIC $(CONFIG_CFLAGS)
+CFLAGS		+= -Wno-deprecated-declarations
+CXXFLAGS	= $(CFLAGS) -std=c++14 -Wno-return-type-c-linkage
 LDFLAGS		+= @LIBS@
 ARFLAGS		= r
 PATHSEP		= /
@@ -117,6 +99,48 @@ src/gentab/wlan_intlv_R54.c : src/gentab/wlan_interleaver_gentab ; ./$< -r 54 > 
 
 # explicitly define dependencies for library objects
 $(objects) : %.o : %.c $(include_headers)
+
+# c++ bindings
+
+objects_cc :=							\
+	src/wlanframegen.cc.o					\
+
+# explicitly define dependencies for library objects
+$(objects_cc) : src/%.cc.o : src/%.cc include/%.hh $(include_headers)
+	g++ -c -Wall -I ./include -o $@ $<
+
+# example
+examples/bind_example : % : %.cc $(objects) $(objects_cc) include/wlanframegen.hh
+	g++ -Wall -I ./include -o $@ $< $(objects) $(objects_cc) ${LDFLAGS}
+
+# python bindings
+
+# the "-undefined dynamic_lookup" is needed on macOS
+# https://pybind11.readthedocs.io/en/stable/compiling.html#building-manually
+PYBIND11_INCLUDES := $(shell python3 -m pybind11 --includes) -I./include
+PYBIND11_SUFFIX   := $(shell python3-config --extension-suffix)
+PYBIND11_FLAGS    := @CXX_FLAGS_PYBIND@
+PYBIND11_LIBS     := $(shell python3-config --libs)
+PYBIND11_LDFLAGS  := $(shell python3-config --ldflags)
+
+# re-compile targets with python extensions
+objects_python = $(patsubst %.cc.o,%.python.o,$(objects_cc))
+
+$(objects_python) : src/%.python.o : src/%.cc include/%.hh $(include_headers)
+	g++ ${CXXFLAGS} -D PYTHONLIB ${PYBIND11_INCLUDES} -c -o $@ $<
+
+src/liquid.python.o : src/liquid.python.cc include/liquid-wlan.python.hh $(include_headers)
+	g++ ${CXXFLAGS} -D PYTHONLIB ${PYBIND11_INCLUDES} -c -o $@ $<
+
+# g++ ${CXXFLAGS} `python3 -m pybind11 --includes` -D PYTHONLIB src/liquid.python.cc -o liquid`python3-config --extension-suffix` -lliquid `python3-config --ldflags`
+pythonlib := liquidwlan${PYBIND11_SUFFIX}
+${pythonlib} : src/liquid.python.o $(objects) $(objects_python)
+	g++ ${CXXFLAGS} ${PYBIND11_FLAGS} -shared -fPIC -o $@ $^ ${LDFLAGS} ${PYBIND11_LDFLAGS} ${PYBIND11_LIBS}
+
+python: ${pythonlib}
+
+clean-python:
+	$(RM) src/*.python.o ${pythonlib}
 
 ##
 ## TARGET : all       - build shared library (default)
@@ -352,7 +376,7 @@ clean-sandbox:
 ##
 
 
-clean: clean-check clean-examples clean-sandbox
+clean: clean-check clean-examples clean-sandbox clean-python
 	$(RM) $(objects)
 	$(RM) src/gentab/wlan_interleaver_gentab
 	$(RM) src/gentab/wlan_intlv_R*.c

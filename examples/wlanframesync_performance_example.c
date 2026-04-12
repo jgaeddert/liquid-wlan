@@ -1,28 +1,5 @@
-/*
- * Copyright (c) 2019 Joseph Gaeddert
- *
- * This file is part of liquid.
- *
- * liquid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * liquid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-//
-// wlanframesync_performance_example.c
-//
 // Test performance of frame detection, header decoding, and payload
 // decoding in additive white Gauss noise (AWGN) channels.
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,8 +19,8 @@ void usage()
     printf(" -s <snr>   : SNR: starting value (dB),              default: -3\n");
     printf(" -d <step>  : SNR: step size (dB),                   default:  1\n");
     printf(" -x <snr>   : SNR: maximum value (dB),               default:  10\n");
-    printf(" -n <num>   : max number of trials to run,           default: 10,000\n");
-    printf(" -m <bits>  : min number of bit errors for success,  default:    500\n");
+    printf(" -n <num>   : max number of trials to run,           default: 1,000\n");
+    printf(" -m <bits>  : min number of bit errors for success,  default:   100\n");
     printf(" -r <rate>  : rate {6,9,12,18,24,36,48,54} M bits/s, default: 6\n");
     printf(" -L <len>   : frame length (bytes),                  default: 800\n");
     printf(" -o <file>  : output filename,                       default: %s\n", FILENAME_OUTPUT);
@@ -62,6 +39,7 @@ int bit_errors;
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata)
 {
     frame_detected  = 1;
@@ -86,8 +64,8 @@ int main(int argc, char*argv[])
     float               SNRdB_min       = -3.0f;    // SNR (dB), min
     float               SNRdB_step      =  1.0f;    // SNR (dB), step
     float               SNRdB_max       = 30.0f;    // SNR (dB), max
-    unsigned long int   max_trials      = 10000;    // maximum number of trials to run
-    unsigned long int   min_bit_errors  =  500;  // minimum bit errors before success
+    unsigned long int   max_trials      = 1000;     // maximum number of trials to run
+    unsigned long int   min_bit_errors  =  100;     // minimum bit errors before success
     const char *        filename        = FILENAME_OUTPUT;
     unsigned int        seed            =    0;     // random seed
 

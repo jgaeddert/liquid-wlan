@@ -1,33 +1,9 @@
-/*
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
- *
- * This file is part of liquid.
- *
- * liquid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * liquid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-//
-// signalfield_fec_test.c
-//
 // Test PLCP Header encoding/decoding (SIGNAL field); data obtained from
 // Annex G in 1999 specification (Tables G.7 & G.8, p. 61-62).
 //
 // Generator polynomials:
 //  g0 = 133 (oct) = 1011011 (bin), 1101101 (bin, flipped) = 0x6d
 //  g1 = 171 (oct) = 1111001 (bin), 1001111 (bin, flipped) = 0x4f
-//
 
 #include <stdio.h>
 #include <stdlib.h>

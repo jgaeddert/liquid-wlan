@@ -1,9 +1,5 @@
 /*
  * Copyright Feb 2004, Phil Karn, KA9Q
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
- *
- * This file is part of liquid.
  *
  * liquid is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

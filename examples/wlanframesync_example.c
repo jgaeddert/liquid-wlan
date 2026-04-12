@@ -1,28 +1,4 @@
-/*
- * Copyright (c) 2011 Joseph Gaeddert
- * Copyright (c) 2011 Virginia Polytechnic Institute & State University
- *
- * This file is part of liquid.
- *
- * liquid is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * liquid is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with liquid.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-//
-// wlanframesync_example.c
-//
-// Test generation/synchronization of wlan frame
-//
+// Test generation/synchronization of WLAN frame
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +27,7 @@ void usage()
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata);
 
 int main(int argc, char*argv[])
@@ -199,9 +176,19 @@ int main(int argc, char*argv[])
 static int callback(int                    _header_valid,
                     unsigned char *        _payload,
                     struct wlan_rxvector_s _rxvector,
+                    framesyncstats_s       _stats,
                     void *                 _userdata)
 {
     printf("**** callback invoked (header: %s)\n", _header_valid ? "valid" : "INVALID");
+    printf("    evm         : %12.6f dB\n", _stats.evm);
+    printf("    rssi        : %12.6f dB\n", _stats.rssi);
+    printf("    cfo         : %12.6f (f/Fs)\n", _stats.cfo);
+    printf("    num syms    : %12u\n", _stats.num_framesyms);
+    printf("    mod         : %12d\n", _stats.mod_scheme);
+    printf("    bps         : %12d\n", _stats.mod_bps);
+    printf("    check       : %12d\n", _stats.check);
+    printf("    fec[0]      : %12d\n", _stats.fec0);
+    printf("    fec[1]      : %12d\n", _stats.fec1);
 
     if (!_header_valid)
         return 1;
@@ -212,6 +199,15 @@ static int callback(int                    _header_valid,
     // count errors
     unsigned int num_bit_errors = count_bit_errors_array(_payload, msg_org, _rxvector.LENGTH);
     printf("bit errors : %4u / %4u\n", num_bit_errors, 8*_rxvector.LENGTH);
+
+#if 0
+    // write frame symbols to file
+    FILE * fid = fopen("framesyms.txt","w");
+    unsigned int i;
+    for (i=0; i<_stats.num_framesyms; i++)
+        fprintf(fid,"%12.4e %12.4e\n", crealf(_stats.framesyms[i]), cimagf(_stats.framesyms[i]));
+    fclose(fid);
+#endif
 
     return 0;
 }

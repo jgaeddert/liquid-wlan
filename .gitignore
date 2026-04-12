@@ -1,3 +1,6 @@
+# ignore build directories
+build
+
 # ignore all object files
 *.o
 *.d

@@ -1,0 +1,5 @@
+liquid-dsp
+matplotlib
+numpy
+pybind11[global]
+# PyQt5
