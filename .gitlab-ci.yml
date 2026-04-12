@@ -43,7 +43,7 @@ bind-automatic:
   stage: build
   #tags: [docker]
   script:
-    - apt -qq install -y --no-install-recommends virtualenv
+    - apt -qq install -y --no-install-recommends python3-dev virtualenv
     - virtualenv env/liquid-wlan
     - source env/liquid-wlan/bin/activate
     - pip install .
