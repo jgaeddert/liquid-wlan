@@ -16,36 +16,30 @@ print('liquid-wlan python version:',wlan.__version__)
 
 # create frame
 fg = wlan.framegen()
-buf = fg.execute()
+buf = fg.execute(datarate=6,length=1500)
 print(buf.shape)
 
-#
+# user-defined callback function
 def callback(context,payload,stats):
     print('frame detected!')
-    print(json.dumps(stats,indent=2))
+    print(json.dumps(stats['rxvector']))
+    context.update(stats)
 
-fs = wlan.framesync(callback,None)
+info = {}
+fs = wlan.framesync(callback,info)
 fs.execute(buf)
 
 print('')
 print('final statistics')
 print(json.dumps(fs.framedatastats,indent=2))
 
-'''
-# estimate spectrum and plot results
-psd = dsp.spgram(nfft=600,wlen=400,delay=10)
-psd.execute(buf)
-
-# get spectrum plot and display
-print(psd)
-Sxx,f = psd.get_psd()
-print('Sxx:',Sxx.shape,'f:',f.shape)
-
-fig,ax = plt.subplots(1,figsize=(8,8))
-ax.plot(f,Sxx)
-ax.set_xlabel('Frequency [f/Fs]')
-ax.set_ylabel('PSD [dB]')
-ax.grid(True, zorder=5)
-plt.show()
-'''
+# plot symbols
+if 'framesyms' in info:
+    fig,ax = plt.subplots(1,figsize=(8,8))
+    ax.plot(np.real(info['framesyms']),np.imag(info['framesyms']),'.')
+    ax.set_xlabel('Real')
+    ax.set_ylabel('Imag')
+    ax.set(xlim=(-1.5,1.5),ylim=(-1.5,1.5))
+    ax.grid(True, zorder=5)
+    plt.show()
 

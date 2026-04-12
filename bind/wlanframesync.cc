@@ -34,8 +34,14 @@ int wlan::py_callback_wrapper_framesync(
     // type cast user data as frame synchronizer
     wlan::framesync * fs = (wlan::framesync*) _userdata;
 
-    // wrap C-style callback and invoke python callback
+    // payload bytes
     py::array_t<uint8_t> payload({_rxvector.LENGTH,},{1,},(uint8_t*)_payload);
+
+    // frame symbols
+    std::complex<float> * s = (std::complex<float>*) _stats.framesyms;
+    py::array_t<std::complex<float>> syms({_stats.num_framesyms,},{sizeof(std::complex<float>),},s);
+
+    // wrap C-style callback and invoke python callback
     py::dict stats = py::dict(
         "rxvector"_a = py::dict(
             "length"_a  = _rxvector.LENGTH,
@@ -46,7 +52,7 @@ int wlan::py_callback_wrapper_framesync(
         "evm"_a           = _stats.evm,
         "rssi"_a          = _stats.rssi,
         "cfo"_a           = _stats.cfo,
-        "framesyms"_a     = py::none(),
+        "framesyms"_a     = syms, //py::none(),
         "mod_scheme"_a    = std::string( modulation_types[_stats.mod_scheme].name ),
         "fec"_a           = std::string( fec_scheme_str[_stats.fec0][1] )
         );
