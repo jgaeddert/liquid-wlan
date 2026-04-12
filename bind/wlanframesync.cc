@@ -37,10 +37,18 @@ int wlan::py_callback_wrapper_framesync(
     // wrap C-style callback and invoke python callback
     py::array_t<uint8_t> payload({_rxvector.LENGTH,},{1,},(uint8_t*)_payload);
     py::dict stats = py::dict(
-        "rssi"_a = _rxvector.RSSI, // TODO: convert to float?
-        "datarate"_a = _rxvector.DATARATE,
-        "service"_a = _rxvector.SERVICE
-        // TODO: add EVM, symbols, carrier offset, etc.
+        "rxvector"_a = py::dict(
+            "length"_a  = _rxvector.LENGTH,
+            "rssi"_a    = _rxvector.RSSI,
+            "datarate"_a= _rxvector.DATARATE,
+            "service"_a = _rxvector.SERVICE
+        ),
+        "evm"_a           = _stats.evm,
+        "rssi"_a          = _stats.rssi,
+        "cfo"_a           = _stats.cfo,
+        "framesyms"_a     = py::none(),
+        "mod_scheme"_a    = std::string( modulation_types[_stats.mod_scheme].name ),
+        "fec"_a           = std::string( fec_scheme_str[_stats.fec0][1] )
         );
     //py::object o =
     fs->py_callback(fs->context,payload,stats);

@@ -22,10 +22,13 @@ print(buf.shape)
 #
 def callback(context,payload,stats):
     print('frame detected!')
+    print(json.dumps(stats,indent=2))
 
 fs = wlan.framesync(callback,None)
 fs.execute(buf)
 
+print('')
+print('final statistics')
 print(json.dumps(fs.framedatastats,indent=2))
 
 '''
