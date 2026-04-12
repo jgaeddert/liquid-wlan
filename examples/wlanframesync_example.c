@@ -180,6 +180,15 @@ static int callback(int                    _header_valid,
                     void *                 _userdata)
 {
     printf("**** callback invoked (header: %s)\n", _header_valid ? "valid" : "INVALID");
+    printf("    evm         : %12.6f dB\n", _stats.evm);
+    printf("    rssi        : %12.6f dB\n", _stats.rssi);
+    printf("    cfo         : %12.6f (f/Fs)\n", _stats.cfo);
+    printf("    num syms    : %12u\n", _stats.num_framesyms);
+    printf("    mod         : %12d\n", _stats.mod_scheme);
+    printf("    bps         : %12d\n", _stats.mod_bps);
+    printf("    check       : %12d\n", _stats.check);
+    printf("    fec[0]      : %12d\n", _stats.fec0);
+    printf("    fec[1]      : %12d\n", _stats.fec1);
 
     if (!_header_valid)
         return 1;

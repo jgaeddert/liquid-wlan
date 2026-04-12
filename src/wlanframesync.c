@@ -25,7 +25,8 @@
 #define WLANFRAMESYNC_S1B_ABS_THRESH    (0.35f)
 #define WLANFRAMESYNC_S1B_ARG_THRESH    (0.3f)
 
-struct wlanframesync_s {
+struct wlanframesync_s
+{
     // callback
     wlanframesync_callback callback;// user-defined callback function
     void *                 userdata;// user-defined context field
@@ -216,7 +217,7 @@ void wlanframesync_reset(wlanframesync _q)
     _q->framesyncstats.mod_bps       = 0;
     _q->framesyncstats.check         = LIQUID_CRC_UNKNOWN;
     _q->framesyncstats.fec0          = LIQUID_FEC_UNKNOWN;
-    _q->framesyncstats.fec1          = LIQUID_FEC_UNKNOWN;
+    _q->framesyncstats.fec1          = LIQUID_FEC_NONE;
 }
 
 // execute framing synchronizer on input buffer
@@ -287,7 +288,7 @@ float wlanframesync_get_rssi(wlanframesync _q)
 // get receiver carrier frequency offset estimate
 float wlanframesync_get_cfo(wlanframesync _q)
 {
-    return 0.0f;
+    return nco_crcf_get_frequency(_q->nco_rx);
 }
 
 // Reset frame data statistics
@@ -699,6 +700,11 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
     // decode SIGNAL field
     wlanframesync_decode_signal(_q);
 
+    // populate frame statistics
+    _q->framesyncstats.evm  = 0; // TODO
+    _q->framesyncstats.rssi = wlanframesync_get_rssi(_q);
+    _q->framesyncstats.cfo  = wlanframesync_get_cfo(_q);
+
     // validate proper decoding
     if (!_q->signal_valid) {
         // invoke callback
@@ -718,6 +724,21 @@ void wlanframesync_execute_rxsignal(wlanframesync _q)
         return;
     }
     _q->framedatastats.num_headers_valid++;
+
+    // populate frame sync stats
+    _q->framesyncstats.mod_scheme = _q->mod_scheme;
+    _q->framesyncstats.mod_bps    = _q->nbpsc;
+    switch (_q->rate) {
+    case WLANFRAME_RATE_6:  _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27;    break; // BPSK,   r1/2, 1101
+    case WLANFRAME_RATE_9:  _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27P34; break; // BPSK,   r3/4, 1111
+    case WLANFRAME_RATE_12: _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27;    break; // QPSK,   r1/2, 0101
+    case WLANFRAME_RATE_18: _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27P34; break; // QPSK,   r3/4, 0111
+    case WLANFRAME_RATE_24: _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27;    break; // 16-QAM, r1/2, 1001
+    case WLANFRAME_RATE_36: _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27P34; break; // 16-QAM, r3/4, 1011
+    case WLANFRAME_RATE_48: _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27P23; break; // 64-QAM, r2/3, 0001
+    case WLANFRAME_RATE_54: _q->framesyncstats.fec0 = LIQUID_FEC_CONV_V27P34; break; // 64-QAM, r3/4, 0011
+    default:;
+    }
 
     // set state
     _q->state = WLANFRAMESYNC_STATE_RXDATA;
@@ -788,8 +809,15 @@ void wlanframesync_execute_rxdata(wlanframesync _q)
     if (_q->num_symbols == _q->nsym) {
         // decode message
         wlan_packet_decode(_q->rate, _q->seed, _q->length, _q->msg_enc, _q->msg_dec);
+
+        // populate frame data statistics
         _q->framedatastats.num_payloads_valid++; // TODO: validate CRC?
         _q->framedatastats.num_bytes_received += _q->length;
+
+        // populate frame sync statistics
+        _q->framesyncstats.evm  = 0;
+        _q->framesyncstats.rssi = wlanframesync_get_rssi(_q);
+        _q->framesyncstats.cfo  = wlanframesync_get_cfo(_q);
 
         // assemble RX vector
         struct wlan_rxvector_s rxvector;
