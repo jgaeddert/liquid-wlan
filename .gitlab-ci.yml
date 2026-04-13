@@ -12,6 +12,7 @@ before_script:
   - apt -qq install -y --no-install-recommends automake autoconf build-essential git
   - apt-get -qq install -y --no-install-recommends build-essential cmake time curl virtualenv
 
+# build main C library and run tests
 main:
   stage: build
   #tags: [docker]
@@ -22,7 +23,8 @@ main:
     - make -j2
     - ctest -j2
 
-bind:
+# manually build python library and validate build
+bind-manual:
   stage: build
   #tags: [docker]
   script:
@@ -34,6 +36,16 @@ bind:
     - cd build
     - cmake -D BUILD_LIQUID=ON -D BUILD_PYTHON=ON ..
     - make -j2
-    - ls -lahG
+    - python3 -c "import liquid_wlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
+
+# automatically build python library and validate build
+bind-automatic:
+  stage: build
+  #tags: [docker]
+  script:
+    - apt -qq install -y --no-install-recommends python3-dev virtualenv
+    - virtualenv env/liquid-wlan
+    - source env/liquid-wlan/bin/activate
+    - pip install .
     - python3 -c "import liquid_wlan as wlan; print('liquid-wlan python version:',wlan.__version__)"
 

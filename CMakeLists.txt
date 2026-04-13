@@ -59,9 +59,10 @@ if (BUILD_LIQUID)
         GIT_REPOSITORY https://github.com/jgaeddert/liquid-dsp.git
         GIT_TAG        master #v1.7.0
         )
-    set(BUILD_AUTOTESTS  OFF CACHE INTERNAL "Disable building liquid tests")
-    set(BUILD_BENCHMARKS OFF CACHE INTERNAL "Disable building liquid benchmarks")
-    set(BUILD_EXAMPLES   OFF CACHE INTERNAL "Disable building liquid examples")
+    set(BUILD_AUTOTESTS   OFF CACHE INTERNAL "Disable building liquid tests")
+    set(BUILD_BENCHMARKS  OFF CACHE INTERNAL "Disable building liquid benchmarks")
+    set(BUILD_EXAMPLES    OFF CACHE INTERNAL "Disable building liquid examples")
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build liquid-dsp as static library")
     FetchContent_MakeAvailable(liquid)
     # FetchContent_Populate(liquid) <- older policy, see CMP0169
 else()
